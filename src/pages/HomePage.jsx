@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { authApi } from '../services/api/authApi';
-import { ShieldCheck, Heart, Truck, Users, HelpCircle, FileText, Bot, Store, Leaf } from 'lucide-react';
+import { ShieldCheck, Heart, Truck, Users, HelpCircle } from 'lucide-react';
+import susheelPic from '../assets/susheel.png';
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -72,22 +73,26 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Top Banner Card */}
+      {/* Top Banner Card (Left Pic, Right Content) */}
       <section className="max-w-4xl mx-auto px-4 pt-6">
-        <div className="bg-gradient-to-r from-primary-light via-primary/30 to-amber-100 rounded-2xl border border-primary-dark/30 p-5 md:p-6 flex flex-col md:flex-row items-center gap-4 shadow-sm overflow-hidden relative">
-          <div className="flex-1 space-y-2.5">
-            <p className="text-xs md:text-sm font-semibold text-text-dark leading-relaxed">
+        <div className="bg-gradient-to-r from-primary-light via-primary/30 to-amber-100 rounded-2xl border border-primary-dark/30 p-5 flex flex-row items-center gap-4 md:gap-6 shadow-sm overflow-hidden relative">
+          {/* Left Side: Portrait Photo */}
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-primary-dark/40 overflow-hidden shadow-sm flex-shrink-0 bg-white">
+            <img 
+              src={susheelPic} 
+              alt="Susheel" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Right Side: Text Content */}
+          <div className="flex-1 space-y-1.5 text-left">
+            <p className="text-sm font-black text-text-dark tracking-tight">
+              Susheel
+            </p>
+            <p className="text-xs md:text-sm font-semibold text-text-dark/90 leading-relaxed">
               MilkMaatu is built to help farmers get heavy cattle feed delivered directly from manufacturers to their doorstep, track milk production data, and easily buy or sell cattle through a trusted local platform.
             </p>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold bg-white text-text-dark py-1 px-2.5 rounded-full border border-primary-dark/40 shadow-xs">
-                Built by Susheel
-              </span>
-            </div>
-          </div>
-          {/* Avatar Placeholder Area */}
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-white/70 border border-primary-dark/30 rounded-xl flex items-center justify-center text-3xl select-none flex-shrink-0 shadow-inner">
-            🧑‍🌾
           </div>
         </div>
       </section>
@@ -164,4 +169,5 @@ export const HomePage = () => {
     </div>
   );
 };
+
 
