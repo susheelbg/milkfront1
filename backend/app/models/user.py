@@ -15,7 +15,7 @@ class User(Base):
     village = Column(String, nullable=True)
     profile_image = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationships
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")

@@ -6,6 +6,8 @@ from app.core.security import hash_password
 from app.models.user import User
 from app.models.feed import Feed
 from app.models.cattle import Cattle
+from app.models.order import Order
+from app.services.cloudinary_service import upload_image
 
 SEED_FEEDS = [
     {
@@ -72,6 +74,14 @@ async def seed_database():
         await conn.run_sync(Base.metadata.create_all)
         
     async with SessionLocal() as db:
+        # 1.5. Clean all existing listings data to start from a completely clean slate
+        print("[SEED DB] Purging all existing feeds, cattle, and orders data from Supabase...")
+        from sqlalchemy import delete
+        await db.execute(delete(Cattle))
+        await db.execute(delete(Feed))
+        await db.execute(delete(Order))  # Cascades automatically to OrderItem
+        await db.commit()
+
         # 2. Seed Users
         # Check if the demo admin exists
         stmt = select(User).where(User.phone_number == "+919876543210")
@@ -124,49 +134,21 @@ async def seed_database():
         if not existing_feeds:
             print("[SEED DB] Seeding catalog feeds products...")
             for f_data in SEED_FEEDS:
+                # Upload to Cloudinary to replace dummy unsplash URL
+                f_data["image_url"] = upload_image(f_data["image_url"])
                 feed = Feed(**f_data)
                 db.add(feed)
             await db.commit()
-
-        # 4. Seed Cattle
-        stmt = select(Cattle)
-        result = await db.execute(stmt)
-        existing_cattle = result.scalars().all()
-        
-        if not existing_cattle:
-            print("[SEED DB] Seeding initial active Sante cattle postings...")
-            
-            c1 = Cattle(
-                user_id=admin_id,
-                animal_name="Jersey Cow",
-                age=5,
-                milk_capacity="20L/day",
-                price=65000,
-                village="Thendekere",
-                sante_name="Thendekere Sante",
-                description="Healthy Jersey cow with excellent milk output. Vaccinated and dewormed.",
-                image_url="https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop",
-                phone_number="+919876543210",
-                expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
-            )
-            
-            c2 = Cattle(
-                user_id=admin_id,
-                animal_name="Holstein Friesian",
-                age=4,
-                milk_capacity="25L/day",
-                price=85000,
-                village="Belgaum",
-                sante_name="KRS Sante",
-                description="Premium Holstein Friesian with best genetics. High milk quality assured.",
-                image_url="https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop",
-                phone_number="+919876543211",
-                expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
-            )
-            
-            db.add(c1)
-            db.add(c2)
+        else:
+            # Upgrade existing feeds if they still have dummy unsplash images
+            print("[SEED DB] Checking existing feeds for dummy images...")
+            for feed in existing_feeds:
+                if feed.image_url and "unsplash.com" in feed.image_url:
+                    print(f"[SEED DB] Uploading dummy image for feed '{feed.title}' to Cloudinary...")
+                    feed.image_url = upload_image(feed.image_url)
             await db.commit()
+
+        # 4. Cattle Seeding is skipped to let marketplace start completely empty and clean for real farmer uploads
 
     print("[SEED COMPLETE] Database populated successfully! You are ready to log in.")
 

@@ -20,10 +20,10 @@ async def get_cattle_listings(
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve active (non-expired) cattle listings, optionally filtered by Sante and search text."""
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(timezone.utc).replace(tzinfo=None)
     
-    # Select listings that have not yet expired
-    query = select(Cattle).where(Cattle.expires_at > current_time)
+    # Select listings that have not yet expired and were uploaded by actual farmers (role == "user")
+    query = select(Cattle).join(User).where(Cattle.expires_at > current_time).where(User.role == "user")
     
     if sante:
         query = query.where(Cattle.sante_name == sante)

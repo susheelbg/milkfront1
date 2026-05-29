@@ -13,7 +13,7 @@ class Order(Base):
     delivery_address = Column(String, nullable=False)
     phone_number = Column(String, nullable=False)
     payment_status = Column(String, default="pending") # pending, paid, refunded
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationships
     user = relationship("User", back_populates="orders")

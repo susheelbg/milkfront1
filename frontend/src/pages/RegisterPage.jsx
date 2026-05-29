@@ -290,7 +290,7 @@ export const RegisterPage = () => {
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
-                onChange={errors.confirmPassword ? errors.confirmPassword : ''}
+                onChange={handleChange}
                 error={errors.confirmPassword}
                 required
               />

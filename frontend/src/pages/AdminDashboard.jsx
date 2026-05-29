@@ -78,6 +78,20 @@ export const AdminDashboard = () => {
   };
 
   // Feed Actions
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFeedFormData(prev => ({
+          ...prev,
+          image: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const openAddFeed = () => {
     setEditingFeed(null);
     setFeedFormData({ name: '', price: '', description: '', category: 'Dairy', image: '' });
@@ -525,12 +539,37 @@ export const AdminDashboard = () => {
                 </div>
               </div>
 
-              <Input
-                label="Image URL (Optional)"
-                placeholder="https://..."
-                value={feedFormData.image}
-                onChange={(e) => setFeedFormData({ ...feedFormData, image: e.target.value })}
-              />
+              <div>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">Product Photo</label>
+                {feedFormData.image ? (
+                  <div className="relative w-full max-w-xs mt-1">
+                    <img
+                      src={feedFormData.image}
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-lg border-2 border-border-light"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFeedFormData({ ...feedFormData, image: '' })}
+                      className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-primary hover:bg-primary-light/20 rounded-lg cursor-pointer transition-colors bg-bg-light text-center mt-1">
+                    <Plus className="w-6 h-6 text-primary-dark mb-1" />
+                    <span className="text-xs text-text-dark font-bold">Upload Product Image</span>
+                    <span className="text-[10px] text-text-light mt-0.5">JPEG, PNG allowed</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs text-text-light font-bold uppercase mb-1">Description</label>

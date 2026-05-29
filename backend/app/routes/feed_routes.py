@@ -7,6 +7,7 @@ from app.core.dependencies import get_current_admin
 from app.models.feed import Feed
 from app.schemas.feed import FeedCreate, FeedUpdate, FeedResponse
 from app.utils.response import json_response
+from app.services.cloudinary_service import upload_image
 
 router = APIRouter(tags=["Feeds Catalog"])
 
@@ -55,13 +56,15 @@ async def get_feed_by_id(id: int, db: AsyncSession = Depends(get_db)):
 
 # --- ADMIN WRITE ENDPOINTS (Protected by Admin Role check) ---
 
-@router.post("/admin/feeds")
+@router.post("/feeds")
 async def create_feed(
     req: FeedCreate,
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new feed product item (Admin only)."""
+    cdn_url = upload_image(req.image)
+    
     # Create the SQLAlchemy model
     new_feed = Feed(
         title=req.name,
@@ -69,7 +72,7 @@ async def create_feed(
         description=req.description,
         brand=req.brand,
         stock_quantity=req.stock_quantity,
-        image_url=req.image,
+        image_url=cdn_url,
         category=req.category
     )
     
@@ -84,7 +87,7 @@ async def create_feed(
         data=payload
     )
 
-@router.put("/admin/feeds/{id}")
+@router.put("/feeds/{id}")
 async def update_feed(
     id: int,
     req: FeedUpdate,
@@ -113,7 +116,7 @@ async def update_feed(
     if "category" in update_data:
         feed.category = update_data["category"]
     if "image" in update_data:
-        feed.image_url = update_data["image"]
+        feed.image_url = upload_image(update_data["image"])
     if "brand" in update_data:
         feed.brand = update_data["brand"]
     if "stock_quantity" in update_data:
@@ -129,7 +132,7 @@ async def update_feed(
         data=payload
     )
 
-@router.delete("/admin/feeds/{id}")
+@router.delete("/feeds/{id}")
 async def delete_feed(
     id: int,
     admin_user = Depends(get_current_admin),

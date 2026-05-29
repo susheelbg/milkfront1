@@ -33,7 +33,7 @@ async def get_admin_stats(
     total_orders = orders_res.scalar_one()
 
     # 4. Active cattle posts
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(timezone.utc).replace(tzinfo=None)
     cattle_res = await db.execute(
         select(func.count(Cattle.id)).where(Cattle.expires_at > current_time)
     )

@@ -17,25 +17,26 @@ else:
     CLOUDINARY_ENABLED = False
 
 # Default premium cattle photo fallback
-DEFAULT_CATTLE_IMAGE = "https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop"
+DEFAULT_CATTLE_IMAGE = "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=500&h=400&fit=crop"
 
 def upload_image(image_data: str) -> str:
-    """Upload base64 image or raw string to Cloudinary, returning the secure CDN URL."""
+    """Upload base64 image, raw string, or remote URL to Cloudinary, returning the secure CDN URL."""
     if not image_data:
         return DEFAULT_CATTLE_IMAGE
 
-    # Check if the image_data is already a standard http/https web URL
-    if image_data.startswith("http://") or image_data.startswith("https://"):
+    # Check if the image_data is already a Cloudinary web URL
+    if (image_data.startswith("http://") or image_data.startswith("https://")) and "res.cloudinary.com" in image_data:
         return image_data
 
     # Check if Cloudinary is not configured
     if not CLOUDINARY_ENABLED:
-        print("[CLOUDINARY MOCK] Cloudinary disabled. Returning mock photo URL.")
+        print("[CLOUDINARY MOCK] Cloudinary disabled. Returning original URL / default.")
+        if image_data.startswith("http://") or image_data.startswith("https://"):
+            return image_data
         return DEFAULT_CATTLE_IMAGE
 
     try:
-        # standard base64 upload to Cloudinary
-        # Cloudinary uploader automatically accepts data URI schema, e.g., 'data:image/png;base64,...'
+        # Cloudinary uploader accepts base64, data URIs, or standard remote HTTP URLs!
         upload_result = cloudinary.uploader.upload(
             image_data,
             folder="milkmaatu_sante",

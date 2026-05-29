@@ -28,7 +28,7 @@ async def clean_expired_listings_worker():
             await asyncio.sleep(3600)
             
             async with SessionLocal() as db:
-                current_time = datetime.now(timezone.utc)
+                current_time = datetime.now(timezone.utc).replace(tzinfo=None)
                 # Find posts where expires_at is in the past
                 stmt = select(Cattle).where(Cattle.expires_at < current_time)
                 result = await db.execute(stmt)

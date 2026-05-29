@@ -5,7 +5,7 @@ from app.core.database import Base
 
 def get_expiry_time():
     """Default expiry duration is 24 hours in the future."""
-    return datetime.now(timezone.utc) + timedelta(hours=24)
+    return (datetime.now(timezone.utc) + timedelta(hours=24)).replace(tzinfo=None)
 
 class Cattle(Base):
     __tablename__ = "cattle"
@@ -23,7 +23,7 @@ class Cattle(Base):
     phone_number = Column(String, nullable=False)
     sante_name = Column(String, nullable=False) # KRS Sante or Thendekere Sante
     expires_at = Column(DateTime, default=get_expiry_time, nullable=False, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="cattle_listings")

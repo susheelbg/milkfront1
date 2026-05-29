@@ -11,6 +11,9 @@ class RegisterRequest(BaseModel):
     address: str = Field(None, description="Optional street address details")
     villageName: str = Field(None, description="Optional village name")
 
+class OtpSendRequest(BaseModel):
+    phone: str = Field(..., description="Mobile number to send OTP to")
+
 class OtpVerifyRequest(BaseModel):
     phone: str = Field(..., description="Mobile number being verified")
     otp: str = Field(..., min_length=4, max_length=4, description="WhatsApp OTP code (e.g. 1234)")

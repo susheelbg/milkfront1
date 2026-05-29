@@ -17,7 +17,8 @@ else:
         settings.DATABASE_URL,
         pool_pre_ping=True,
         pool_size=15,
-        max_overflow=25
+        max_overflow=25,
+        connect_args={"statement_cache_size": 0}
     )
 
 # Async session factory

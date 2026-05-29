@@ -173,24 +173,23 @@ const SEED_USERS = [
   }
 ];
 
-// Initialize localStorage DB
-export const initMockDb = () => {
-  if (!localStorage.getItem('mock_feeds')) {
-    localStorage.setItem('mock_feeds', JSON.stringify(SEED_FEEDS));
-  }
-  if (!localStorage.getItem('mock_cattle')) {
-    localStorage.setItem('mock_cattle', JSON.stringify(SEED_CATTLE));
-  }
-  if (!localStorage.getItem('mock_users')) {
-    localStorage.setItem('mock_users', JSON.stringify(SEED_USERS));
-  }
-  if (!localStorage.getItem('mock_orders')) {
-    localStorage.setItem('mock_orders', JSON.stringify([]));
+// Clean up all old localStorage mock data to prevent any conflicts with the live Supabase/Cloudinary database
+export const purgeMockDb = () => {
+  localStorage.removeItem('mock_feeds');
+  localStorage.removeItem('mock_cattle');
+  localStorage.removeItem('mock_users');
+  localStorage.removeItem('mock_orders');
+  
+  // Wipe old mock JWT tokens to force a fresh, real backend authentication session
+  const token = localStorage.getItem('authToken');
+  if (token && token.startsWith('jwt_token_mock_')) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
   }
 };
 
-// Auto initialize mock db
-initMockDb();
+// Auto purge mock database to ensure clean live state
+purgeMockDb();
 
 // Generic helper to simulate API delay
 export const mockDelay = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));

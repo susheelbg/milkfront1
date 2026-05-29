@@ -13,4 +13,4 @@ class Feed(Base):
     stock_quantity = Column(Integer, default=100)
     image_url = Column(String, nullable=True)
     category = Column(String, default="Dairy") # Dairy, Fodder, Supplement, Hay, Mineral, Protein
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

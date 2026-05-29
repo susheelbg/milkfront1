@@ -15,10 +15,10 @@ class CattleCreate(BaseModel):
 
 class CattleResponse(BaseModel):
     id: int
-    animalName: str = Field(..., serialization_alias="animalName")
+    animalName: str = Field(..., validation_alias="animal_name", serialization_alias="animalName")
     price: int
     age: int
-    milkCapacity: str = Field(..., serialization_alias="milkCapacity")
+    milkCapacity: str = Field(..., validation_alias="milk_capacity", serialization_alias="milkCapacity")
     contactNumber: str = Field(..., validation_alias="phone_number", serialization_alias="contactNumber")
     villageName: str = Field(..., validation_alias="village", serialization_alias="villageName")
     santeName: str = Field(..., validation_alias="sante_name", serialization_alias="santeName")

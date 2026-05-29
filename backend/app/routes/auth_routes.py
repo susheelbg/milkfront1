@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, OtpVerifyRequest, TokenResponse
+from app.schemas.auth import LoginRequest, RegisterRequest, OtpSendRequest, OtpVerifyRequest, TokenResponse
 from app.schemas.user import UserResponse
 from app.utils.response import json_response
 
@@ -28,18 +28,41 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
             detail="Phone number is already registered in our system."
         )
         
-    # Store registration details in cache memory temporarily waiting for OTP verification
-    PENDING_REGISTRATIONS[req.phone] = {
-        "name": req.name,
-        "password": hash_password(req.password),
-        "address": req.address or "",
-        "villageName": req.villageName or "",
-    }
+    pending = PENDING_REGISTRATIONS.get(req.phone)
+    if not pending or not pending.get("verified"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP verification required before completing registration."
+        )
+        
+    # Save the user in Supabase
+    new_user = User(
+        full_name=req.name,
+        phone_number=req.phone,
+        hashed_password=hash_password(req.password),
+        address=req.address or "",
+        village=req.villageName or "",
+        role="user" if req.phone != "+919876543210" else "admin", # Demo user is Admin
+        is_verified=True
+    )
     
-    # In a real app, WhatsApp OTP API call would go here
-    # E.g. whatsapp_service.send_otp(req.phone, otp="1234")
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    # Remove from pending store
+    PENDING_REGISTRATIONS.pop(req.phone, None)
+    
+    return json_response(
+        success=True,
+        message="Farmer account created successfully.",
+        data={"phone": req.phone}
+    )
+
+@router.post("/send-otp")
+async def send_otp(req: OtpSendRequest):
     print(f"[WHATSAPP GATEWAY SIMULATION] Sending OTP Code '1234' to {req.phone}")
-    
+    PENDING_REGISTRATIONS[req.phone] = {"verified": False}
     return json_response(
         success=True,
         message="WhatsApp mock verification OTP code sent. Use code '1234'.",
@@ -63,30 +86,14 @@ async def verify_otp(req: OtpVerifyRequest, db: AsyncSession = Depends(get_db)):
         
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration session expired. Please register again."
+            detail="Registration session expired. Please send OTP again."
         )
         
-    # User OTP verified successfully. Save the user in Supabase
-    new_user = User(
-        full_name=pending["name"],
-        phone_number=req.phone,
-        hashed_password=pending["password"],
-        address=pending["address"],
-        village=pending["villageName"],
-        role="user" if req.phone != "+919876543210" else "admin", # Demo user is Admin
-        is_verified=True
-    )
-    
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    
-    # Remove from pending store
-    PENDING_REGISTRATIONS.pop(req.phone, None)
+    pending["verified"] = True
     
     return json_response(
         success=True,
-        message="WhatsApp OTP verified successfully. Profile created.",
+        message="WhatsApp OTP verified successfully.",
         data={"phone": req.phone}
     )
 
