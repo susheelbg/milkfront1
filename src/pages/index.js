@@ -6,3 +6,7 @@ export { SanteSelectorPage } from './SanteSelectorPage';
 export { SanteActionPage } from './SanteActionPage';
 export { SanteBuyPage } from './SanteBuyPage';
 export { SanteSellPage } from './SanteSellPage';
+export { RegisterPage } from './RegisterPage';
+export { ProfilePage } from './ProfilePage';
+export { AdminDashboard } from './AdminDashboard';
+

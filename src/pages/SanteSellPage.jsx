@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
-import { cattleService } from '../services/dataService';
+import { cattleApi } from '../services/api/cattleApi';
 import { toastService } from '../services/toastService';
-import { Upload, X } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 
 export const SanteSellPage = () => {
   const location = useLocation();
@@ -112,7 +112,7 @@ export const SanteSellPage = () => {
     setLoading(true);
 
     try {
-      await cattleService.createPost({
+      await cattleApi.createCattleListing({
         animalName: formData.animalName,
         price: parseInt(formData.price),
         age: parseInt(formData.age),
@@ -176,15 +176,16 @@ export const SanteSellPage = () => {
                   </button>
                 </div>
               ) : (
-                <label className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-border-light rounded-lg hover:border-primary cursor-pointer transition-colors bg-bg-light">
+                <label className="flex flex-col items-center justify-center w-full px-4 py-10 border-2 border-dashed border-primary hover:bg-primary-light/30 rounded-lg cursor-pointer transition-colors bg-bg-light text-center">
                   <div className="flex flex-col items-center">
-                    <Upload className="w-8 h-8 text-primary mb-2" />
-                    <span className="text-sm text-text-dark font-medium">Click to upload photo</span>
-                    <span className="text-xs text-text-light">JPG, PNG up to 5MB</span>
+                    <Camera className="w-10 h-10 text-primary-dark mb-3 animate-bounce-slow" />
+                    <span className="text-base text-text-dark font-bold">Take Live Photo</span>
+                    <span className="text-xs text-text-light mt-1">Mobile camera will open directly (No gallery uploads allowed)</span>
                   </div>
                   <input
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={handleImageChange}
                     className="hidden"
                   />

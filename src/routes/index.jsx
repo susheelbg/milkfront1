@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import {
   LoginPage,
+  RegisterPage,
   HomePage,
   BuyFeedsPage,
   OrderSummaryPage,
@@ -9,13 +10,24 @@ import {
   SanteActionPage,
   SanteBuyPage,
   SanteSellPage,
+  ProfilePage,
+  AdminDashboard,
 } from '../pages';
-import { authService } from '../services/authService';
+import { authApi } from '../services/api/authApi';
 
 // Protected route component
 export const ProtectedRoute = ({ children }) => {
-  if (!authService.isAuthenticated()) {
+  if (!authApi.isAuthenticated()) {
     return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+// Admin route component
+export const AdminRoute = ({ children }) => {
+  const user = authApi.getCurrentUser();
+  if (!authApi.isAuthenticated() || user?.role !== 'admin') {
+    return <Navigate to="/home" replace />;
   }
   return children;
 };
@@ -27,11 +39,31 @@ export const routes = [
     element: <LoginPage />,
   },
   {
+    path: '/register',
+    element: <RegisterPage />,
+  },
+  {
     path: '/home',
     element: (
       <ProtectedRoute>
         <HomePage />
       </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/profile',
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin',
+    element: (
+      <AdminRoute>
+        <AdminDashboard />
+      </AdminRoute>
     ),
   },
   {
@@ -84,10 +116,11 @@ export const routes = [
   },
   {
     path: '/',
-    element: authService.isAuthenticated() ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />,
+    element: authApi.isAuthenticated() ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />,
   },
   {
     path: '*',
     element: <Navigate to="/home" replace />,
   },
 ];
+

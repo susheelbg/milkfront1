@@ -1,21 +1,45 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Card, Input } from '../components';
-import { cattlePostsData } from '../data/dummyData';
-import { Search, Filter } from 'lucide-react';
+import { cattleApi } from '../services/api/cattleApi';
+import { Search, Filter, Phone, Calendar, Loader2 } from 'lucide-react';
+import { toastService } from '../services/toastService';
 
 export const SanteBuyPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const santeName = location.state?.santeName;
 
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 100000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 150000 });
   const [showFilter, setShowFilter] = useState(false);
 
-  // Filter posts by sante and search/price criteria
+  useEffect(() => {
+    if (!santeName) {
+      navigate('/sante');
+      return;
+    }
+
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const data = await cattleApi.getCattleListings(santeName);
+        setPosts(data);
+      } catch (err) {
+        toastService.error('Failed to load listings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [santeName, navigate]);
+
+  // Filter posts dynamically in client
   const filteredPosts = useMemo(() => {
-    let filtered = cattlePostsData.filter(post => post.santeName === santeName);
+    let filtered = [...posts];
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -32,89 +56,104 @@ export const SanteBuyPage = () => {
     );
 
     return filtered;
-  }, [santeName, searchQuery, priceRange]);
+  }, [posts, searchQuery, priceRange]);
 
-  if (!santeName) {
-    navigate('/sante');
-    return null;
-  }
+  if (!santeName) return null;
 
   return (
-    <div className="min-h-screen bg-bg-light">
+    <div className="min-h-screen bg-bg-light pb-12">
       <Header showBack onBack={() => navigate('/sante-action', { state: { santeName } })} />
 
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-text-dark mb-1">Buy Cattle</h1>
-          <p className="text-text-dark opacity-90">{santeName}</p>
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-text-dark mb-1">Buy Cattle</h1>
+            <p className="text-text-dark opacity-90">{santeName}</p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate('/sante-sell', { state: { santeName } })}
+          >
+            + Sell Cattle
+          </Button>
         </div>
       </section>
 
       {/* Search and Filter Section */}
-      <section className="bg-white border-b border-border-light sticky top-20 z-30 py-4 px-4">
+      <section className="bg-white border-b border-border-light sticky top-14 z-30 py-4 px-4 shadow-sm">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex gap-3 items-center">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search size={20} className="absolute left-3 top-3 text-text-light" />
+              <Search size={18} className="absolute left-3.5 top-3.5 text-text-light" />
               <input
                 type="text"
-                placeholder="Search by animal name, village..."
+                placeholder="Search by breed, village..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-border-light focus:border-primary focus:outline-none"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-border-light focus:border-primary focus:outline-none text-sm transition-all"
               />
             </div>
 
             {/* Filter Button */}
             <button
               onClick={() => setShowFilter(!showFilter)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-text-dark rounded-lg hover:opacity-80 transition-opacity"
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+                showFilter
+                  ? 'bg-text-dark text-white border-text-dark'
+                  : 'bg-white text-text-dark border-border-light hover:border-text-dark'
+              }`}
             >
-              <Filter size={18} />
+              <Filter size={16} />
               Filter
             </button>
           </div>
 
           {/* Filter Panel */}
           {showFilter && (
-            <div className="mt-4 p-4 bg-bg-light rounded-lg border border-border-light">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-4 p-4 bg-bg-light rounded-xl border border-border-light animate-slide-up">
+              <h4 className="text-xs font-bold text-text-light uppercase tracking-wider mb-3">Price Budget Range</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-2">
-                    Min Price: ₹{priceRange.min}
-                  </label>
+                  <div className="flex justify-between text-sm text-text-dark font-bold mb-1.5">
+                    <span>Min Price</span>
+                    <span>₹{priceRange.min.toLocaleString()}</span>
+                  </div>
                   <input
                     type="range"
                     min="0"
-                    max="100000"
+                    max="150000"
+                    step="5000"
                     value={priceRange.min}
                     onChange={(e) =>
-                      setPriceRange({
-                        ...priceRange,
+                      setPriceRange(prev => ({
+                        ...prev,
                         min: parseInt(e.target.value),
-                      })
+                      }))
                     }
-                    className="w-full"
+                    className="w-full accent-primary-dark"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-dark mb-2">
-                    Max Price: ₹{priceRange.max}
-                  </label>
+                  <div className="flex justify-between text-sm text-text-dark font-bold mb-1.5">
+                    <span>Max Price</span>
+                    <span>₹{priceRange.max.toLocaleString()}</span>
+                  </div>
                   <input
                     type="range"
                     min="0"
-                    max="100000"
+                    max="150000"
+                    step="5000"
                     value={priceRange.max}
                     onChange={(e) =>
-                      setPriceRange({
-                        ...priceRange,
+                      setPriceRange(prev => ({
+                        ...prev,
                         max: parseInt(e.target.value),
-                      })
+                      }))
                     }
-                    className="w-full"
+                    className="w-full accent-primary-dark"
                   />
                 </div>
               </div>
@@ -124,76 +163,88 @@ export const SanteBuyPage = () => {
       </section>
 
       {/* Posts Grid */}
-      <section className="max-w-6xl mx-auto px-4 py-12">
-        {filteredPosts.length === 0 ? (
-          <div className="text-center py-12">
+      <section className="max-w-6xl mx-auto px-4 py-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-text-light">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+            <p className="font-semibold text-sm">Searching Sante listings...</p>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center py-16 bg-white border border-border-light rounded-2xl p-6">
             <div className="text-5xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-text-dark mb-2">No Listings Found</h2>
-            <p className="text-text-light mb-6">
-              Try adjusting your search filters or check back later
+            <h2 className="text-xl font-bold text-text-dark mb-2">No Cattle Listings Found</h2>
+            <p className="text-text-light text-sm mb-6">
+              Try adjusting your price range or search terms.
             </p>
-            <Button variant="primary" onClick={() => setSearchQuery('')}>
-              Clear Search
+            <Button variant="primary" onClick={() => { setSearchQuery(''); setPriceRange({ min: 0, max: 150000 }); }}>
+              Reset Filters
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPosts.map(post => (
-              <Card key={post.id} padding="0" hover className="overflow-hidden flex flex-col">
+              <Card key={post.id} padding="0" hover className="overflow-hidden flex flex-col border border-border-light">
                 {/* Image */}
-                <img
-                  src={post.image}
-                  alt={post.animalName}
-                  className="w-full h-48 object-cover"
-                />
+                <div className="relative h-48 bg-gray-100 overflow-hidden">
+                  <img
+                    src={post.image}
+                    alt={post.animalName}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 left-3 bg-text-dark/80 backdrop-blur-xs text-white text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full border border-white/20">
+                    24H Live
+                  </div>
+                </div>
 
                 {/* Content */}
                 <div className="p-4 flex flex-col flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-text-dark">
+                  <div className="flex justify-between items-start mb-1.5">
+                    <h3 className="text-lg font-black text-text-dark">
                       {post.animalName}
                     </h3>
-                    <span className="bg-primary-light text-text-dark px-3 py-1 rounded-full text-sm font-bold">
-                      {post.age} yrs
+                    <span className="bg-primary-light text-text-dark px-2.5 py-1 rounded-lg text-xs font-bold border border-primary-dark/20">
+                      {post.age} yrs old
                     </span>
                   </div>
 
-                  <p className="text-text-light text-sm mb-3">{post.villageName}</p>
+                  <p className="text-text-light text-xs font-bold uppercase mb-3 tracking-wide">{post.villageName}</p>
 
                   {/* Details Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                    <div className="bg-bg-light p-2 rounded">
-                      <p className="text-text-light text-xs">Milk Capacity</p>
-                      <p className="font-bold text-text-dark">{post.milkCapacity}</p>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-bg-light p-2.5 rounded-lg border border-border-light text-center">
+                      <p className="text-text-light text-[10px] font-bold uppercase">Milk Output</p>
+                      <p className="font-extrabold text-sm text-text-dark">{post.milkCapacity}</p>
                     </div>
-                    <div className="bg-bg-light p-2 rounded">
-                      <p className="text-text-light text-xs">Price</p>
-                      <p className="font-bold text-primary">₹{post.price}</p>
+                    <div className="bg-primary-light/40 p-2.5 rounded-lg border border-primary-dark/10 text-center">
+                      <p className="text-text-light text-[10px] font-bold uppercase">Asking Price</p>
+                      <p className="font-extrabold text-sm text-primary-dark">₹{post.price.toLocaleString()}</p>
                     </div>
                   </div>
 
-                  <p className="text-text-light text-sm mb-4 line-clamp-2">
-                    {post.description}
+                  <p className="text-text-light text-sm mb-5 flex-1 line-clamp-3 italic">
+                    "{post.description}"
                   </p>
 
                   {/* Contact Button */}
                   <Button
                     variant="primary"
                     size="md"
-                    className="w-full mb-2"
+                    className="w-full flex items-center justify-center gap-2"
                     onClick={() => {
                       alert(
-                        `Contact: ${post.contactNumber}\n\nPlease use this number to discuss the cattle details with the seller.`
+                        `📞 SELLER CONTACT INFO\n\nName: Seller at ${post.villageName}\nPhone: ${post.contactNumber}\n\nPlease click OK to copy the number or call directly.`
                       );
                     }}
                   >
-                    Contact Seller
+                    <Phone size={16} />
+                    Call Seller ({post.contactNumber})
                   </Button>
 
                   {/* Posted Date */}
-                  <p className="text-text-light text-xs text-center">
-                    Posted: {new Date(post.postedDate).toLocaleDateString()}
-                  </p>
+                  <div className="mt-3 flex items-center justify-center gap-1.5 text-text-light text-[10px] font-bold uppercase">
+                    <Calendar size={12} />
+                    <span>Posted: {new Date(post.postedDate).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </Card>
             ))}
@@ -202,14 +253,14 @@ export const SanteBuyPage = () => {
       </section>
 
       {/* Info Banner */}
-      <section className="bg-yellow-50 border-t border-border-light py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-text-dark">
-            <span className="font-bold">⏰ Note:</span> Posts automatically delete after 24 hours. 
-            Make sure to contact the seller quickly!
+      <section className="max-w-6xl mx-auto px-4 mt-4">
+        <div className="bg-yellow-50 border-2 border-yellow-100 rounded-xl py-4 px-4 text-center">
+          <p className="text-text-dark text-xs font-semibold">
+            📌 MilkMaatu marketplace policy: All Sante cattle posts automatically delete after 24 hours to prevent outdated sales information.
           </p>
         </div>
       </section>
     </div>
   );
 };
+

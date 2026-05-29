@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card } from '../components';
-import { authService } from '../services/authService';
+import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
 
 export const LoginPage = () => {
@@ -50,8 +50,14 @@ export const LoginPage = () => {
     setLoading(true);
 
     try {
-      await authService.login(formData.phone, formData.password);
-      toastService.success('Login successful!');
+      // Normalize number
+      let cleanedPhone = formData.phone.trim();
+      if (cleanedPhone.length === 10 && !cleanedPhone.startsWith('+')) {
+        cleanedPhone = `+91${cleanedPhone}`;
+      }
+      
+      const user = await authApi.login(cleanedPhone, formData.password);
+      toastService.success(`Welcome back, ${user.name}!`);
       navigate('/home');
     } catch (error) {
       toastService.error(error.message || 'Login failed. Please try again.');
@@ -64,10 +70,10 @@ export const LoginPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary-light to-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Title */}
-        <div className="text-center mb-8 animate-slide-up">
+        <div className="text-center mb-8 animate-fade-in">
           <h1 className="text-5xl font-bold text-text-dark mb-2">🥛</h1>
           <h2 className="text-4xl font-bold text-text-dark mb-2">MilkMaatu</h2>
-          <p className="text-text-light">Your Farmer's Dairy Platform</p>
+          <p className="text-text-light text-sm font-medium">Your Farmer's Dairy Platform</p>
         </div>
 
         {/* Login Card */}
@@ -106,8 +112,21 @@ export const LoginPage = () => {
               {loading ? 'Logging in...' : 'Login'}
             </Button>
 
-            <div className="text-center text-sm text-text-light">
-              <p className="mb-2">Demo Credentials:</p>
+            <div className="border-t border-border-light pt-4 text-center">
+              <p className="text-sm text-text-light">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  className="font-bold underline text-text-dark hover:opacity-85 transition-opacity"
+                >
+                  Register here
+                </button>
+              </p>
+            </div>
+
+            <div className="mt-6 text-center text-xs text-text-light bg-bg-light p-3 rounded-lg border border-border-light">
+              <p className="font-bold mb-1">Demo Credentials:</p>
               <p>Phone: +919876543210</p>
               <p>Password: demo123</p>
             </div>
@@ -115,10 +134,11 @@ export const LoginPage = () => {
         </Card>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-text-light text-sm">
-          <p>Secure login with phone number and password</p>
+        <div className="mt-8 text-center text-text-light text-xs font-semibold">
+          <p>Secure login with OTP verified phone numbers</p>
         </div>
       </div>
     </div>
   );
 };
+
