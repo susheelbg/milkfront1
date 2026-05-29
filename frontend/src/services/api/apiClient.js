@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Check if backend server is available (can be toggled manually or set via ENV)
 // By default we check if we should run in mock mode
-const USE_MOCK_API = true; // Set to false to force real API calls to FastAPI
+const USE_MOCK_API = false; // Set to false to force real API calls to FastAPI
 
 // Helper to get JWT token
 const getToken = () => localStorage.getItem('authToken');
