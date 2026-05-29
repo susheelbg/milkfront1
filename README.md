@@ -47,11 +47,18 @@ An administrative control portal allowing dairy network operators to moderate th
 
 ---
 
+## 📂 Project Structure
+The repository is divided into two primary subdirectories to scale cleanly as a full-stack platform:
+* **`frontend/`**: The complete React 18 + Vite + Tailwind CSS frontend application.
+* **`backend/`**: The directory reserved for building your future FastAPI + Supabase backend APIs.
+
+---
+
 ## 📂 Backend-Ready API Structure
-The frontend has been designed with clean abstractions under `src/services/api/` to make connecting to a **FastAPI + Supabase** backend tomorrow extremely easy:
+The frontend has been designed with clean abstractions under `frontend/src/services/api/` to make connecting to a **FastAPI + Supabase** backend tomorrow extremely easy:
 
 ```
-src/services/api/
+frontend/src/services/api/
 ├── apiClient.js     # Centralized fetch client (JWT token insertion, configurable API Base URL)
 ├── authApi.js       # Login, Registration, WhatsApp OTP delivery, Profile updates
 ├── feedsApi.js      # Feeds list retrieval, catalog modifications
@@ -63,7 +70,7 @@ src/services/api/
 ### Transitioning to a Live FastAPI Server
 By default, the `apiClient.js` runs in local mock mode. When you deploy your FastAPI server, simply configure:
 1. Set the server host environment variable `VITE_API_URL` to your FastAPI server (e.g. `http://localhost:8000/api`).
-2. Open `src/services/api/apiClient.js` and change `USE_MOCK_API` to `false`.
+2. Open `frontend/src/services/api/apiClient.js` and change `USE_MOCK_API` to `false`.
 3. The client will automatically transition from local simulation to making real HTTP requests, injecting `Authorization: Bearer <JWT_Token>` headers on all protected queries.
 
 ---
@@ -71,14 +78,16 @@ By default, the `apiClient.js` runs in local mock mode. When you deploy your Fas
 ## 🚀 Running Locally
 
 ### 1. Installation
-Clone the repository and install the dependencies:
+Navigate into the `frontend` directory and install the dependencies:
 ```bash
+cd frontend
 npm install
 ```
 
 ### 2. Start the Development Server
 To launch the app on your computer:
 ```bash
+cd frontend
 npm run dev
 ```
 Open **[http://localhost:5173](http://localhost:5173)** in your browser.
@@ -86,8 +95,9 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 ### 3. Expose to Mobile Phone (Wi-Fi)
 To test the direct camera capture and mobile views on your physical phone:
 1. Ensure both your computer and phone are connected to the **same Wi-Fi network**.
-2. Run Vite exposing host interfaces:
+2. Start Vite exposing host interfaces:
    ```bash
+   cd frontend
    npm run dev -- --host
    ```
 3. Type the **Network URL** (e.g., `http://192.168.1.4:5173`) printed in your terminal directly into your phone's browser.
@@ -96,3 +106,4 @@ To test the direct camera capture and mobile views on your physical phone:
 
 ## 👤 Credits
 Built and designed with premium mobile aesthetics by **Susheel**.
+
