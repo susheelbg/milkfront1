@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Card } from '../components';
+import { Button, Input, Card, Logo } from '../components';
 import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
 
@@ -69,10 +69,13 @@ export const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light to-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo/Title */}
-        <div className="text-center mb-8 animate-fade-in">
-          <h1 className="text-5xl font-bold text-text-dark mb-2">🥛</h1>
-          <h2 className="text-4xl font-bold text-text-dark mb-2">MilkMaatu</h2>
+        {/* Logo */}
+        <div className="text-center mb-8 animate-fade-in flex flex-col items-center">
+          <Logo
+            imgClassName="h-24 w-auto mb-3 drop-shadow-md"
+            fallbackClassName="text-4xl font-black mb-3"
+            alt="MilkMaatu Logo"
+          />
           <p className="text-text-light text-sm font-medium">Your Farmer's Dairy Platform</p>
         </div>
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 class OrderItemCreate(BaseModel):
     id: int = Field(..., description="Feed product ID")
@@ -8,35 +8,63 @@ class OrderItemCreate(BaseModel):
     price: float = Field(..., description="Feed price per bag at purchase")
 
 class OrderItemResponse(BaseModel):
-    id: int = Field(..., description="Feed product ID")
-    name: str = Field(..., description="Feed name")
+    id: int = Field(..., description="OrderItem row ID")
+    feed_id: Optional[int] = None
+    name: Optional[str] = None   # Resolved from related Feed.title
     price: float
     quantity: int
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_feed_name(cls, values):
+        # When loading from ORM, pull name from the related feed relationship
+        if hasattr(values, "feed") and values.feed is not None:
+            values.__dict__["name"] = values.feed.title
+        return values
 
     class Config:
         from_attributes = True
 
 class OrderCreate(BaseModel):
-    customerName: str = Field(..., validation_alias="customerName")
-    phoneNumber: str = Field(..., validation_alias="phoneNumber")
-    villageName: str = Field(..., validation_alias="villageName")
+    customerName: str
+    phoneNumber: str
+    villageName: str
     address: str
     items: List[OrderItemCreate]
-    totalPrice: float = Field(..., validation_alias="totalPrice")
+    totalPrice: float
 
 class OrderUpdate(BaseModel):
     status: str = Field(..., description="New order status")
 
 class OrderResponse(BaseModel):
     id: str
-    customerName: str = Field(..., serialization_alias="customerName")
-    phoneNumber: str = Field(..., serialization_alias="phoneNumber")
-    villageName: str = Field(..., serialization_alias="villageName")
-    address: str
-    items: List[OrderItemResponse]
-    totalPrice: float = Field(..., serialization_alias="totalPrice")
-    status: str = Field(..., serialization_alias="order_status")
-    createdAt: datetime = Field(..., serialization_alias="created_at")
+    customerName: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    villageName: Optional[str] = None
+    address: Optional[str] = None
+    items: List[OrderItemResponse] = []
+    totalPrice: float = 0.0
+    status: str = "pending"
+    createdAt: Optional[datetime] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_db_fields(cls, values):
+        """Map SQLAlchemy ORM model fields to the camelCase response fields."""
+        if hasattr(values, "__dict__") or hasattr(values, "__table__"):
+            # It's an ORM object — map columns to camelCase
+            d = {}
+            d["id"] = values.id
+            d["customerName"] = values.customer_name
+            d["phoneNumber"] = values.phone_number
+            d["villageName"] = values.village_name
+            d["address"] = values.delivery_address
+            d["totalPrice"] = values.total_amount
+            d["status"] = values.order_status
+            d["createdAt"] = values.created_at
+            d["items"] = values.items if values.items else []
+            return d
+        return values
 
     class Config:
         from_attributes = True

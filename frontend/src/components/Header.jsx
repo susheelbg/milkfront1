@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X, User } from 'lucide-react';
 import { authApi } from '../services/api/authApi';
+import { Logo } from './Logo';
 
 export const Header = ({ showBack = false, onBack = null }) => {
   const navigate = useNavigate();
@@ -31,10 +32,18 @@ export const Header = ({ showBack = false, onBack = null }) => {
               ←
             </button>
           ) : null}
-          <h1 className="text-xl md:text-2xl font-bold text-text-dark cursor-pointer hover:opacity-80 flex items-center gap-1.5" onClick={() => navigate('/home')}>
-            <span>🥛</span>
-            <span className="tracking-tight">MilkMaatu</span>
-          </h1>
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/home')}
+            role="button"
+            aria-label="Go to home"
+          >
+            <Logo
+              imgClassName="h-9 w-auto"
+              fallbackClassName="text-xl font-black"
+              alt="MilkMaatu"
+            />
+          </div>
         </div>
 
         {/* Right side actions */}

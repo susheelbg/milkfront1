@@ -70,6 +70,8 @@ async def place_order(
         total_amount=calculated_total,
         order_status="pending",
         delivery_address=req.address,
+        village_name=req.villageName,
+        customer_name=req.customerName,
         phone_number=req.phoneNumber,
         payment_status="pending"
     )
@@ -93,7 +95,7 @@ async def place_order(
     full_order = res.scalars().first()
 
     # Form response payload
-    payload = OrderResponse.model_validate(full_order).model_dump(by_alias=True)
+    payload = OrderResponse.model_validate(full_order).model_dump()
 
     return json_response(
         success=True,
@@ -116,7 +118,7 @@ async def get_my_orders(
     result = await db.execute(stmt)
     orders = result.scalars().all()
     
-    payload = [OrderResponse.model_validate(o).model_dump(by_alias=True) for o in orders]
+    payload = [OrderResponse.model_validate(o).model_dump() for o in orders]
     return json_response(
         success=True,
         message="Fetched farmer orders successfully",
@@ -139,7 +141,7 @@ async def get_all_orders(
     result = await db.execute(stmt)
     orders = result.scalars().all()
     
-    payload = [OrderResponse.model_validate(o).model_dump(by_alias=True) for o in orders]
+    payload = [OrderResponse.model_validate(o).model_dump() for o in orders]
     return json_response(
         success=True,
         message="Fetched all system orders successfully",
@@ -170,9 +172,17 @@ async def update_order_status(
         
     order.order_status = req.status
     await db.commit()
-    await db.refresh(order)
     
-    payload = OrderResponse.model_validate(order).model_dump(by_alias=True)
+    # Reload order with items relationship properly loaded
+    reload_stmt = (
+        select(Order)
+        .where(Order.id == id)
+        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+    )
+    reload_res = await db.execute(reload_stmt)
+    updated_order = reload_res.scalars().first()
+    
+    payload = OrderResponse.model_validate(updated_order).model_dump()
     return json_response(
         success=True,
         message="Order status updated successfully",

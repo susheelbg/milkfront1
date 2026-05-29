@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Card } from '../components';
+import { Button, Input, Card, Logo } from '../components';
 import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
 import { Check, ShieldCheck, KeyRound, UserPlus, ArrowRight, Smartphone } from 'lucide-react';
@@ -148,8 +148,12 @@ export const RegisterPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary-light to-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Title */}
-        <div className="text-center mb-8 animate-fade-in">
-          <h1 className="text-4xl font-bold text-text-dark mb-1">🥛 MilkMaatu</h1>
+        <div className="text-center mb-8 animate-fade-in flex flex-col items-center">
+          <Logo
+            imgClassName="h-20 w-auto mb-2 drop-shadow-sm"
+            fallbackClassName="text-3xl font-black mb-2"
+            alt="MilkMaatu Logo"
+          />
           <p className="text-text-light text-sm">Create your cattle farmer account</p>
         </div>
 

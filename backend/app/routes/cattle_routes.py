@@ -22,11 +22,16 @@ async def get_cattle_listings(
     """Retrieve active (non-expired) cattle listings, optionally filtered by Sante and search text."""
     current_time = datetime.now(timezone.utc).replace(tzinfo=None)
     
-    # Select listings that have not yet expired and were uploaded by actual farmers (role == "user")
-    query = select(Cattle).join(User).where(Cattle.expires_at > current_time).where(User.role == "user")
+    # Explicit join with ON condition so SQLAlchemy knows how to link tables
+    query = (
+        select(Cattle)
+        .join(User, Cattle.user_id == User.id)
+        .where(Cattle.expires_at > current_time)
+    )
     
     if sante:
-        query = query.where(Cattle.sante_name == sante)
+        # Case-insensitive match so "KRS Sante" == "krs sante"
+        query = query.where(Cattle.sante_name.ilike(sante))
         
     if q:
         search_filter = f"%{q}%"
@@ -42,6 +47,7 @@ async def get_cattle_listings(
     # Map models through Pydantic to ensure serialization aliases align with React naming
     payload = [CattleResponse.model_validate(c).model_dump(by_alias=True) for c in listings]
     return payload # Return array directly to keep it simple for frontend mapping, or envelope it
+
 
 @router.get("/cattle/search")
 async def search_cattle_listings(

@@ -11,6 +11,8 @@ class Order(Base):
     total_amount = Column(Float, nullable=False)
     order_status = Column(String, default="pending") # pending, confirmed, shipped, delivered, cancelled
     delivery_address = Column(String, nullable=False)
+    village_name = Column(String, nullable=True)
+    customer_name = Column(String, nullable=True)
     phone_number = Column(String, nullable=False)
     payment_status = Column(String, default="pending") # pending, paid, refunded
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
