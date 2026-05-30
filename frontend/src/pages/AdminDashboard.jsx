@@ -7,7 +7,7 @@ import { orderApi } from '../services/api/orderApi';
 import { cattleApi } from '../services/api/cattleApi';
 import { toastService } from '../services/toastService';
 import { authApi } from '../services/api/authApi';
-import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers } from 'lucide-react';
+import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers, Eye, EyeOff } from 'lucide-react';
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -30,6 +30,7 @@ export const AdminDashboard = () => {
     description: '',
     category: 'Dairy',
     image: '',
+    is_hidden: false,
   });
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export const AdminDashboard = () => {
         adminApi.getStats(),
         adminApi.getUsers(),
         orderApi.getOrders(),
-        feedsApi.getFeeds(),
+        feedsApi.getAdminFeeds(),
         cattleApi.getCattleListings(),
       ]);
 
@@ -94,7 +95,7 @@ export const AdminDashboard = () => {
 
   const openAddFeed = () => {
     setEditingFeed(null);
-    setFeedFormData({ name: '', price: '', description: '', category: 'Dairy', image: '' });
+    setFeedFormData({ name: '', price: '', description: '', category: 'Dairy', image: '', is_hidden: false });
     setIsFeedModalOpen(true);
   };
 
@@ -106,6 +107,7 @@ export const AdminDashboard = () => {
       description: feed.description,
       category: feed.category,
       image: feed.image,
+      is_hidden: feed.is_hidden || false,
     });
     setIsFeedModalOpen(true);
   };
@@ -140,6 +142,23 @@ export const AdminDashboard = () => {
       loadData();
     } catch (e) {
       toastService.error('Failed to delete feed.');
+    }
+  };
+
+  const handleToggleHideFeed = async (feed) => {
+    try {
+      await feedsApi.updateFeed(feed.id, {
+        name: feed.name,
+        price: feed.price,
+        description: feed.description,
+        category: feed.category,
+        image: feed.image,
+        is_hidden: !feed.is_hidden,
+      });
+      toastService.success(feed.is_hidden ? 'Feed product is now visible to customers.' : 'Feed product has been hidden from customers.');
+      loadData();
+    } catch (e) {
+      toastService.error('Failed to toggle visibility.');
     }
   };
 
@@ -289,9 +308,25 @@ export const AdminDashboard = () => {
                                   <span className="bg-bg-light text-text-dark border border-border-light px-2.5 py-1 rounded text-xs font-semibold">
                                     {feed.category}
                                   </span>
+                                  {feed.is_hidden && (
+                                    <span className="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-black uppercase ml-1.5" title="Hidden from customers">
+                                      Hidden
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="p-4 font-bold text-primary-dark">₹{feed.price}</td>
                                 <td className="p-4 text-right space-x-2">
+                                  <button
+                                    onClick={() => handleToggleHideFeed(feed)}
+                                    className={`p-1.5 rounded transition-colors inline-block ${
+                                      feed.is_hidden 
+                                        ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' 
+                                        : 'text-text-light hover:text-text-dark hover:bg-bg-light'
+                                    }`}
+                                    title={feed.is_hidden ? 'Make visible to customers' : 'Hide from customers'}
+                                  >
+                                    {feed.is_hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                                  </button>
                                   <button
                                     onClick={() => openEditFeed(feed)}
                                     className="p-1.5 text-text-light hover:text-text-dark hover:bg-bg-light rounded transition-colors inline-block"
@@ -302,7 +337,7 @@ export const AdminDashboard = () => {
                                   <button
                                     onClick={() => handleDeleteFeed(feed.id)}
                                     className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors inline-block"
-                                    title="Delete"
+                                    title="Delete Permanently"
                                   >
                                     <Trash2 size={16} />
                                   </button>
@@ -569,6 +604,20 @@ export const AdminDashboard = () => {
                     />
                   </label>
                 )}
+              </div>
+
+              {/* Visibility Switch */}
+              <div className="flex items-center gap-2.5 py-1 bg-bg-light/40 px-1 rounded">
+                <input
+                  type="checkbox"
+                  id="is_hidden"
+                  checked={feedFormData.is_hidden}
+                  onChange={(e) => setFeedFormData({ ...feedFormData, is_hidden: e.target.checked })}
+                  className="w-4.5 h-4.5 accent-primary-dark cursor-pointer rounded"
+                />
+                <label htmlFor="is_hidden" className="text-xs text-text-dark font-extrabold cursor-pointer select-none">
+                  Hide this product from customer shop
+                </label>
               </div>
 
               <div>

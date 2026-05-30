@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean
 from app.core.database import Base
 
 class Feed(Base):
@@ -13,4 +13,5 @@ class Feed(Base):
     stock_quantity = Column(Integer, default=100)
     image_url = Column(String, nullable=True)
     category = Column(String, default="Dairy") # Dairy, Fodder, Supplement, Hay, Mineral, Protein
+    is_hidden = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

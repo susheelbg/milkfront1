@@ -42,7 +42,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         hashed_password=hash_password(req.password),
         address=req.address or "",
         village=req.villageName or "",
-        role="user" if req.phone != "+919876543210" else "admin", # Demo user is Admin
+        role="user" if req.phone != "+917795056391" else "admin", # Susheel is Admin
         is_verified=True
     )
     

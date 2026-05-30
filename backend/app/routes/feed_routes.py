@@ -20,7 +20,7 @@ async def get_feeds(
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve all available feed products with optional category and keyword filters."""
-    query = select(Feed)
+    query = select(Feed).where(Feed.is_hidden == False)
     
     if category:
         query = query.where(Feed.category == category)
@@ -39,6 +39,32 @@ async def get_feeds(
     payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
     
     return payload # Return array directly to keep it simple for frontend mapping, or envelope it
+
+@router.get("/feeds/admin")
+async def get_feeds_admin(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    admin_user = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve all feed products including hidden ones (Admin only)."""
+    query = select(Feed)
+    
+    if category:
+        query = query.where(Feed.category == category)
+        
+    if search:
+        search_filter = f"%{search}%"
+        query = query.where(
+            (Feed.title.ilike(search_filter)) | 
+            (Feed.description.ilike(search_filter))
+        )
+        
+    result = await db.execute(query.order_by(Feed.id.asc()))
+    feeds = result.scalars().all()
+    
+    payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
+    return payload
 
 @router.get("/feeds/{id}")
 async def get_feed_by_id(id: int, db: AsyncSession = Depends(get_db)):
@@ -73,7 +99,8 @@ async def create_feed(
         brand=req.brand,
         stock_quantity=req.stock_quantity,
         image_url=cdn_url,
-        category=req.category
+        category=req.category,
+        is_hidden=req.is_hidden
     )
     
     db.add(new_feed)
@@ -121,6 +148,8 @@ async def update_feed(
         feed.brand = update_data["brand"]
     if "stock_quantity" in update_data:
         feed.stock_quantity = update_data["stock_quantity"]
+    if "is_hidden" in update_data:
+        feed.is_hidden = update_data["is_hidden"]
         
     await db.commit()
     await db.refresh(feed)

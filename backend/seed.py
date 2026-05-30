@@ -80,11 +80,12 @@ async def seed_database():
         await db.execute(delete(Cattle))
         await db.execute(delete(Feed))
         await db.execute(delete(Order))  # Cascades automatically to OrderItem
+        await db.execute(delete(User).where(User.phone_number == "+919876543210"))
         await db.commit()
 
         # 2. Seed Users
         # Check if the demo admin exists
-        stmt = select(User).where(User.phone_number == "+919876543210")
+        stmt = select(User).where(User.phone_number == "+917795056391")
         result = await db.execute(stmt)
         admin_exists = result.scalars().first()
         
@@ -93,8 +94,8 @@ async def seed_database():
             print("[SEED DB] Seeding system administrator profile...")
             admin = User(
                 full_name="Susheel",
-                phone_number="+919876543210",
-                hashed_password=hash_password("demo123"),
+                phone_number="+917795056391",
+                hashed_password=hash_password("Susheel@451"),
                 role="admin",
                 address="Dairy Farm Road, Bengaluru",
                 village="Gokula",

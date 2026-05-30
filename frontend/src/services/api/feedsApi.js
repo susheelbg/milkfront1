@@ -6,6 +6,11 @@ export const feedsApi = {
     return await apiClient.get('/feeds');
   },
 
+  // Retrieve list of feeds including hidden ones (Admin action)
+  getAdminFeeds: async () => {
+    return await apiClient.get('/feeds/admin');
+  },
+
   // Create new feed (Admin action)
   createFeed: async (feedData) => {
     return await apiClient.post('/feeds', feedData);

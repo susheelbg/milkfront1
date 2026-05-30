@@ -10,6 +10,7 @@ class FeedBase(BaseModel):
     image: Optional[str] = Field(None, validation_alias=AliasChoices("image", "image_url"), serialization_alias="image")
     brand: Optional[str] = None
     stock_quantity: int = 100
+    is_hidden: bool = False
 
 class FeedCreate(FeedBase):
     pass
@@ -22,6 +23,7 @@ class FeedUpdate(BaseModel):
     image: Optional[str] = Field(None, validation_alias=AliasChoices("image", "image_url"))
     brand: Optional[str] = None
     stock_quantity: Optional[int] = None
+    is_hidden: Optional[bool] = None
 
 class FeedResponse(FeedBase):
     id: int

@@ -127,12 +127,6 @@ export const LoginPage = () => {
                 </button>
               </p>
             </div>
-
-            <div className="mt-6 text-center text-xs text-text-light bg-bg-light p-3 rounded-lg border border-border-light">
-              <p className="font-bold mb-1">Demo Credentials:</p>
-              <p>Phone: +919876543210</p>
-              <p>Password: demo123</p>
-            </div>
           </form>
         </Card>
 
