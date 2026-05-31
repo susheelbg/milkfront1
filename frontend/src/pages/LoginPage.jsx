@@ -7,6 +7,7 @@ import { toastService } from '../services/toastService';
 export const LoginPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     phone: '',
     password: '',
@@ -96,7 +97,7 @@ export const LoginPage = () => {
 
             <Input
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Enter your password"
               name="password"
               value={formData.password}
@@ -104,6 +105,23 @@ export const LoginPage = () => {
               error={errors.password}
               required
             />
+
+            {/* Show Password Toggle Checkbox */}
+            <div className="flex items-center gap-2 mb-6 -mt-2">
+              <input
+                type="checkbox"
+                id="show-password"
+                checked={showPassword}
+                onChange={() => setShowPassword(!showPassword)}
+                className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-primary"
+              />
+              <label
+                htmlFor="show-password"
+                className="text-xs font-bold text-text-light hover:text-text-dark cursor-pointer select-none transition-colors"
+              >
+                Show Password
+              </label>
+            </div>
 
             <Button
               type="submit"

@@ -2,8 +2,52 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Card, Input } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
-import { Search, Filter, Phone, Calendar, Loader2 } from 'lucide-react';
+import { Search, Filter, Phone, Calendar, Loader2, Clock } from 'lucide-react';
 import { toastService } from '../services/toastService';
+
+const CattleCountdown = ({ expiresAt }) => {
+  const calculateTimeLeft = () => {
+    const difference = +new Date(expiresAt) - +new Date();
+    let timeLeft = { hours: 0, minutes: 0, seconds: 0 };
+
+    if (difference > 0) {
+      timeLeft = {
+        hours: Math.floor(difference / (1000 * 60 * 60)),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    }
+    return timeLeft;
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  const pad = (num) => String(num).padStart(2, '0');
+  const totalSeconds = timeLeft.hours * 3600 + timeLeft.minutes * 60 + timeLeft.seconds;
+  const isCritical = totalSeconds < 3600 * 3; // Highlight in red/pulse if less than 3 hours left
+
+  return (
+    <div className={`absolute top-3 left-3 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-md backdrop-blur-md transition-all ${
+      isCritical 
+        ? 'bg-red-600/90 text-white border-red-500 animate-pulse' 
+        : 'bg-black/75 text-white border-white/20'
+    }`}>
+      <Clock size={11} className={isCritical ? 'text-white' : 'text-primary'} />
+      <span>
+        Deletes in: {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
+      </span>
+    </div>
+  );
+};
 
 export const SanteBuyPage = () => {
   const location = useLocation();
@@ -191,9 +235,7 @@ export const SanteBuyPage = () => {
                     alt={post.animalName}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-3 left-3 bg-text-dark/80 backdrop-blur-xs text-white text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full border border-white/20">
-                    24H Live
-                  </div>
+                  <CattleCountdown expiresAt={post.expiresAt} />
                 </div>
 
                 {/* Content */}

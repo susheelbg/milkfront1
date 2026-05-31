@@ -13,6 +13,12 @@ export const orderApi = {
     return res && res.success ? res.data : res;
   },
 
+  // Retrieve purchase history for the logged-in farmer
+  getMyOrders: async () => {
+    const res = await apiClient.get('/orders/my-orders');
+    return res && res.success ? res.data : res;
+  },
+
   // Update status (Admin action)
   updateOrderStatus: async (orderId, status) => {
     const res = await apiClient.put(`/admin/orders/${orderId}/status`, { status });

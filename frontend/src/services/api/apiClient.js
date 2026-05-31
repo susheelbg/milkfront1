@@ -162,16 +162,7 @@ const SEED_CATTLE = [
   },
 ];
 
-const SEED_USERS = [
-  {
-    phone: '+919876543210',
-    password: 'demo123',
-    name: 'Susheel',
-    role: 'admin',
-    address: 'Dairy Farm Road, Bengaluru',
-    villageName: 'Gokula',
-  }
-];
+// Mock users are removed as per security request to store all user data purely in the database.
 
 // Clean up all old localStorage mock data to prevent any conflicts with the live Supabase/Cloudinary database
 export const purgeMockDb = () => {

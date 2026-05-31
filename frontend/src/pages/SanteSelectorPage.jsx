@@ -10,13 +10,13 @@ export const SanteSelectorPage = () => {
     {
       id: 1,
       name: 'KRS Sante',
-      range: '40 KM',
+      range: '20 KM',
       description: 'Large cattle marketplace',
     },
     {
       id: 2,
       name: 'Thendekere Sante',
-      range: '40 KM',
+      range: '20 KM',
       description: 'Local cattle trading hub',
     },
   ];
@@ -73,7 +73,7 @@ export const SanteSelectorPage = () => {
         {/* Info Box */}
         <Card padding="md" className="bg-blue-50 border-2 border-blue-200">
           <p className="text-text-dark text-center">
-            <span className="font-bold">📍 Coverage:</span> Each Sante covers a 40 KM range for efficient local trading
+            <span className="font-bold">📍 Coverage:</span> Each Sante covers a 20 KM range for efficient local trading
           </p>
         </Card>
       </section>

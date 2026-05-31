@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { authApi } from '../services/api/authApi';
 import { ShieldCheck, Heart, Truck, Users, HelpCircle } from 'lucide-react';
-import susheelPic from '../assets/susheel.png';
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -79,7 +78,7 @@ export const HomePage = () => {
           {/* Left Side: Portrait Photo */}
           <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-primary-dark/40 overflow-hidden shadow-sm flex-shrink-0 bg-white">
             <img 
-              src={susheelPic} 
+              src="https://res.cloudinary.com/drj9c8kpj/image/upload/v1780207723/milkmaatu_sante/gzgmvhcns8fo8uaf25sq.png" 
               alt="Susheel" 
               className="w-full h-full object-cover"
             />
