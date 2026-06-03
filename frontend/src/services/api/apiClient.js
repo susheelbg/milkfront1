@@ -1,7 +1,13 @@
 // Central API client wrapper for FastAPI/Supabase/JWT integration
 // Fallbacks to localStorage-based mock database when server is not running
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+console.log("Production API Base URL configured:", API_BASE_URL);
+
+if (!API_BASE_URL) {
+  throw new Error("VITE_API_URL is not defined in production environment");
+}
 
 // Check if backend server is available (can be toggled manually or set via ENV)
 // By default we check if we should run in mock mode
@@ -58,6 +64,7 @@ export const apiClient = {
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] URL: ${url}`);
     const headers = getHeaders(options);
 
     try {
