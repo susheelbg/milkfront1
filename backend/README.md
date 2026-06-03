@@ -12,6 +12,7 @@ This is the complete, modular, and production-ready Python FastAPI backend for t
 * **Authorizations:** PyJWT
 * **Security:** Passlib (Bcrypt hashing)
 * **Media Uploads:** Cloudinary SDK
+* **AI Integration:** Google GenAI SDK (`gemini-2.5-flash`)
 
 ---
 
@@ -43,9 +44,12 @@ backend/
 │   │   ├── order_routes.py    # Purchases & admin status dropdowns
 │   │   ├── cattle_routes.py   # Sante listings & direct camera uploads
 │   │   ├── profile_routes.py  # Profile retrieval & address updates
-│   │   └── admin_routes.py    # Administrative dashboard counters
+│   │   ├── admin_routes.py    # Administrative dashboard counters
+│   │   └── ai_routes.py       # Nandini AI chat assistant endpoint
 │   ├── services/
-│   │   └── cloudinary_service.py # Cloudinary base64 media uploads
+│   │   ├── cloudinary_service.py # Cloudinary base64 media uploads
+│   │   └── ai/
+│   │       └── nandini_ai.py  # Google GenAI model config and dairy farming filters
 │   └── utils/
 │       └── response.py        # Standardized envelope formatting
 ├── requirements.txt           # Explicit dependencies specification
@@ -108,6 +112,18 @@ For Sante direct mobile-camera photo submissions:
    CLOUDINARY_API_SECRET=your_api_secret
    ```
 *If these parameters are left blank, the `cloudinary_service` operates in robust mock mode, automatically returning a default cow photo to prevent API failures during local testing!*
+
+---
+
+## 🤖 Configuring Nandini AI
+Nandini AI is a smart dairy farming assistant powered by the Google GenAI `gemini-2.5-flash` model.
+To configure it:
+1. Obtain a Gemini API Key from Google AI Studio.
+2. Update your `backend/.env` file to include:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key
+   ```
+The backend verifies the key presence at startup. It enforces strict Kannada-only output and limits answers strictly to dairy farming related topics.
 
 ---
 
