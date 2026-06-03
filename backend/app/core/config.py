@@ -2,6 +2,11 @@ import os
 from typing import List
 from pydantic import AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+
+# Explicitly load .env file from the backend root folder
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
+load_dotenv(env_path)
 
 class Settings(BaseSettings):
     # App Settings
@@ -24,6 +29,9 @@ class Settings(BaseSettings):
 
     # Mock OTP Config
     MOCK_OTP: str = "1234"
+
+    # Gemini API settings
+    GEMINI_API_KEY: str = ""
 
     # CORS Settings
     # Load comma-separated origins from environment or default to allow all

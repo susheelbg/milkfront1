@@ -48,12 +48,12 @@ export const HomePage = () => {
     },
     {
       id: 'ai',
-      label: 'AI Assistant',
-      emoji: '🤖',
+      label: 'Nandini AI',
+      emoji: '🤖✨',
       bg: 'bg-indigo-100',
       border: 'border-indigo-200',
       action: () => {
-        alert('AI Assistant: "Namaste! I am your smart cattle guide. How can I help you today?"');
+        navigate('/nandini-ai');
       },
     },
   ];

@@ -9,4 +9,5 @@ export { SanteSellPage } from './SanteSellPage';
 export { RegisterPage } from './RegisterPage';
 export { ProfilePage } from './ProfilePage';
 export { AdminDashboard } from './AdminDashboard';
+export { NandiniAIPage } from './NandiniAIPage';
 

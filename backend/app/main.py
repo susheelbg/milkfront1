@@ -17,6 +17,7 @@ from app.routes.order_routes import router as order_router
 from app.routes.cattle_routes import router as cattle_router
 from app.routes.profile_routes import router as profile_router
 from app.routes.admin_routes import router as admin_router
+from app.routes.ai_routes import router as ai_router
 
 # Background loop for Sante listing sweeps
 async def clean_expired_listings_worker():
@@ -90,6 +91,7 @@ app.include_router(order_router, prefix=settings.API_PREFIX)
 app.include_router(cattle_router, prefix=settings.API_PREFIX)
 app.include_router(profile_router, prefix=settings.API_PREFIX)
 app.include_router(admin_router, prefix=settings.API_PREFIX)
+app.include_router(ai_router, prefix=settings.API_PREFIX)
 
 @app.get("/", tags=["Health Check"])
 async def root():

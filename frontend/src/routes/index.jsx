@@ -12,6 +12,7 @@ import {
   SanteSellPage,
   ProfilePage,
   AdminDashboard,
+  NandiniAIPage,
 } from '../pages';
 import { authApi } from '../services/api/authApi';
 
@@ -47,6 +48,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <HomePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/nandini-ai',
+    element: (
+      <ProtectedRoute>
+        <NandiniAIPage />
       </ProtectedRoute>
     ),
   },
