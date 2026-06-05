@@ -30,8 +30,13 @@ async def get_cattle_listings(
     )
     
     if sante:
-        # Case-insensitive match so "KRS Sante" == "krs sante"
-        query = query.where(Cattle.sante_name.ilike(sante))
+        sante_lower = sante.lower()
+        if "krs" in sante_lower or "ಕೆ.ಆರ್.ಎಸ್" in sante_lower:
+            query = query.where(Cattle.sante_name.in_(["KRS Sante", "ಕೆ.ಆರ್.ಎಸ್ ಸಂತೆ"]))
+        elif "thendekere" in sante_lower or "ತೆಂಡೆಕೆರೆ" in sante_lower:
+            query = query.where(Cattle.sante_name.in_(["Thendekere Sante", "ತೆಂಡೆಕೆರೆ ಸಂತೆ"]))
+        else:
+            query = query.where(Cattle.sante_name.ilike(sante))
         
     if q:
         search_filter = f"%{q}%"

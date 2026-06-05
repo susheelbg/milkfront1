@@ -45,7 +45,7 @@ const CattleCountdown = ({ expiresAt }) => {
     }`}>
       <Clock size={11} className={isCritical ? 'text-white' : 'text-primary'} />
       <span>
-        {t('sante.days24Hours') ? (t('sante.posted') + ": " + pad(timeLeft.hours) + "h " + pad(timeLeft.minutes) + "m") : `Deletes in: ${pad(timeLeft.hours)}h ${pad(timeLeft.minutes)}m`}
+        {t('sante.deletesIn') || "Deletes in"}: {pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m
       </span>
     </div>
   );
