@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
+import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
 import { Camera, X } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const SanteSellPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const santeName = location.state?.santeName;
 
   const [formData, setFormData] = useState({
@@ -24,6 +27,18 @@ export const SanteSellPage = () => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Prefill user details
+    const user = authApi.getCurrentUser();
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        contactNumber: user.phone || '',
+        villageName: user.villageName || '',
+      }));
+    }
+  }, []);
 
   if (!santeName) {
     navigate('/sante');
@@ -65,37 +80,29 @@ export const SanteSellPage = () => {
     const newErrors = {};
 
     if (!formData.animalName.trim()) {
-      newErrors.animalName = 'Animal name is required';
+      newErrors.animalName = t('sante.errBreed') || 'Animal name is required';
     }
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      newErrors.price = 'Price must be greater than 0';
+      newErrors.price = t('sante.errPrice') || 'Price must be greater than 0';
     }
 
     if (!formData.age || parseInt(formData.age) <= 0) {
-      newErrors.age = 'Valid age is required';
-    }
-
-    if (!formData.milkCapacity.trim()) {
-      newErrors.milkCapacity = 'Milk capacity is required';
+      newErrors.age = t('sante.errAge') || 'Valid age is required';
     }
 
     if (!formData.contactNumber.trim()) {
-      newErrors.contactNumber = 'Contact number is required';
+      newErrors.contactNumber = t('register.phoneRequired') || 'Contact number is required';
     } else if (!/^[+]?[\d\s\-()]+$/.test(formData.contactNumber)) {
-      newErrors.contactNumber = 'Invalid phone number';
+      newErrors.contactNumber = t('register.invalidPhone') || 'Invalid phone number';
     }
 
     if (!formData.villageName.trim()) {
-      newErrors.villageName = 'Village name is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.villageName = t('register.villageRequired') || 'Village name is required';
     }
 
     if (!formData.imagePreview) {
-      newErrors.image = 'Image is required';
+      newErrors.image = t('sante.errPhoto') || 'Image is required';
     }
 
     setErrors(newErrors);
@@ -124,7 +131,7 @@ export const SanteSellPage = () => {
         image: formData.imagePreview || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop',
       });
 
-      toastService.success('Cattle posted successfully!');
+      toastService.success(t('sante.deleteSuccess') ? t('common.success') : 'Cattle posted successfully!');
       
       setTimeout(() => {
         navigate('/sante-buy', { state: { santeName } });
@@ -143,7 +150,7 @@ export const SanteSellPage = () => {
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-text-dark mb-1">Sell Cattle</h1>
+          <h1 className="text-3xl font-bold text-text-dark mb-1">{t('sante.sellCattle')}</h1>
           <p className="text-text-dark opacity-90">{santeName}</p>
         </div>
       </section>
@@ -152,12 +159,12 @@ export const SanteSellPage = () => {
       <section className="max-w-4xl mx-auto px-4 py-12">
         <Card padding="lg">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <h2 className="text-2xl font-bold text-text-dark">Post Your Cattle</h2>
+            <h2 className="text-2xl font-bold text-text-dark">{t('sante.postAd')}</h2>
 
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-text-dark mb-2">
-                Animal Photo <span className="text-red-500">*</span>
+                {t('sante.photoUpload')} <span className="text-red-500">*</span>
               </label>
 
               {formData.imagePreview ? (
@@ -179,8 +186,8 @@ export const SanteSellPage = () => {
                 <label className="flex flex-col items-center justify-center w-full px-4 py-10 border-2 border-dashed border-primary hover:bg-primary-light/30 rounded-lg cursor-pointer transition-colors bg-bg-light text-center">
                   <div className="flex flex-col items-center">
                     <Camera className="w-10 h-10 text-primary-dark mb-3 animate-bounce-slow" />
-                    <span className="text-base text-text-dark font-bold">Take Live Photo</span>
-                    <span className="text-xs text-text-light mt-1">Mobile camera will open directly (No gallery uploads allowed)</span>
+                    <span className="text-base text-text-dark font-bold">{t('sante.photoUpload')}</span>
+                    <span className="text-xs text-text-light mt-1">{t('sante.cameraRequired')}</span>
                   </div>
                   <input
                     type="file"
@@ -197,8 +204,8 @@ export const SanteSellPage = () => {
             {/* Animal Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Animal Name"
-                placeholder="e.g., Jersey Cow, Holstein"
+                label={t('sante.breedLabel')}
+                placeholder={t('sante.breedPlaceholder')}
                 name="animalName"
                 value={formData.animalName}
                 onChange={handleChange}
@@ -207,7 +214,7 @@ export const SanteSellPage = () => {
               />
 
               <Input
-                label="Age (years)"
+                label={t('sante.ageLabel')}
                 type="number"
                 placeholder="e.g., 5"
                 name="age"
@@ -218,9 +225,9 @@ export const SanteSellPage = () => {
               />
 
               <Input
-                label="Price (₹)"
+                label={t('sante.priceLabel')}
                 type="number"
-                placeholder="e.g., 65000"
+                placeholder={t('sante.pricePlaceholder')}
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
@@ -229,20 +236,19 @@ export const SanteSellPage = () => {
               />
 
               <Input
-                label="Milk Capacity"
-                placeholder="e.g., 20L/day"
+                label={t('sante.milkYield')}
+                placeholder={t('sante.milkYieldPlaceholder')}
                 name="milkCapacity"
                 value={formData.milkCapacity}
                 onChange={handleChange}
                 error={errors.milkCapacity}
-                required
               />
             </div>
 
             {/* Contact and Location */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Contact Number"
+                label={t('orderSummary.phoneNumber')}
                 placeholder="+91 9876543210"
                 name="contactNumber"
                 value={formData.contactNumber}
@@ -252,7 +258,7 @@ export const SanteSellPage = () => {
               />
 
               <Input
-                label="Village Name"
+                label={t('orderSummary.village')}
                 placeholder="Your village"
                 name="villageName"
                 value={formData.villageName}
@@ -265,10 +271,10 @@ export const SanteSellPage = () => {
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-text-dark mb-2">
-                Description <span className="text-red-500">*</span>
+                {t('sante.description')}
               </label>
               <textarea
-                placeholder="Describe the cattle's health, breed details, vaccination status, etc."
+                placeholder={t('sante.descriptionPlaceholder')}
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
@@ -281,7 +287,7 @@ export const SanteSellPage = () => {
             {/* Info Box */}
             <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
               <p className="text-text-dark text-sm">
-                <span className="font-bold">📌 Note:</span> Your post will be visible for 24 hours. Repost to keep it active in the marketplace.
+                <span className="font-bold">📌 {t('sante.days24Hours')}</span>
               </p>
             </div>
 
@@ -293,7 +299,7 @@ export const SanteSellPage = () => {
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Posting Cattle...' : 'Post to Sante'}
+              {loading ? t('sante.submitting') : t('sante.submitAdButton')}
             </Button>
           </form>
         </Card>

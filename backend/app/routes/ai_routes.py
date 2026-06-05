@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from typing import Optional
 from app.services.ai.nandini_ai import nandini_ai_service
 from app.utils.response import json_response
 from app.core.dependencies import get_current_user
@@ -9,6 +10,7 @@ router = APIRouter(prefix="/ai", tags=["Nandini AI"])
 
 class AIRequest(BaseModel):
     prompt: str = Field(..., description="The query for Nandini AI")
+    language: Optional[str] = Field(None, description="Preferred language ('kn' or 'en')")
 
 @router.post("/nandini")
 async def ask_nandini(req: AIRequest, current_user: User = Depends(get_current_user)):
@@ -21,8 +23,10 @@ async def ask_nandini(req: AIRequest, current_user: User = Depends(get_current_u
             detail="Prompt cannot be empty"
         )
     
+    lang = req.language or current_user.language or "kn"
+    
     try:
-        response_text = await nandini_ai_service.get_response(req.prompt.strip())
+        response_text = await nandini_ai_service.get_response(req.prompt.strip(), lang=lang)
         return {"response": response_text}
     except Exception as e:
         print(f"[AI ROUTE EXCEPTION] {e}", flush=True)

@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, Logo } from '../components';
 import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -18,15 +20,15 @@ export const LoginPage = () => {
     const newErrors = {};
     
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.phone = t('login.phoneRequired') || 'Phone number is required';
     } else if (!/^[+]?[\d\s\-()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Invalid phone number format';
+      newErrors.phone = t('login.invalidPhone') || 'Invalid phone number format';
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('login.passwordRequired') || 'Password is required';
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('login.passwordMin') || 'Password must be at least 6 characters';
     }
 
     setErrors(newErrors);
@@ -58,10 +60,10 @@ export const LoginPage = () => {
       }
       
       const user = await authApi.login(cleanedPhone, formData.password);
-      toastService.success(`Welcome back, ${user.name}!`);
+      toastService.success((t('login.welcomeToast') || 'Welcome back, {name}!').replace('{name}', user.name));
       navigate('/home');
     } catch (error) {
-      toastService.error(error.message || 'Login failed. Please try again.');
+      toastService.error(error.message || t('login.failedToast') || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -77,16 +79,16 @@ export const LoginPage = () => {
             fallbackClassName="text-4xl font-black mb-3"
             alt="MilkMaatu Logo"
           />
-          <p className="text-text-light text-sm font-medium">Your Farmer's Dairy Platform</p>
+          <p className="text-text-light text-sm font-medium">{t('common.tagline') || "Your Farmer's Dairy Platform"}</p>
         </div>
 
         {/* Login Card */}
         <Card className="animate-slide-up" padding="lg">
           <form onSubmit={handleSubmit}>
-            <h3 className="text-2xl font-bold text-text-dark mb-6 text-center">Welcome Back</h3>
+            <h3 className="text-2xl font-bold text-text-dark mb-6 text-center">{t('login.subtitle')}</h3>
 
             <Input
-              label="Phone Number"
+              label={t('common.phone')}
               placeholder="+91 9876543210"
               name="phone"
               value={formData.phone}
@@ -96,9 +98,9 @@ export const LoginPage = () => {
             />
 
             <Input
-              label="Password"
+              label={t('common.password')}
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
+              placeholder={t('login.passwordPlaceholder')}
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -119,7 +121,7 @@ export const LoginPage = () => {
                 htmlFor="show-password"
                 className="text-xs font-bold text-text-light hover:text-text-dark cursor-pointer select-none transition-colors"
               >
-                Show Password
+                {t('login.showPassword') || 'Show Password'}
               </label>
             </div>
 
@@ -130,18 +132,18 @@ export const LoginPage = () => {
               className="w-full mb-4"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (t('common.loading') || 'Logging in...') : t('login.loginButton')}
             </Button>
 
             <div className="border-t border-border-light pt-4 text-center">
               <p className="text-sm text-text-light">
-                Don't have an account?{' '}
+                {t('login.noAccount') || "Don't have an account?"}{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/register')}
                   className="font-bold underline text-text-dark hover:opacity-85 transition-opacity"
                 >
-                  Register here
+                  {t('login.signupLink')}
                 </button>
               </p>
             </div>
@@ -150,7 +152,7 @@ export const LoginPage = () => {
 
         {/* Footer Info */}
         <div className="mt-8 text-center text-text-light text-xs font-semibold">
-          <p>Secure login with OTP verified phone numbers</p>
+          <p>{t('login.secureLogin') || 'Secure login with OTP verified phone numbers'}</p>
         </div>
       </div>
     </div>

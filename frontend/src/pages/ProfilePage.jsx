@@ -4,10 +4,12 @@ import { Header, Button, Input, Card } from '../components';
 import { authApi } from '../services/api/authApi';
 import { orderApi } from '../services/api/orderApi';
 import { toastService } from '../services/toastService';
-import { User, Phone, MapPin, Edit3, Save, LogOut, ArrowLeft, ShoppingBag, Clock, CheckCircle2, IndianRupee, Tag } from 'lucide-react';
+import { User, Phone, MapPin, Edit3, Save, LogOut, ArrowLeft, ShoppingBag, Clock, CheckCircle2, IndianRupee, Tag, Globe } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
+  const { t, language, setLanguage } = useTranslation();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -58,16 +60,19 @@ export const ProfilePage = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      toastService.error('Name is required');
+      toastService.error(t('profile.fullName') + ' is required');
       return;
     }
 
     setLoading(true);
     try {
-      const updatedUser = await authApi.updateProfile(formData);
+      const updatedUser = await authApi.updateProfile({
+        ...formData,
+        language: language, // preserve current language
+      });
       setUser(updatedUser);
       setIsEditing(false);
-      toastService.success('Profile updated successfully!');
+      toastService.success(t('profile.updateSuccess') || 'Profile updated successfully!');
     } catch (err) {
       toastService.error(err.message || 'Failed to update profile.');
     } finally {
@@ -99,7 +104,7 @@ export const ProfilePage = () => {
           </div>
           <h1 className="text-3xl font-bold text-text-dark">{user.name}</h1>
           <p className="text-sm bg-text-dark text-white px-3 py-1 rounded-full mt-2 inline-block font-semibold capitalize">
-            {user.role} Account
+            {user.role === 'admin' ? t('common.admin') : t('common.farmer')}
           </p>
         </div>
       </section>
@@ -111,13 +116,13 @@ export const ProfilePage = () => {
           <div className="lg:col-span-1">
             <Card padding="lg">
               <div className="flex justify-between items-center mb-6 border-b border-border-light pb-4">
-                <h2 className="text-xl font-bold text-text-dark">Profile Details</h2>
+                <h2 className="text-xl font-bold text-text-dark">{t('profile.personalDetails')}</h2>
                 {user.role === 'admin' && (
                   <button
                     onClick={() => navigate('/admin')}
                     className="text-xs font-bold text-text-dark bg-primary-light hover:bg-primary px-3 py-1.5 rounded-lg border border-primary-dark transition-all"
                   >
-                    Go to Admin Panel
+                    {t('admin.dashboard')}
                   </button>
                 )}
               </div>
@@ -127,20 +132,20 @@ export const ProfilePage = () => {
                 <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
                   <Phone className="text-text-light" size={20} />
                   <div className="flex-1">
-                    <p className="text-xs text-text-light font-bold uppercase">Mobile Number</p>
+                    <p className="text-xs text-text-light font-bold uppercase">{t('common.phone')}</p>
                     <p className="font-semibold text-text-dark">{user.phone}</p>
                   </div>
                 </div>
 
                 {/* Name */}
                 <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">Full Name</label>
+                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('profile.fullName')}</label>
                   {isEditing ? (
                     <Input
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Your Full Name"
+                      placeholder={t('register.fullNamePlaceholder')}
                       required
                     />
                   ) : (
@@ -153,13 +158,13 @@ export const ProfilePage = () => {
 
                 {/* Village */}
                 <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">Village Name</label>
+                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('profile.villageName')}</label>
                   {isEditing ? (
                     <Input
                       name="villageName"
                       value={formData.villageName}
                       onChange={handleChange}
-                      placeholder="Your Village"
+                      placeholder={t('register.villagePlaceholder')}
                     />
                   ) : (
                     <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
@@ -171,13 +176,13 @@ export const ProfilePage = () => {
 
                 {/* Address */}
                 <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">Delivery Address</label>
+                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('orderSummary.deliveryAddress')}</label>
                   {isEditing ? (
                     <Input
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      placeholder="Street details, Landmark, City"
+                      placeholder={t('profile.addressPlaceholder')}
                     />
                   ) : (
                     <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
@@ -185,6 +190,22 @@ export const ProfilePage = () => {
                       <p className="font-semibold text-text-dark">{user.address || 'Not provided'}</p>
                     </div>
                   )}
+                </div>
+
+                {/* Language Settings Dropdown */}
+                <div>
+                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('profile.language')}</label>
+                  <div className="flex items-center gap-3 bg-bg-light p-3 border border-border-light rounded-lg">
+                    <Globe className="text-text-light" size={20} />
+                    <select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="flex-1 bg-transparent text-sm text-text-dark font-bold outline-none cursor-pointer"
+                    >
+                      <option value="kn">ಕನ್ನಡ</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Buttons */}
@@ -199,7 +220,7 @@ export const ProfilePage = () => {
                         disabled={loading}
                       >
                         <Save size={18} />
-                        {loading ? 'Saving...' : 'Save Changes'}
+                        {loading ? t('profile.updating') : t('common.save')}
                       </Button>
                       <Button
                         type="button"
@@ -208,7 +229,7 @@ export const ProfilePage = () => {
                         className="flex-1"
                         onClick={() => setIsEditing(false)}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     </div>
                   ) : (
@@ -220,7 +241,7 @@ export const ProfilePage = () => {
                       onClick={() => setIsEditing(true)}
                     >
                       <Edit3 size={18} />
-                      Edit Profile Info
+                      {t('common.edit')}
                     </Button>
                   )}
 
@@ -230,7 +251,7 @@ export const ProfilePage = () => {
                     className="w-full flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-sm"
                   >
                     <LogOut size={18} />
-                    Logout Account
+                    {t('common.logout')}
                   </button>
                 </div>
               </form>
@@ -243,7 +264,7 @@ export const ProfilePage = () => {
               <div className="flex justify-between items-center mb-6 border-b border-border-light pb-4">
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="text-text-dark" size={24} />
-                  <h2 className="text-xl font-bold text-text-dark">My Order History</h2>
+                  <h2 className="text-xl font-bold text-text-dark">{t('orderSummary.orderItems')}</h2>
                 </div>
                 <span className="text-xs font-semibold bg-primary text-text-dark px-2.5 py-1 rounded-full border border-primary-dark shadow-sm">
                   {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
@@ -253,7 +274,7 @@ export const ProfilePage = () => {
               {loadingOrders ? (
                 <div className="flex flex-col items-center justify-center py-12 text-text-light">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-dark mb-2"></div>
-                  <p className="text-xs font-bold uppercase tracking-wider">Fetching your orders...</p>
+                  <p className="text-xs font-bold uppercase tracking-wider">{t('common.loading')}</p>
                 </div>
               ) : orders.length === 0 ? (
                 <div className="text-center py-12 px-4 bg-bg-light rounded-2xl border border-dashed border-border-light flex flex-col items-center">
@@ -322,11 +343,11 @@ export const ProfilePage = () => {
                       {/* Order Total / Address info */}
                       <div className="flex justify-between items-end bg-white bg-opacity-50 p-2.5 rounded-lg border border-border-light border-dashed text-xs">
                         <div className="text-[10px] text-text-light leading-relaxed max-w-[70%]">
-                          <p className="font-bold uppercase tracking-wide mb-0.5">Delivery Address</p>
+                          <p className="font-bold uppercase tracking-wide mb-0.5">{t('orderSummary.deliveryAddress')}</p>
                           <p className="truncate font-medium">{order.delivery_address || order.village_name || 'Home Village'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] text-text-light font-bold uppercase tracking-wide mb-0.5">Grand Total</p>
+                          <p className="text-[10px] text-text-light font-bold uppercase tracking-wide mb-0.5">{t('orderSummary.grandTotal')}</p>
                           <p className="font-bold text-sm text-text-dark flex items-center justify-end">
                             <IndianRupee size={13} />
                             {order.total_amount}

@@ -123,7 +123,11 @@ To configure it:
    ```env
    GEMINI_API_KEY=your_gemini_api_key
    ```
-The backend verifies the key presence at startup. It enforces strict Kannada-only output and limits answers strictly to dairy farming related topics.
+The backend verifies the key presence at startup. Nandini AI acts as a dedicated dairy farming assistant specifically tailored for Karnataka farmers:
+* **Language:** Always replies in simple, farmer-friendly Kannada (even if queried in English).
+* **Focus Areas:** Covers dairy farming, cow & buffalo care, feed/fodder, milk production, fat/SNF, vaccination/health, breeding, Karnataka milk unions, and government dairy schemes.
+* **Format:** Keeps responses short, practical (usually 1-4 lines), and direct.
+* **Guardrails:** Politely declines non-farming or non-livestock related queries.
 
 ---
 

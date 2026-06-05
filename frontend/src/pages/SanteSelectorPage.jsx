@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const SanteSelectorPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [selectedSante, setSelectedSante] = useState(null);
 
   const santes = [
     {
       id: 1,
-      name: 'KRS Sante',
+      name: t('sante.krsSante'),
       range: '20 KM',
-      description: 'Large cattle marketplace',
+      description: t('sante.subtitle'),
     },
     {
       id: 2,
-      name: 'Thendekere Sante',
+      name: t('sante.thendekereSante'),
       range: '20 KM',
-      description: 'Local cattle trading hub',
+      description: t('sante.subtitle'),
     },
   ];
 
@@ -33,9 +35,9 @@ export const SanteSelectorPage = () => {
       {/* Page Header */}
       <section className="bg-primary py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold text-text-dark mb-3">Choose Your Sante</h1>
+          <h1 className="text-4xl font-bold text-text-dark mb-3">{t('sante.title')}</h1>
           <p className="text-lg text-text-dark opacity-90">
-            Select your preferred marketplace to buy or sell cattle
+            {t('sante.subtitle')}
           </p>
         </div>
       </section>
@@ -55,7 +57,7 @@ export const SanteSelectorPage = () => {
               <h2 className="text-2xl font-bold text-text-dark mb-2">{sante.name}</h2>
               <p className="text-text-light mb-2">{sante.description}</p>
               <div className="bg-primary-light rounded-lg p-3 mb-6">
-                <p className="text-sm text-text-dark font-semibold">Coverage Range</p>
+                <p className="text-sm text-text-dark font-semibold">{t('sante.santeRadius')}</p>
                 <p className="text-2xl font-bold text-primary">{sante.range}</p>
               </div>
               <Button
@@ -64,7 +66,7 @@ export const SanteSelectorPage = () => {
                 className="w-full"
                 onClick={() => handleProceed(sante.name)}
               >
-                Select Sante →
+                {sante.name} →
               </Button>
             </Card>
           ))}
@@ -72,8 +74,8 @@ export const SanteSelectorPage = () => {
 
         {/* Info Box */}
         <Card padding="md" className="bg-blue-50 border-2 border-blue-200">
-          <p className="text-text-dark text-center">
-            <span className="font-bold">📍 Coverage:</span> Each Sante covers a 20 KM range for efficient local trading
+          <p className="text-text-dark text-center font-bold">
+            📍 {t('sante.days24Hours')}
           </p>
         </Card>
       </section>

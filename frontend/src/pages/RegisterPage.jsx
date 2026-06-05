@@ -4,9 +4,11 @@ import { Button, Input, Card, Logo } from '../components';
 import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
 import { Check, ShieldCheck, KeyRound, UserPlus, ArrowRight, Smartphone } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1); // 1: Info/Phone, 2: OTP, 3: Password, 4: Success
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,12 +33,12 @@ export const RegisterPage = () => {
   // Step 1 validation
   const validateStep1 = () => {
     const errs = {};
-    if (!formData.name.trim()) errs.name = 'Full name is required';
+    if (!formData.name.trim()) errs.name = t('register.fullNameRequired') || 'Full name is required';
     
     if (!formData.phone.trim()) {
-      errs.phone = 'Mobile number is required';
+      errs.phone = t('register.phoneRequired') || 'Mobile number is required';
     } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/[^0-9]/g, '').slice(-10))) {
-      errs.phone = 'Please enter a valid 10-digit mobile number';
+      errs.phone = t('register.invalidPhone') || 'Please enter a valid 10-digit mobile number';
     }
     
     setErrors(errs);
@@ -47,9 +49,9 @@ export const RegisterPage = () => {
   const validateStep2 = () => {
     const errs = {};
     if (!formData.otp.trim()) {
-      errs.otp = 'OTP is required';
+      errs.otp = t('register.otpRequired') || 'OTP is required';
     } else if (formData.otp.length !== 4) {
-      errs.otp = 'OTP must be 4 digits';
+      errs.otp = t('register.otpDigits') || 'OTP must be 4 digits';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -59,13 +61,13 @@ export const RegisterPage = () => {
   const validateStep3 = () => {
     const errs = {};
     if (!formData.password) {
-      errs.password = 'Password is required';
+      errs.password = t('login.passwordRequired') || 'Password is required';
     } else if (formData.password.length < 6) {
-      errs.password = 'Password must be at least 6 characters';
+      errs.password = t('login.passwordMin') || 'Password must be at least 6 characters';
     }
 
     if (formData.password !== formData.confirmPassword) {
-      errs.confirmPassword = 'Passwords do not match';
+      errs.confirmPassword = t('register.passwordMatch') || 'Passwords do not match';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -83,7 +85,7 @@ export const RegisterPage = () => {
       const formattedPhone = cleanedPhone.length === 10 ? `+91${cleanedPhone}` : `+${cleanedPhone}`;
       
       await authApi.sendOtp(formattedPhone);
-      toastService.success('Mock OTP sent to WhatsApp! Use code 1234');
+      toastService.success(t('register.otpSentToast') || 'Mock OTP sent to WhatsApp! Use code 1234');
       setStep(2);
     } catch (err) {
       toastService.error(err.message || 'Failed to send OTP.');
@@ -103,7 +105,7 @@ export const RegisterPage = () => {
       const formattedPhone = cleanedPhone.length === 10 ? `+91${cleanedPhone}` : `+${cleanedPhone}`;
 
       await authApi.verifyOtp(formattedPhone, formData.otp);
-      toastService.success('OTP Verified!');
+      toastService.success(t('register.otpVerifiedToast') || 'OTP Verified!');
       setStep(3);
     } catch (err) {
       toastService.error(err.message || 'Verification failed. Try 1234');
@@ -130,7 +132,7 @@ export const RegisterPage = () => {
         villageName: formData.villageName,
       });
 
-      toastService.success('Account created successfully!');
+      toastService.success(t('register.successToast') || 'Account created successfully!');
       setStep(4);
       
       // Auto redirect to login after 3 seconds
@@ -150,11 +152,11 @@ export const RegisterPage = () => {
         {/* Title */}
         <div className="text-center mb-8 animate-fade-in flex flex-col items-center">
           <Logo
-            imgClassName="h-20 w-auto mb-2 drop-shadow-sm"
+            imgClassName="h-20 w-auto mb-2 drop-shadow-md"
             fallbackClassName="text-3xl font-black mb-2"
             alt="MilkMaatu Logo"
           />
-          <p className="text-text-light text-sm">Create your cattle farmer account</p>
+          <p className="text-text-light text-sm">{t('register.subtitle')}</p>
         </div>
 
         {/* Step Indicator */}
@@ -187,13 +189,13 @@ export const RegisterPage = () => {
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="text-center mb-4">
                 <UserPlus className="w-12 h-12 mx-auto text-primary mb-2" />
-                <h3 className="text-xl font-bold text-text-dark">Farmer Information</h3>
-                <p className="text-text-light text-xs">Enter your details to receive an OTP</p>
+                <h3 className="text-xl font-bold text-text-dark">{t('register.title')}</h3>
+                <p className="text-text-light text-xs">{t('register.subtitle')}</p>
               </div>
 
               <Input
-                label="Full Name"
-                placeholder="e.g. Susheel Kumar"
+                label={t('register.fullName')}
+                placeholder={t('register.fullNamePlaceholder')}
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
@@ -202,8 +204,8 @@ export const RegisterPage = () => {
               />
 
               <Input
-                label="Mobile Number"
-                placeholder="10-digit number"
+                label={t('common.phone')}
+                placeholder={t('register.phonePlaceholder')}
                 type="tel"
                 name="phone"
                 value={formData.phone}
@@ -219,7 +221,7 @@ export const RegisterPage = () => {
                 className="w-full flex items-center justify-center gap-2"
                 disabled={loading}
               >
-                {loading ? 'Sending...' : 'Send WhatsApp OTP'}
+                {loading ? t('common.loading') : 'Send WhatsApp OTP'}
                 <ArrowRight size={18} />
               </Button>
             </form>
@@ -230,13 +232,13 @@ export const RegisterPage = () => {
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="text-center mb-4">
                 <Smartphone className="w-12 h-12 mx-auto text-primary mb-2" />
-                <h3 className="text-xl font-bold text-text-dark">WhatsApp Verification</h3>
-                <p className="text-text-light text-xs">We sent a mock verification code to WhatsApp</p>
+                <h3 className="text-xl font-bold text-text-dark">{t('register.otpVerifyTitle')}</h3>
+                <p className="text-text-light text-xs">{t('register.otpVerifySubtitle')}</p>
               </div>
 
               <Input
-                label="Verification Code (OTP)"
-                placeholder="Enter 4-digit code (e.g. 1234)"
+                label={t('register.otpVerifyTitle')}
+                placeholder={t('register.otpPlaceholder')}
                 type="text"
                 maxLength={4}
                 name="otp"
@@ -254,7 +256,7 @@ export const RegisterPage = () => {
                 className="w-full flex items-center justify-center gap-2"
                 disabled={loading}
               >
-                {loading ? 'Verifying...' : 'Verify OTP'}
+                {loading ? t('common.loading') : t('register.verifyButton')}
                 <ShieldCheck size={18} />
               </Button>
 
@@ -263,7 +265,7 @@ export const RegisterPage = () => {
                 onClick={() => setStep(1)}
                 className="w-full text-center text-sm text-text-light hover:text-text-dark mt-2 font-medium"
               >
-                ← Back to edit phone number
+                ← {t('common.back')}
               </button>
             </form>
           )}
@@ -273,13 +275,13 @@ export const RegisterPage = () => {
             <form onSubmit={handleRegisterComplete} className="space-y-4">
               <div className="text-center mb-4">
                 <KeyRound className="w-12 h-12 mx-auto text-primary mb-2" />
-                <h3 className="text-xl font-bold text-text-dark">Secure Password</h3>
-                <p className="text-text-light text-xs">Choose a secure password and optional details</p>
+                <h3 className="text-xl font-bold text-text-dark">{t('register.title')}</h3>
+                <p className="text-text-light text-xs">{t('register.subtitle')}</p>
               </div>
 
               <Input
-                label="Password"
-                placeholder="At least 6 characters"
+                label={t('common.password')}
+                placeholder={t('register.passwordPlaceholder')}
                 type="password"
                 name="password"
                 value={formData.password}
@@ -289,8 +291,8 @@ export const RegisterPage = () => {
               />
 
               <Input
-                label="Confirm Password"
-                placeholder="Re-enter password"
+                label={t('register.confirmPassword') || 'Confirm Password'}
+                placeholder={t('register.passwordPlaceholder')}
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
@@ -301,15 +303,15 @@ export const RegisterPage = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Village (Optional)"
-                  placeholder="e.g. Thendekere"
+                  label={t('register.villageName')}
+                  placeholder={t('register.villagePlaceholder')}
                   name="villageName"
                   value={formData.villageName}
                   onChange={handleChange}
                 />
                 <Input
-                  label="Address (Optional)"
-                  placeholder="e.g. Road 4"
+                  label={t('common.address')}
+                  placeholder={t('register.addressPlaceholder')}
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
@@ -323,7 +325,7 @@ export const RegisterPage = () => {
                 className="w-full flex items-center justify-center gap-2"
                 disabled={loading}
               >
-                {loading ? 'Finishing Registration...' : 'Complete Register'}
+                {loading ? t('common.loading') : t('register.registerButton')}
                 <Check size={18} />
               </Button>
             </form>
@@ -335,12 +337,12 @@ export const RegisterPage = () => {
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl">
                 ✓
               </div>
-              <h3 className="text-2xl font-bold text-text-dark">Account Created!</h3>
+              <h3 className="text-2xl font-bold text-text-dark">{t('register.successTitle') || 'Account Created!'}</h3>
               <p className="text-text-light text-sm">
-                Congratulations, {formData.name}! Your farmer account is ready.
+                {formData.name}, {t('register.successToast') || 'Your account is ready.'}
               </p>
               <div className="bg-primary-light text-text-dark text-xs p-3 rounded-lg">
-                Redirecting you to the Login screen in a few seconds...
+                {t('register.redirecting') || 'Redirecting you to the Login screen in a few seconds...'}
               </div>
               <Button
                 variant="primary"
@@ -348,7 +350,7 @@ export const RegisterPage = () => {
                 className="w-full"
                 onClick={() => navigate('/login')}
               >
-                Go to Login Now
+                {t('register.loginLink')}
               </Button>
             </div>
           )}
@@ -358,12 +360,12 @@ export const RegisterPage = () => {
         {step < 4 && (
           <div className="text-center mt-6">
             <p className="text-text-dark text-sm">
-              Already have an account?{' '}
+              {t('register.alreadyHaveAccount')}{' '}
               <button
                 onClick={() => navigate('/login')}
                 className="font-bold underline text-text-dark hover:opacity-80 transition-opacity"
               >
-                Login here
+                {t('register.loginLink')}
               </button>
             </p>
           </div>

@@ -6,8 +6,8 @@ export const aiApi = {
    * @param {string} prompt 
    * @returns {Promise<{response: string}>}
    */
-  askNandini: async (prompt) => {
-    const res = await apiClient.post('/ai/nandini', { prompt });
+  askNandini: async (prompt, language) => {
+    const res = await apiClient.post('/ai/nandini', { prompt, language });
     if (res && res.response) {
       return res;
     }

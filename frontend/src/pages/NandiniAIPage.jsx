@@ -4,26 +4,33 @@ import { Header, Button, Card } from '../components';
 import { aiApi } from '../services/api/aiApi';
 import { Send, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { toastService } from '../services/toastService';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const NandiniAIPage = () => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      sender: 'bot',
-      text: 'ನಮಸ್ಕಾರ! ನಾನು ನಂದಿನಿ AI. ಹಸು ಮತ್ತು ಎಮ್ಮೆಗಳ ಆರೈಕೆ, ಹಾಲಿನ ಇಳುವರಿ ಹೆಚ್ಚಿಸುವುದು, ಹೈನುಗಾರಿಕೆ ವ್ಯವಹಾರ, ಮೇವು ಮತ್ತು ಜಾನುವಾರುಗಳ ಆರೋಗ್ಯಕ್ಕೆ ಸಂಬಂಧಿಸಿದ ನಿಮ್ಮ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಿ. ನಾನು ಕನ್ನಡದಲ್ಲಿ ಮಾತ್ರ ಉತ್ತರಿಸಬಲ್ಲೆ.',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const { t, language } = useTranslation();
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Initialize and translate welcome message on language change
+  useEffect(() => {
+    setMessages([
+      {
+        id: 'welcome',
+        sender: 'bot',
+        text: t('nandini.emptyChat'),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+  }, [language]);
+
   const suggestions = [
-    'ಹಾಲಿನ ಇಳುವರಿ ಹೆಚ್ಚಿಸುವುದು ಹೇಗೆ?',
-    'ಗರ್ಭಿಣಿ ಹಸುವಿಗೆ ಯಾವ ಆಹಾರ ನೀಡಬೇಕು?',
-    'ಕೆಚ್ಚಲು ಬಾವು ರೋಗದ ಲಕ್ಷಣಗಳು ಯಾವುವು?',
-    'ಉತ್ತಮ ಹಾಲಿನ ತಳಿಗಳು ಯಾವುವು?'
+    t('nandini.sug1'),
+    t('nandini.sug2'),
+    t('nandini.sug3'),
+    t('nandini.sug4'),
   ];
 
   useEffect(() => {
@@ -46,7 +53,7 @@ export const NandiniAIPage = () => {
     setLoading(true);
 
     try {
-      const data = await aiApi.askNandini(text.trim());
+      const data = await aiApi.askNandini(text.trim(), language);
       
       const botMsg = {
         id: `bot-${Date.now()}`,
@@ -56,11 +63,11 @@ export const NandiniAIPage = () => {
       };
       setMessages(prev => [...prev, botMsg]);
     } catch (err) {
-      toastService.error(err.message || 'Failed to get response');
+      toastService.error(err.message || t('common.error'));
       const errorMsg = {
         id: `error-${Date.now()}`,
         sender: 'bot',
-        text: 'ಕ್ಷಮಿಸಿ, ಪ್ರತಿಕ್ರಿಯೆ ಪಡೆಯಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.',
+        text: t('nandini.errorMsg') || 'Sorry, failed to get a response.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       };
@@ -85,10 +92,10 @@ export const NandiniAIPage = () => {
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-text-dark flex items-center gap-2">
-              🤖✨ Nandini AI
+              🧠✨ {t('nandini.title')}
             </h1>
             <p className="text-text-dark/95 text-xs md:text-sm font-bold mt-1">
-              ನಿಮ್ಮ ಹೈನುಗಾರಿಕೆ ಮತ್ತು ಜಾನುವಾರು ಮಾರ್ಗದರ್ಶಿ (Your Dairy Farming Guide)
+              {t('nandini.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-center">
@@ -107,7 +114,7 @@ export const NandiniAIPage = () => {
           <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 flex items-start gap-2.5">
             <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={16} />
             <p className="text-[11px] md:text-xs text-amber-800 font-semibold leading-relaxed">
-              ನಂದಿನಿ AI ಕೇವಲ ಹಾಲು, ಹೈನುಗಾರಿಕೆ ಮತ್ತು ಜಾನುವಾರುಗಳಿಗೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆಗಳಿಗೆ ಮಾತ್ರ ಕನ್ನಡದಲ್ಲಿ ಉತ್ತರಿಸುತ್ತದೆ.
+              {t('nandini.disclaimer')}
             </p>
           </div>
 
@@ -129,7 +136,7 @@ export const NandiniAIPage = () => {
                 >
                   {msg.sender === 'bot' && (
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider">🤖 Nandini AI</span>
+                      <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider">🧠 {t('nandini.title')}</span>
                     </div>
                   )}
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
@@ -141,7 +148,7 @@ export const NandiniAIPage = () => {
             {loading && (
               <div className="flex items-center gap-2 text-text-light bg-white border border-border-light rounded-xl px-4 py-3 shadow-xs self-start max-w-[200px] animate-pulse">
                 <Loader2 className="w-4 h-4 animate-spin text-primary-dark" />
-                <span className="text-xs font-semibold">ನಂದಿನಿ AI ಯೋಚಿಸುತ್ತಿದೆ...</span>
+                <span className="text-xs font-semibold">{t('nandini.thinking') || 'Thinking...'}</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -150,7 +157,7 @@ export const NandiniAIPage = () => {
           {/* Suggestions block */}
           {messages.length === 1 && !loading && (
             <div className="px-4 py-3 border-t border-border-light bg-white">
-              <p className="text-xs text-text-light font-bold mb-2">ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಂದ ಪ್ರಾರಂಭಿಸಿ:</p>
+              <p className="text-xs text-text-light font-bold mb-2">{t('nandini.startWith')}</p>
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((sug, i) => (
                   <button
@@ -172,7 +179,7 @@ export const NandiniAIPage = () => {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="ನಿಮ್ಮ ಹೈನುಗಾರಿಕೆ ಪ್ರಶ್ನೆಯನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ..."
+              placeholder={t('nandini.placeholder')}
               className="flex-1 text-sm bg-bg-light border border-border-light focus:border-primary-dark outline-none rounded-xl px-4 py-3.5 transition-all text-text-dark font-medium placeholder-text-light/70 shadow-inner"
               disabled={loading}
             />

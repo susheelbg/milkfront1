@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { authApi } from '../services/api/authApi';
 import { ShieldCheck, Heart, Truck, Users, HelpCircle } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const HomePage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -13,16 +15,16 @@ export const HomePage = () => {
   }, []);
 
   const upcomingFeatures = [
-    { icon: ShieldCheck, label: 'Insurance', description: 'Cattle & farm protection policy' },
-    { icon: Truck, label: 'Vet Visit', description: 'Schedule home vet visits' },
-    { icon: Users, label: 'Doctor Near Me', description: 'Find nearest veterinary clinic' },
-    { icon: HelpCircle, label: 'Expert Advice', description: 'One-on-one expert consultations' },
+    { icon: ShieldCheck, label: t('home.insurance'), description: t('home.insuranceDesc') },
+    { icon: Truck, label: t('home.vetVisit'), description: t('home.vetVisitDesc') },
+    { icon: Users, label: t('home.doctorNearMe'), description: t('home.doctorNearMeDesc') },
+    { icon: HelpCircle, label: t('home.expertAdvice'), description: t('home.expertAdviceDesc') },
   ];
 
   const mainActions = [
     {
       id: 'feeds',
-      label: 'Buy Feeds',
+      label: t('home.buyFeeds'),
       emoji: '🌾',
       bg: 'bg-amber-100',
       border: 'border-amber-200',
@@ -30,7 +32,7 @@ export const HomePage = () => {
     },
     {
       id: 'sante',
-      label: 'Sante',
+      label: t('home.sante'),
       emoji: '🐄',
       bg: 'bg-emerald-100',
       border: 'border-emerald-200',
@@ -38,18 +40,18 @@ export const HomePage = () => {
     },
     {
       id: 'ocr',
-      label: 'OCR Extract',
+      label: t('home.ocrExtract'),
       emoji: '📄',
       bg: 'bg-sky-100',
       border: 'border-sky-200',
       action: () => {
-        alert('OCR Feature is opening camera. Direct scanner integration is preparing...');
+        alert(t('home.ocrAlert') || 'OCR Feature is opening camera. Direct scanner integration is preparing...');
       },
     },
     {
       id: 'ai',
-      label: 'Nandini AI',
-      emoji: '🤖✨',
+      label: t('home.nandiniAi'),
+      emoji: '🧠✨',
       bg: 'bg-indigo-100',
       border: 'border-indigo-200',
       action: () => {
@@ -65,9 +67,9 @@ export const HomePage = () => {
       {/* Welcome Title */}
       <section className="bg-white border-b border-border-light py-5 px-4 shadow-sm">
         <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-text-light font-bold uppercase tracking-wider">Namaste</p>
+          <p className="text-xs text-text-light font-bold uppercase tracking-wider">{t('common.namaste')}</p>
           <h2 className="text-2xl md:text-3xl font-extrabold text-text-dark">
-            Welcome, {currentUser?.name || 'Farmer'}
+            {t('common.welcome')}, {currentUser?.name || t('common.farmer')}
           </h2>
         </div>
       </section>
@@ -90,7 +92,7 @@ export const HomePage = () => {
               Susheel
             </p>
             <p className="text-xs md:text-sm font-semibold text-text-dark/90 leading-relaxed">
-              MilkMaatu is built to help farmers get heavy cattle feed delivered directly from manufacturers to their doorstep, track milk production data, and easily buy or sell cattle through a trusted local platform.
+              {t('home.welcomeMessage')}
             </p>
           </div>
         </div>
@@ -98,7 +100,7 @@ export const HomePage = () => {
 
       {/* Circular Round Action Buttons Grid */}
       <section className="max-w-4xl mx-auto px-4 py-8">
-        <h3 className="text-lg font-bold text-text-dark mb-4 px-1">Quick Services</h3>
+        <h3 className="text-lg font-bold text-text-dark mb-4 px-1">{t('home.quickServices')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {mainActions.map((act) => (
             <Card
@@ -120,7 +122,7 @@ export const HomePage = () => {
 
       {/* Coming Soon Section */}
       <section className="max-w-4xl mx-auto px-4 py-4">
-        <h3 className="text-lg font-bold text-text-dark mb-4 px-1">Coming Soon Features</h3>
+        <h3 className="text-lg font-bold text-text-dark mb-4 px-1">{t('home.comingSoon')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {upcomingFeatures.map((feature, index) => {
             const Icon = feature.icon;
@@ -138,7 +140,7 @@ export const HomePage = () => {
                   <p className="text-xs text-text-light">{feature.description}</p>
                 </div>
                 <span className="text-[10px] font-bold bg-gray-100 text-gray-500 py-1 px-2 rounded-full uppercase border border-gray-200">
-                  Soon
+                  {t('home.soon')}
                 </span>
               </Card>
             );
@@ -152,15 +154,15 @@ export const HomePage = () => {
           <div className="grid grid-cols-3 gap-4 text-center divide-x divide-border-light">
             <div>
               <div className="text-xl md:text-2xl font-black text-text-dark">1000+</div>
-              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">Active Farmers</p>
+              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">{t('home.activeFarmers')}</p>
             </div>
             <div>
               <div className="text-xl md:text-2xl font-black text-text-dark">500+</div>
-              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">Transactions</p>
+              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">{t('home.transactions')}</p>
             </div>
             <div>
               <div className="text-xl md:text-2xl font-black text-text-dark">24/7</div>
-              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">Support</p>
+              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">{t('home.support')}</p>
             </div>
           </div>
         </div>

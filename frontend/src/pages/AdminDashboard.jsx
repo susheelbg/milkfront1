@@ -8,9 +8,11 @@ import { cattleApi } from '../services/api/cattleApi';
 import { toastService } from '../services/toastService';
 import { authApi } from '../services/api/authApi';
 import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, users, orders, cattle
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -175,11 +177,11 @@ export const AdminDashboard = () => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Stats Overview', icon: BarChart3 },
-    { id: 'feeds', label: 'Feeds Catalog', icon: Layers },
-    { id: 'orders', label: 'Orders List', icon: ClipboardList },
-    { id: 'users', label: 'Users Base', icon: Users },
-    { id: 'cattle', label: 'Cattle Sante', icon: Users },
+    { id: 'overview', label: t('admin.overview'), icon: BarChart3 },
+    { id: 'feeds', label: t('admin.products'), icon: Layers },
+    { id: 'orders', label: t('admin.orders'), icon: ClipboardList },
+    { id: 'users', label: t('admin.users'), icon: Users },
+    { id: 'cattle', label: t('admin.cattle'), icon: Users },
   ];
 
   return (
@@ -190,8 +192,8 @@ export const AdminDashboard = () => {
       <section className="bg-text-dark text-white py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Admin Control Panel</h1>
-            <p className="text-gray-400 text-sm mt-0.5">Manage MilkMaatu feed supply, sante ads, and customer orders</p>
+            <h1 className="text-3xl font-extrabold tracking-tight">{t('admin.dashboard')}</h1>
+            <p className="text-gray-400 text-sm mt-0.5">Control panel & analytics</p>
           </div>
           <button
             onClick={loadData}
@@ -231,7 +233,7 @@ export const AdminDashboard = () => {
             {loading ? (
               <Card padding="lg" className="flex flex-col items-center justify-center py-20 text-text-light border border-border-light">
                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="font-semibold text-sm">Refreshing dashboard data...</p>
+                <p className="font-semibold text-sm">{t('common.loading')}</p>
               </Card>
             ) : (
               <div className="space-y-6">
@@ -241,20 +243,20 @@ export const AdminDashboard = () => {
                     {/* Stats Blocks */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <Card className="border border-border-light" padding="md">
-                        <p className="text-[10px] text-text-light font-bold uppercase">Total Revenue</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.totalRevenue')}</p>
                         <p className="text-2xl font-black text-emerald-600 mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
                       </Card>
                       <Card className="border border-border-light" padding="md">
-                        <p className="text-[10px] text-text-light font-bold uppercase">Feed Catalog Size</p>
-                        <p className="text-2xl font-black text-text-dark mt-1">{stats.feedsCount} Items</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.activeFeeds')}</p>
+                        <p className="text-2xl font-black text-text-dark mt-1">{stats.feedsCount}</p>
                       </Card>
                       <Card className="border border-border-light" padding="md">
-                        <p className="text-[10px] text-text-light font-bold uppercase">Placed Orders</p>
-                        <p className="text-2xl font-black text-text-dark mt-1">{stats.ordersCount} Orders</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.pendingOrders')}</p>
+                        <p className="text-2xl font-black text-text-dark mt-1">{stats.ordersCount}</p>
                       </Card>
                       <Card className="border border-border-light" padding="md">
-                        <p className="text-[10px] text-text-light font-bold uppercase">Sante Cattle Ads</p>
-                        <p className="text-2xl font-black text-text-dark mt-1">{stats.cattleCount} Active</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.activeCattle')}</p>
+                        <p className="text-2xl font-black text-text-dark mt-1">{stats.cattleCount}</p>
                       </Card>
                     </div>
 
@@ -263,10 +265,10 @@ export const AdminDashboard = () => {
                       <h3 className="text-lg font-bold text-text-dark mb-3">Quick Actions</h3>
                       <div className="flex flex-wrap gap-3">
                         <Button variant="primary" size="md" onClick={openAddFeed}>
-                          + Add Feed Product
+                          + {t('admin.addProduct')}
                         </Button>
                         <Button variant="secondary" size="md" onClick={() => setActiveTab('orders')}>
-                          View Unconfirmed Orders
+                          View Orders List
                         </Button>
                       </div>
                     </Card>
@@ -277,9 +279,9 @@ export const AdminDashboard = () => {
                 {activeTab === 'feeds' && (
                   <div className="space-y-4 animate-slide-up">
                     <div className="flex justify-between items-center px-1">
-                      <h3 className="text-lg font-bold text-text-dark">Feeds catalog ({feedsList.length})</h3>
+                      <h3 className="text-lg font-bold text-text-dark">{t('admin.products')} ({feedsList.length})</h3>
                       <Button variant="primary" size="sm" onClick={openAddFeed}>
-                        + Add Feed Product
+                        + {t('admin.addProduct')}
                       </Button>
                     </div>
 
@@ -354,11 +356,11 @@ export const AdminDashboard = () => {
                 {/* 3. ORDERS LIST TAB */}
                 {activeTab === 'orders' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">Orders Tracker ({ordersList.length})</h3>
+                    <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.orders')} ({ordersList.length})</h3>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {ordersList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">No orders recorded yet.</p>
+                        <p className="text-center text-text-light text-sm py-12">{t('admin.noOrders')}</p>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm border-collapse">
@@ -377,7 +379,6 @@ export const AdminDashboard = () => {
                                   <td className="p-4 align-top">
                                     <p className="font-extrabold text-sm">{order.customerName}</p>
                                     <p className="text-xs text-text-light">{order.phoneNumber}</p>
-                                    <p className="text-[10px] text-text-light font-bold mt-1 uppercase">{order.id}</p>
                                   </td>
                                   <td className="p-4 align-top max-w-[200px]">
                                     <p className="text-xs font-semibold">{order.villageName}</p>
@@ -430,7 +431,7 @@ export const AdminDashboard = () => {
                 {/* 4. USERS TAB */}
                 {activeTab === 'users' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">Registered Users ({usersList.length})</h3>
+                    <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.users')} ({usersList.length})</h3>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       <div className="overflow-x-auto">
@@ -470,11 +471,11 @@ export const AdminDashboard = () => {
                 {/* 5. CATTLE TAB */}
                 {activeTab === 'cattle' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">Active Cattle Marketplace Posts ({cattleList.length})</h3>
+                    <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.cattle')} ({cattleList.length})</h3>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {cattleList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">No active cattle posts found.</p>
+                        <p className="text-center text-text-light text-sm py-12">{t('admin.noCattle')}</p>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm border-collapse text-text-dark">
@@ -536,13 +537,13 @@ export const AdminDashboard = () => {
             </button>
 
             <h3 className="text-xl font-bold text-text-dark mb-6">
-              {editingFeed ? 'Edit Feed Product' : 'Add Feed Product'}
+              {editingFeed ? t('admin.editProduct') : t('admin.addProduct')}
             </h3>
 
             <form onSubmit={handleFeedSubmit} className="space-y-4">
               <Input
-                label="Product Name"
-                placeholder="e.g. Premium Cow Supplement"
+                label={t('admin.productName')}
+                placeholder={t('admin.productNamePlaceholder')}
                 value={feedFormData.name}
                 onChange={(e) => setFeedFormData({ ...feedFormData, name: e.target.value })}
                 required
@@ -550,7 +551,7 @@ export const AdminDashboard = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Price (₹ per bag)"
+                  label={t('admin.price')}
                   placeholder="e.g. 500"
                   type="number"
                   value={feedFormData.price}
@@ -558,7 +559,7 @@ export const AdminDashboard = () => {
                   required
                 />
                 <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">Category</label>
+                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.category')}</label>
                   <select
                     value={feedFormData.category}
                     onChange={(e) => setFeedFormData({ ...feedFormData, category: e.target.value })}
@@ -575,7 +576,7 @@ export const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-text-light font-bold uppercase mb-1">Product Photo</label>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.image')}</label>
                 {feedFormData.image ? (
                   <div className="relative w-full max-w-xs mt-1">
                     <img
@@ -621,7 +622,7 @@ export const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-text-light font-bold uppercase mb-1">Description</label>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.description')}</label>
                 <textarea
                   value={feedFormData.description}
                   onChange={(e) => setFeedFormData({ ...feedFormData, description: e.target.value })}
@@ -632,7 +633,7 @@ export const AdminDashboard = () => {
               </div>
 
               <Button type="submit" variant="primary" size="lg" className="w-full mt-4 font-bold">
-                {editingFeed ? 'Update Product' : 'Add Catalog Product'}
+                {editingFeed ? t('admin.update') : t('admin.add')}
               </Button>
             </form>
           </Card>

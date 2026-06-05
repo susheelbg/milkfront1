@@ -6,10 +6,12 @@ import { orderApi } from '../services/api/orderApi';
 import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
 import { ShoppingBag, Loader2, MapPin } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const OrderSummaryPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const cart = location.state?.cart || {};
 
   const [feeds, setFeeds] = useState([]);
@@ -28,7 +30,7 @@ export const OrderSummaryPage = () => {
   useEffect(() => {
     // Check if cart is empty
     if (Object.keys(cart).length === 0) {
-      toastService.info('Your cart is empty. Redirecting to store...');
+      toastService.info(t('feeds.cartEmpty') || 'Your cart is empty. Redirecting to store...');
       navigate('/feeds');
       return;
     }
@@ -57,7 +59,7 @@ export const OrderSummaryPage = () => {
       }
     };
     loadFeeds();
-  }, [cart, navigate]);
+  }, [cart, navigate, t]);
 
   const getCartItems = () => {
     return feeds
@@ -79,21 +81,21 @@ export const OrderSummaryPage = () => {
     const newErrors = {};
 
     if (!formData.customerName.trim()) {
-      newErrors.customerName = 'Customer name is required';
+      newErrors.customerName = t('register.fullNameRequired') || 'Customer name is required';
     }
 
     if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
+      newErrors.phoneNumber = t('register.phoneRequired') || 'Phone number is required';
     } else if (!/^[+]?[\d\s\-()]+$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Invalid phone number';
+      newErrors.phoneNumber = t('register.invalidPhone') || 'Invalid phone number';
     }
 
     if (!formData.villageName.trim()) {
-      newErrors.villageName = 'Village name is required';
+      newErrors.villageName = t('register.villageRequired') || 'Village name is required';
     }
 
     if (!formData.address.trim()) {
-      newErrors.address = 'Complete delivery address is required';
+      newErrors.address = t('register.addressRequired') || 'Complete delivery address is required';
     }
 
     setErrors(newErrors);
@@ -125,7 +127,7 @@ export const OrderSummaryPage = () => {
         ...formData,
       });
 
-      toastService.success('Order placed successfully!');
+      toastService.success(t('orderSummary.successMessage') || 'Order placed successfully!');
       
       // Clear active cart
       localStorage.removeItem('active_cart');
@@ -152,7 +154,7 @@ export const OrderSummaryPage = () => {
           </div>
           <h1 className="text-2xl font-black text-emerald-800 mb-2">Order Confirmed!</h1>
           <p className="text-text-light text-sm mb-6 leading-relaxed">
-            Your cattle feeds order was registered successfully. Fast doorstep delivery is preparing.
+            {t('orderSummary.successMessage')}
           </p>
           <div className="bg-white/80 p-3 rounded-lg text-xs font-bold text-text-dark border border-emerald-200">
             Auto redirecting back to home page...
@@ -169,7 +171,7 @@ export const OrderSummaryPage = () => {
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-extrabold text-text-dark">Order Checkout</h1>
+          <h1 className="text-3xl font-extrabold text-text-dark">{t('orderSummary.title')}</h1>
         </div>
       </section>
 
@@ -178,7 +180,7 @@ export const OrderSummaryPage = () => {
         {loadingFeeds ? (
           <div className="flex flex-col items-center justify-center py-20 text-text-light">
             <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-            <p className="font-semibold text-sm">Building invoice details...</p>
+            <p className="font-semibold text-sm">{t('common.loading')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -187,12 +189,12 @@ export const OrderSummaryPage = () => {
               <Card padding="lg" className="border border-border-light shadow-sm">
                 <div className="flex items-center gap-2 border-b border-border-light pb-4 mb-6">
                   <MapPin className="text-primary-dark" size={22} />
-                  <h2 className="text-xl font-bold text-text-dark">Delivery Address</h2>
+                  <h2 className="text-xl font-bold text-text-dark">{t('orderSummary.deliveryDetails')}</h2>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Input
-                    label="Farmer Full Name"
+                    label={t('orderSummary.fullName')}
                     placeholder="Enter your full name"
                     name="customerName"
                     value={formData.customerName}
@@ -202,7 +204,7 @@ export const OrderSummaryPage = () => {
                   />
 
                   <Input
-                    label="WhatsApp Mobile Number"
+                    label={t('orderSummary.phoneNumber')}
                     placeholder="+91 9876543210"
                     name="phoneNumber"
                     value={formData.phoneNumber}
@@ -212,7 +214,7 @@ export const OrderSummaryPage = () => {
                   />
 
                   <Input
-                    label="Village Name"
+                    label={t('orderSummary.village')}
                     placeholder="e.g., Thendekere"
                     name="villageName"
                     value={formData.villageName}
@@ -222,7 +224,7 @@ export const OrderSummaryPage = () => {
                   />
 
                   <Input
-                    label="Detailed Address"
+                    label={t('orderSummary.deliveryAddress')}
                     placeholder="Street, door no, landmarks..."
                     name="address"
                     value={formData.address}
@@ -238,7 +240,7 @@ export const OrderSummaryPage = () => {
                     className="w-full font-bold shadow-md hover:scale-[1.01] transition-transform mt-6"
                     disabled={loadingSubmit}
                   >
-                    {loadingSubmit ? 'Placing Order...' : `Confirm & Place Order (₹${getTotalPrice().toLocaleString()})`}
+                    {loadingSubmit ? t('orderSummary.placingOrder') : `${t('orderSummary.placeOrderButton')} (₹${getTotalPrice().toLocaleString()})`}
                   </Button>
                 </form>
               </Card>
@@ -249,7 +251,7 @@ export const OrderSummaryPage = () => {
               <Card padding="lg" className="sticky top-20 border border-border-light shadow-sm">
                 <div className="flex items-center gap-2 border-b border-border-light pb-4 mb-5">
                   <ShoppingBag className="text-primary-dark" size={20} />
-                  <h2 className="text-lg font-bold text-text-dark">Invoice Items</h2>
+                  <h2 className="text-lg font-bold text-text-dark">{t('orderSummary.orderItems')}</h2>
                 </div>
 
                 <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
@@ -272,15 +274,15 @@ export const OrderSummaryPage = () => {
                 {/* Total Calc */}
                 <div className="border-t-2 border-primary-light pt-4 space-y-2.5">
                   <div className="flex justify-between items-center text-xs text-text-light font-bold uppercase">
-                    <span>Feed Subtotal</span>
+                    <span>{t('orderSummary.subtotal')}</span>
                     <span>₹{getTotalPrice().toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs text-text-light font-bold uppercase">
-                    <span>Doorstep Shipping</span>
-                    <span className="text-emerald-600 font-extrabold">FREE DELIVERY</span>
+                    <span>{t('orderSummary.shipping')}</span>
+                    <span className="text-emerald-600 font-extrabold">{t('orderSummary.free')}</span>
                   </div>
                   <div className="flex justify-between items-center pt-3 border-t border-border-light">
-                    <span className="text-sm font-black text-text-dark uppercase">Grand Total</span>
+                    <span className="text-sm font-black text-text-dark uppercase">{t('orderSummary.grandTotal')}</span>
                     <span className="text-2xl font-black text-primary-dark">₹{getTotalPrice().toLocaleString()}</span>
                   </div>
                 </div>
@@ -292,4 +294,3 @@ export const OrderSummaryPage = () => {
     </div>
   );
 };
-

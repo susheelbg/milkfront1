@@ -43,6 +43,9 @@ async def update_profile(
         cdn_url = upload_image(update_data["profile_image"])
         current_user.profile_image = cdn_url
         
+    if "language" in update_data:
+        current_user.language = update_data["language"]
+        
     await db.commit()
     await db.refresh(current_user)
     

@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     address: Optional[str] = None
     village: Optional[str] = None
     profile_image: Optional[str] = None
+    language: Optional[str] = "kn"
 
 class UserCreate(UserBase):
     password: str
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
     address: Optional[str] = None
     villageName: Optional[str] = None
     profile_image: Optional[str] = None
+    language: Optional[str] = None
 
 class UserResponse(BaseModel):
     phone: str = Field(..., validation_alias=AliasChoices("phone", "phone_number"))
@@ -27,6 +29,7 @@ class UserResponse(BaseModel):
     villageName: Optional[str] = Field("", validation_alias=AliasChoices("villageName", "village"))
     profile_image: Optional[str] = ""
     is_verified: bool
+    language: Optional[str] = "kn"
     createdAt: datetime = Field(..., validation_alias=AliasChoices("createdAt", "created_at"))
 
     class Config:

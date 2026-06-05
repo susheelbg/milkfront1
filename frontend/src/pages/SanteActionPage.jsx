@@ -2,10 +2,12 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { ShoppingCart, Upload } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const SanteActionPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const santeName = location.state?.santeName;
 
   if (!santeName) {
@@ -21,7 +23,7 @@ export const SanteActionPage = () => {
       <section className="bg-primary py-8 px-4">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold text-text-dark mb-2">{santeName}</h1>
-          <p className="text-text-dark opacity-90">What would you like to do?</p>
+          <p className="text-text-dark opacity-90">{t('sante.postAd')}</p>
         </div>
       </section>
 
@@ -36,9 +38,9 @@ export const SanteActionPage = () => {
             onClick={() => navigate('/sante-buy', { state: { santeName } })}
           >
             <ShoppingCart className="w-16 h-16 mx-auto text-primary mb-4" />
-            <h2 className="text-3xl font-bold text-text-dark mb-3">Buy Cattle</h2>
+            <h2 className="text-3xl font-bold text-text-dark mb-3">{t('sante.buyCattle')}</h2>
             <p className="text-text-light mb-6">
-              Browse and purchase healthy cattle from verified sellers in your Sante
+              {t('sante.subtitle')}
             </p>
             <Button
               variant="primary"
@@ -46,7 +48,7 @@ export const SanteActionPage = () => {
               className="w-full"
               onClick={() => navigate('/sante-buy', { state: { santeName } })}
             >
-              View Listings →
+              {t('sante.buyCattle')} →
             </Button>
           </Card>
 
@@ -58,9 +60,9 @@ export const SanteActionPage = () => {
             onClick={() => navigate('/sante-sell', { state: { santeName } })}
           >
             <Upload className="w-16 h-16 mx-auto text-primary mb-4" />
-            <h2 className="text-3xl font-bold text-text-dark mb-3">Sell Cattle</h2>
+            <h2 className="text-3xl font-bold text-text-dark mb-3">{t('sante.sellCattle')}</h2>
             <p className="text-text-light mb-6">
-              Post your cattle for sale and reach interested buyers in your area
+              {t('sante.postAd')}
             </p>
             <Button
               variant="primary"
@@ -68,16 +70,15 @@ export const SanteActionPage = () => {
               className="w-full"
               onClick={() => navigate('/sante-sell', { state: { santeName } })}
             >
-              Create Listing →
+              {t('sante.sellCattle')} →
             </Button>
           </Card>
         </div>
 
         {/* Info */}
         <div className="mt-12 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 text-center">
-          <p className="text-text-dark">
-            <span className="font-bold">⏰ Listing Duration:</span> Posts automatically delete after 24 hours. 
-            Repost to keep your listing active!
+          <p className="text-text-dark font-semibold">
+            ⏰ {t('sante.days24Hours')}
           </p>
         </div>
       </section>

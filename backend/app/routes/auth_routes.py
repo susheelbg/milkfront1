@@ -118,6 +118,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         "role": user.role,
         "address": user.address or "",
         "villageName": user.village or "",
+        "language": user.language or "kn",
     }
     
     return json_response(
@@ -140,6 +141,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "address": current_user.address or "",
         "villageName": current_user.village or "",
+        "language": current_user.language or "kn",
         "is_verified": current_user.is_verified,
         "created_at": current_user.created_at.isoformat(),
     }
