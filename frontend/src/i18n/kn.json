@@ -54,7 +54,30 @@
     "loginButton": "ಲಾಗ್ ಇನ್",
     "noAccount": "ಖಾತೆ ಇಲ್ಲವೇ?",
     "signupLink": "ನೋಂದಣಿ ಮಾಡಿ",
-    "demoCredentials": "ಡೆಮೊ ರುಜುವಾತುಗಳು"
+    "demoCredentials": "ಡೆಮೊ ರುಜುವಾತುಗಳು",
+    "forgotPasswordLink": "ಪಾಸ್ವರ್ಡ್ ಮರೆತಿರಾ?"
+  },
+  "forgotPassword": {
+    "title": "ಪಾಸ್ವರ್ಡ್ ಮರೆತಿರಾ",
+    "subtitle": "ನಿಮ್ಮ ಖಾತೆಯ ಪಾಸ್‌ವರ್ಡ್ ಅನ್ನು ಮರುಹೊಂದಿಸಿ",
+    "phoneLabel": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ",
+    "phonePlaceholder": "10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ",
+    "sendOtpButton": "OTP ಕಳುಹಿಸಿ",
+    "otpTitle": "OTP ಪರಿಶೀಲನೆ",
+    "otpSubtitle": "{phone} ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲಾದ 4-ಅಂಕಿಯ ಕೋಡ್ ನಮೂದಿಸಿ",
+    "otpPlaceholder": "OTP ನಮೂದಿಸಿ",
+    "verifyOtpButton": "OTP ಪರಿಶೀಲಿಸಿ",
+    "resendOtpButton": "ಮತ್ತೆ OTP ಕಳುಹಿಸಿ",
+    "newPasswordTitle": "ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ರಚಿಸಿ",
+    "newPasswordSubtitle": "ಬಲಿಷ್ಠವಾದ ಪಾಸ್‌ವರ್ಡ್ ಹೊಂದಿಸಿ",
+    "newPasswordPlaceholder": "ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ",
+    "confirmPasswordPlaceholder": "ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ",
+    "resetButton": "ಪಾಸ್ವರ್ಡ್ ಬದಲಿಸಿ",
+    "successTitle": "ಪಾಸ್ವರ್ಡ್ ಯಶಸ್ವಿಯಾಗಿ ಬದಲಾಗಿದೆ",
+    "backToLogin": "ಹಿಂದಕ್ಕೆ ಲಾಗ್ ಇನ್",
+    "invalidPhone": "ದಯವಿಟ್ಟು ಸರಿಯಾದ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ",
+    "passwordsMismatch": "ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ",
+    "passwordMin": "ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳಿರಬೇಕು"
   },
   "register": {
     "title": "ರೈತರ ನೋಂದಣಿ",

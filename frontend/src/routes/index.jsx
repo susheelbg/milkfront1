@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import {
   LoginPage,
   RegisterPage,
+  ForgotPassword,
   HomePage,
   BuyFeedsPage,
   OrderSummaryPage,
@@ -42,6 +43,10 @@ export const routes = [
   {
     path: '/register',
     element: <RegisterPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />,
   },
   {
     path: '/home',

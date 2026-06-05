@@ -54,7 +54,30 @@
     "loginButton": "Login",
     "noAccount": "Don't have an account?",
     "signupLink": "Sign up",
-    "demoCredentials": "Demo Credentials"
+    "demoCredentials": "Demo Credentials",
+    "forgotPasswordLink": "Forgot Password?"
+  },
+  "forgotPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Reset your account password",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "Enter 10-digit phone number",
+    "sendOtpButton": "Send OTP",
+    "otpTitle": "OTP Verification",
+    "otpSubtitle": "Enter the 4-digit code sent to {phone}",
+    "otpPlaceholder": "Enter OTP",
+    "verifyOtpButton": "Verify OTP",
+    "resendOtpButton": "Resend OTP",
+    "newPasswordTitle": "Create New Password",
+    "newPasswordSubtitle": "Setup a strong password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "resetButton": "Reset Password",
+    "successTitle": "Password reset successful",
+    "backToLogin": "Back to Login",
+    "invalidPhone": "Please enter a valid 10-digit phone number",
+    "passwordsMismatch": "Passwords do not match",
+    "passwordMin": "Password must be at least 6 characters"
   },
   "register": {
     "title": "Farmer Registration",

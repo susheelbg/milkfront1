@@ -6,15 +6,19 @@ from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, OtpSendRequest, OtpVerifyRequest, TokenResponse
+from app.schemas.auth import LoginRequest, RegisterRequest, OtpSendRequest, OtpVerifyRequest, TokenResponse, PasswordResetRequest
 from app.schemas.user import UserResponse
 from app.utils.response import json_response
+from app.services.otp import otp_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # In-memory store for pending registration data (simulates cache database like Redis)
 # Maps phone number -> registration data dict
 PENDING_REGISTRATIONS = {}
+
+# In-memory store for pending password reset verification states
+PENDING_PASSWORD_RESETS = {}
 
 @router.post("/register")
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
@@ -151,3 +155,78 @@ async def get_me(current_user: User = Depends(get_current_user)):
         message="Fetched current profile context successfully",
         data=user_payload
     )
+
+@router.post("/forgot-password/request-otp")
+async def forgot_password_request_otp(req: OtpSendRequest, db: AsyncSession = Depends(get_db)):
+    # Verify phone exists in the database
+    result = await db.execute(select(User).where(User.phone_number == req.phone))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Phone number is not registered."
+        )
+    
+    # Send OTP using the abstraction service
+    otp_service.send_otp(req.phone)
+    PENDING_PASSWORD_RESETS[req.phone] = {"verified": False}
+    
+    return json_response(
+        success=True,
+        message="Forgot password OTP sent via WhatsApp.",
+        data={"phone": req.phone}
+    )
+
+@router.post("/forgot-password/verify-otp")
+async def forgot_password_verify_otp(req: OtpVerifyRequest):
+    # Verify using the abstraction service
+    if not otp_service.verify_otp(req.phone, req.otp):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid OTP verification code. Please enter 1234."
+        )
+    
+    # Check if we have a request tracking state
+    pending = PENDING_PASSWORD_RESETS.get(req.phone)
+    if not pending:
+        PENDING_PASSWORD_RESETS[req.phone] = {}
+        pending = PENDING_PASSWORD_RESETS[req.phone]
+        
+    pending["verified"] = True
+    
+    return json_response(
+        success=True,
+        message="WhatsApp OTP verified successfully for password reset.",
+        data={"phone": req.phone}
+    )
+
+@router.post("/forgot-password/reset")
+async def forgot_password_reset(req: PasswordResetRequest, db: AsyncSession = Depends(get_db)):
+    pending = PENDING_PASSWORD_RESETS.get(req.phone)
+    if not pending or not pending.get("verified"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP verification is required before resetting password."
+        )
+    
+    result = await db.execute(select(User).where(User.phone_number == req.phone))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+        
+    # Update password using hash function
+    user.hashed_password = hash_password(req.password)
+    await db.commit()
+    
+    # Clean up pending state
+    PENDING_PASSWORD_RESETS.pop(req.phone, None)
+    
+    return json_response(
+        success=True,
+        message="Password has been reset successfully.",
+        data={"phone": req.phone}
+    )
+

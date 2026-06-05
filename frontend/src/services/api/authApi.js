@@ -50,6 +50,21 @@ export const authApi = {
     localStorage.removeItem('authToken');
   },
 
+  // Forgot Password: Request OTP
+  requestForgotPasswordOtp: async (phone) => {
+    return await apiClient.post('/auth/forgot-password/request-otp', { phone });
+  },
+
+  // Forgot Password: Verify OTP
+  verifyForgotPasswordOtp: async (phone, otp) => {
+    return await apiClient.post('/auth/forgot-password/verify-otp', { phone, otp });
+  },
+
+  // Forgot Password: Reset Password
+  resetPassword: async (phone, password) => {
+    return await apiClient.post('/auth/forgot-password/reset', { phone, password });
+  },
+
   isAuthenticated: () => {
     return !!localStorage.getItem('authToken');
   },

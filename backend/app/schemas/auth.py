@@ -21,3 +21,8 @@ class OtpVerifyRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class PasswordResetRequest(BaseModel):
+    phone: str = Field(..., description="Verified mobile number")
+    password: str = Field(..., min_length=6, description="New password")
+

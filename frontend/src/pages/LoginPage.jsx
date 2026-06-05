@@ -108,21 +108,30 @@ export const LoginPage = () => {
               required
             />
 
-            {/* Show Password Toggle Checkbox */}
-            <div className="flex items-center gap-2 mb-6 -mt-2">
-              <input
-                type="checkbox"
-                id="show-password"
-                checked={showPassword}
-                onChange={() => setShowPassword(!showPassword)}
-                className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-primary"
-              />
-              <label
-                htmlFor="show-password"
-                className="text-xs font-bold text-text-light hover:text-text-dark cursor-pointer select-none transition-colors"
+            {/* Show Password Toggle Checkbox & Forgot Password Link */}
+            <div className="flex items-center justify-between mb-6 -mt-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="show-password"
+                  checked={showPassword}
+                  onChange={() => setShowPassword(!showPassword)}
+                  className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-primary"
+                />
+                <label
+                  htmlFor="show-password"
+                  className="text-xs font-bold text-text-light hover:text-text-dark cursor-pointer select-none transition-colors"
+                >
+                  {t('login.showPassword') || 'Show Password'}
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/forgot-password')}
+                className="text-xs font-bold text-text-light hover:text-text-dark transition-colors underline"
               >
-                {t('login.showPassword') || 'Show Password'}
-              </label>
+                {t('login.forgotPasswordLink') || 'Forgot Password?'}
+              </button>
             </div>
 
             <Button

@@ -48,6 +48,8 @@ backend/
 │   │   └── ai_routes.py       # Nandini AI chat assistant endpoint
 │   ├── services/
 │   │   ├── cloudinary_service.py # Cloudinary base64 media uploads
+│   │   ├── otp/
+│   │   │   └── otp_service.py    # WhatsApp OTP sender & verifier abstraction
 │   │   └── ai/
 │   │       └── nandini_ai.py  # Google GenAI model config and dairy farming filters
 │   └── utils/
@@ -115,7 +117,7 @@ For Sante direct mobile-camera photo submissions:
 
 ---
 
-## 🤖 Configuring Nandini AI
+## 🧠 Configuring Nandini AI
 Nandini AI is a smart dairy farming assistant powered by the Google GenAI `gemini-2.5-flash` model.
 To configure it:
 1. Obtain a Gemini API Key from Google AI Studio.
@@ -124,10 +126,21 @@ To configure it:
    GEMINI_API_KEY=your_gemini_api_key
    ```
 The backend verifies the key presence at startup. Nandini AI acts as a dedicated dairy farming assistant specifically tailored for Karnataka farmers:
-* **Language:** Always replies in simple, farmer-friendly Kannada (even if queried in English).
+* **Language:** Responds dynamically in the language matching the user's current interface choice (Kannada or English).
 * **Focus Areas:** Covers dairy farming, cow & buffalo care, feed/fodder, milk production, fat/SNF, vaccination/health, breeding, Karnataka milk unions, and government dairy schemes.
 * **Format:** Keeps responses short, practical (usually 1-4 lines), and direct.
 * **Guardrails:** Politely declines non-farming or non-livestock related queries.
+
+---
+
+## 💬 WhatsApp OTP & Forgot Password
+The backend supports secure password resets via WhatsApp OTP verification:
+* **Endpoints:**
+  * `POST /api/auth/forgot-password/request-otp`: Sends a mock OTP (code `1234`) to the registered phone number.
+  * `POST /api/auth/forgot-password/verify-otp`: Validates the submitted OTP.
+  * `POST /api/auth/forgot-password/reset`: Updates the user's password using standard bcrypt hashing.
+* **Abstraction Service (`otp_service.py`):**
+  * Built as a modular abstraction to allow replacing the mock `1234` code with a live Twilio WhatsApp integration later without refactoring backend routes or schemas.
 
 ---
 
