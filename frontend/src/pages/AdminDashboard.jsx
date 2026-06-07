@@ -522,18 +522,25 @@ export const AdminDashboard = () => {
                                 <td className="p-4">
                                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
                                     usr.role === 'admin' 
-                                      ? 'bg-purple-100 text-purple-700' 
-                                      : (usr.accountStatus || usr.account_status) === 'suspended'
+                                      ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                                      : 'bg-blue-100 text-blue-700 border border-blue-200'
+                                  }`}>
+                                    {usr.role || 'user'}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                    (usr.accountStatus || usr.account_status) === 'suspended'
                                       ? 'bg-red-100 text-red-700 border border-red-200'
                                       : (usr.accountStatus || usr.account_status) === 'deleted'
-                                      ? 'bg-gray-100 text-gray-400 line-through'
+                                      ? 'bg-gray-100 text-gray-400 border border-gray-200 line-through'
                                       : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                   }`}>
-                                    {usr.role === 'admin' ? usr.role : (usr.accountStatus || usr.account_status || 'active')}
+                                    {usr.accountStatus || usr.account_status || 'active'}
                                   </span>
                                 </td>
                                 <td className="p-4 text-xs">{usr.villageName || '-'}</td>
-                                <td className="p-4 text-xs text-text-light">{new Date(usr.createdAt).toLocaleDateString()}</td>
+                                <td className="p-4 text-xs text-text-light">{usr.createdAt ? new Date(usr.createdAt).toLocaleDateString() : '-'}</td>
                                 <td className="p-4 text-right">
                                   {usr.role !== 'admin' && (usr.accountStatus || usr.account_status) !== 'deleted' && (
                                     (usr.accountStatus || usr.account_status) === 'suspended' ? (

@@ -28,8 +28,10 @@ async def get_admin_stats(
     feeds_res = await db.execute(select(func.count(Feed.id)))
     total_feeds = feeds_res.scalar_one()
 
-    # 3. Total orders count
-    orders_res = await db.execute(select(func.count(Order.id)))
+    # 3. Pending orders count (only status == "pending")
+    orders_res = await db.execute(
+        select(func.count(Order.id)).where(Order.order_status == "pending")
+    )
     total_orders = orders_res.scalar_one()
 
     # 4. Active cattle posts
