@@ -48,7 +48,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         village=req.villageName or "",
         role="user" if req.phone != "+917795056391" else "admin", # Susheel is Admin
         is_verified=True,
-        consent_timestamp=datetime.fromisoformat(req.consent_timestamp) if req.consent_timestamp else datetime.now(timezone.utc).replace(tzinfo=None)
+        consent_timestamp=datetime.fromisoformat(req.consent_timestamp.replace("Z", "+00:00")).replace(tzinfo=None) if req.consent_timestamp else datetime.now(timezone.utc).replace(tzinfo=None)
     )
     
     db.add(new_user)
