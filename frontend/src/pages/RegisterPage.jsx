@@ -21,6 +21,8 @@ export const RegisterPage = () => {
     villageName: '',
   });
   const [errors, setErrors] = useState({});
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -130,6 +132,7 @@ export const RegisterPage = () => {
         password: formData.password,
         address: formData.address,
         villageName: formData.villageName,
+        consent_timestamp: new Date().toISOString()
       });
 
       toastService.success(t('register.successToast') || 'Account created successfully!');
@@ -316,6 +319,46 @@ export const RegisterPage = () => {
                   value={formData.address}
                   onChange={handleChange}
                 />
+              </div>
+
+              {/* Consent Checkboxes */}
+              <div className="space-y-2.5 my-4 text-xs font-bold text-text-light select-none">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreedTerms}
+                    onChange={(e) => setAgreedTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-border-light text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-primary"
+                  />
+                  <span>
+                    {t('compliance.agreeTerms')}{' '}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/terms')}
+                      className="underline text-text-dark hover:opacity-80 transition-opacity"
+                    >
+                      {t('compliance.termsAndConditions')}
+                    </button>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreedPrivacy}
+                    onChange={(e) => setAgreedPrivacy(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-border-light text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-primary"
+                  />
+                  <span>
+                    {t('compliance.agreePrivacy')}{' '}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/privacy-policy')}
+                      className="underline text-text-dark hover:opacity-80 transition-opacity"
+                    >
+                      {t('compliance.privacyPolicy')}
+                    </button>
+                  </span>
+                </label>
               </div>
 
               <Button

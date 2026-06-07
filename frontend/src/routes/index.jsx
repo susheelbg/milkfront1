@@ -14,6 +14,9 @@ import {
   ProfilePage,
   AdminDashboard,
   NandiniAIPage,
+  PrivacyPolicy,
+  TermsAndConditions,
+  Support,
 } from '../pages';
 import { authApi } from '../services/api/authApi';
 
@@ -47,6 +50,18 @@ export const routes = [
   {
     path: '/forgot-password',
     element: <ForgotPassword />,
+  },
+  {
+    path: '/privacy-policy',
+    element: <PrivacyPolicy />,
+  },
+  {
+    path: '/terms',
+    element: <TermsAndConditions />,
+  },
+  {
+    path: '/support',
+    element: <Support />,
   },
   {
     path: '/home',

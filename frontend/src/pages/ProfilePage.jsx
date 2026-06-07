@@ -4,7 +4,7 @@ import { Header, Button, Input, Card } from '../components';
 import { authApi } from '../services/api/authApi';
 import { orderApi } from '../services/api/orderApi';
 import { toastService } from '../services/toastService';
-import { User, Phone, MapPin, Edit3, Save, LogOut, ArrowLeft, ShoppingBag, Clock, CheckCircle2, IndianRupee, Tag, Globe } from 'lucide-react';
+import { User, Phone, MapPin, Edit3, Save, LogOut, ArrowLeft, ShoppingBag, Clock, CheckCircle2, IndianRupee, Tag, Globe, ShieldAlert, HelpCircle, Trash2 } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const ProfilePage = () => {
@@ -20,6 +20,9 @@ export const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const currentUser = authApi.getCurrentUser();
@@ -84,6 +87,26 @@ export const ProfilePage = () => {
     authApi.logout();
     toastService.success('Logged out successfully.');
     navigate('/login');
+  };
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    if (!deletePassword) {
+      toastService.error('Password is required to confirm deletion');
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await authApi.deleteAccount(deletePassword);
+      toastService.success(t('compliance.successTitle') || 'Your account has been deleted.');
+      authApi.logout();
+      navigate('/login');
+    } catch (err) {
+      toastService.error(err.message || 'Incorrect password verification.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (!user) return null;
@@ -253,6 +276,17 @@ export const ProfilePage = () => {
                     <LogOut size={18} />
                     {t('common.logout')}
                   </button>
+
+                  <div className="border-t border-border-light pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all font-bold text-xs"
+                    >
+                      <Trash2 size={15} />
+                      {t('compliance.deleteAccount')}
+                    </button>
+                  </div>
                 </div>
               </form>
             </Card>
@@ -362,6 +396,60 @@ export const ProfilePage = () => {
           </div>
         </div>
       </section>
+      {/* Delete Account Modal Dialog */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <Card className="w-full max-w-sm border border-red-100 shadow-2xl animate-scale-up" padding="lg">
+            <form onSubmit={handleDeleteAccount} className="space-y-4">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <ShieldAlert size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-text-dark">
+                  {t('compliance.deleteAccount')}
+                </h3>
+                <p className="text-xs text-text-light mt-1.5 leading-relaxed">
+                  {t('compliance.deleteConfirmation')}
+                </p>
+              </div>
+
+              <Input
+                label={t('compliance.enterPassword')}
+                type="password"
+                placeholder={t('login.passwordPlaceholder')}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                required
+              />
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  className="flex-1 bg-red-500 hover:bg-red-600 border-red-500 text-white font-bold text-xs"
+                  disabled={deleting}
+                >
+                  {deleting ? t('profile.updating') : t('compliance.confirmDelete')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  className="flex-1 font-bold text-xs"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletePassword('');
+                  }}
+                  disabled={deleting}
+                >
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

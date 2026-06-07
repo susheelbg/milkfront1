@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
@@ -10,6 +11,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=6)
     address: str = Field(None, description="Optional street address details")
     villageName: str = Field(None, description="Optional village name")
+    consent_timestamp: Optional[str] = Field(None, description="Timestamp when user agreed to T&C / Privacy Policy")
 
 class OtpSendRequest(BaseModel):
     phone: str = Field(..., description="Mobile number to send OTP to")

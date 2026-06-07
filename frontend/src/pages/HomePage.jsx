@@ -148,25 +148,25 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Info Stats Banner */}
-      <section className="max-w-4xl mx-auto px-4 pt-8">
-        <div className="bg-white border border-border-light rounded-xl py-6 px-4">
-          <div className="grid grid-cols-3 gap-4 text-center divide-x divide-border-light">
-            <div>
-              <div className="text-xl md:text-2xl font-black text-text-dark">1000+</div>
-              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">{t('home.activeFarmers')}</p>
-            </div>
-            <div>
-              <div className="text-xl md:text-2xl font-black text-text-dark">500+</div>
-              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">{t('home.transactions')}</p>
-            </div>
-            <div>
-              <div className="text-xl md:text-2xl font-black text-text-dark">24/7</div>
-              <p className="text-[10px] md:text-xs text-text-light font-bold uppercase mt-1">{t('home.support')}</p>
-            </div>
-          </div>
+      {/* Legal Footer Links */}
+      <footer className="max-w-4xl mx-auto px-4 pt-12 pb-6 text-center">
+        <div className="flex flex-wrap justify-center items-center gap-4 text-xs font-extrabold text-text-light border-t border-border-light pt-6 mb-4">
+          <button onClick={() => navigate('/support')} className="hover:text-primary-dark transition-colors">
+            {t('compliance.helpSupport')}
+          </button>
+          <span className="text-border-light">•</span>
+          <button onClick={() => navigate('/privacy-policy')} className="hover:text-primary-dark transition-colors">
+            {t('compliance.privacyPolicy')}
+          </button>
+          <span className="text-border-light">•</span>
+          <button onClick={() => navigate('/terms')} className="hover:text-primary-dark transition-colors">
+            {t('compliance.termsAndConditions')}
+          </button>
         </div>
-      </section>
+        <p className="text-[10px] text-text-light/60 font-bold uppercase tracking-wider">
+          © {new Date().getFullYear()} MilkMaatu. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 };

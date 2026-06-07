@@ -1,9 +1,14 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.security import verify_password
 from app.models.user import User
+from app.models.cattle import Cattle
 from app.schemas.user import UserUpdate, UserResponse
 from app.services.cloudinary_service import upload_image
 from app.utils.response import json_response
@@ -54,4 +59,40 @@ async def update_profile(
         success=True,
         message="Profile details updated successfully",
         data=payload
+    )
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(..., min_length=6)
+
+@router.delete("/delete-account")
+async def delete_account(
+    req: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Permanently disables and anonymizes user profile (Play Store compliant deletion)."""
+    # 1. Verify password
+    if not verify_password(req.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password verification. Unable to delete account."
+        )
+
+    # 2. Delete all active cattle listings for this user
+    await db.execute(delete(Cattle).where(Cattle.user_id == current_user.id))
+
+    # 3. Soft-delete and anonymize user
+    current_user.full_name = "Deleted User"
+    current_user.phone_number = f"deleted_{current_user.id}_{datetime.now().timestamp()}"
+    current_user.address = ""
+    current_user.village = ""
+    current_user.profile_image = ""
+    current_user.account_status = "deleted"
+    current_user.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    await db.commit()
+
+    return json_response(
+        success=True,
+        message="Your account has been deleted successfully."
     )

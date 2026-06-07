@@ -30,6 +30,8 @@ class UserResponse(BaseModel):
     profile_image: Optional[str] = ""
     is_verified: bool
     language: Optional[str] = "kn"
+    account_status: Optional[str] = Field("active", validation_alias=AliasChoices("account_status", "accountStatus"))
+    consent_timestamp: Optional[datetime] = Field(None, validation_alias=AliasChoices("consent_timestamp", "consentTimestamp"))
     createdAt: datetime = Field(..., validation_alias=AliasChoices("createdAt", "created_at"))
 
     class Config:

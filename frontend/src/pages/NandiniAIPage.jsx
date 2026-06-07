@@ -114,7 +114,7 @@ export const NandiniAIPage = () => {
           <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 flex items-start gap-2.5">
             <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={16} />
             <p className="text-[11px] md:text-xs text-amber-800 font-semibold leading-relaxed">
-              {t('nandini.disclaimer')}
+              {t('compliance.aiDisclaimer')}
             </p>
           </div>
 

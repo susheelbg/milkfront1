@@ -5,9 +5,10 @@ import { adminApi } from '../services/api/adminApi';
 import { feedsApi } from '../services/api/feedsApi';
 import { orderApi } from '../services/api/orderApi';
 import { cattleApi } from '../services/api/cattleApi';
+import { reportApi } from '../services/api/reportApi';
 import { toastService } from '../services/toastService';
 import { authApi } from '../services/api/authApi';
-import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers, Eye, EyeOff } from 'lucide-react';
+import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const AdminDashboard = () => {
@@ -22,6 +23,7 @@ export const AdminDashboard = () => {
   const [ordersList, setOrdersList] = useState([]);
   const [feedsList, setFeedsList] = useState([]);
   const [cattleList, setCattleList] = useState([]);
+  const [reportsList, setReportsList] = useState([]);
 
   // Form states (Feed Add/Edit)
   const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
@@ -49,12 +51,13 @@ export const AdminDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, ordersData, feedsDataRes, cattleData] = await Promise.all([
+      const [statsData, usersData, ordersData, feedsDataRes, cattleData, reportsData] = await Promise.all([
         adminApi.getStats(),
         adminApi.getUsers(),
         orderApi.getOrders(),
         feedsApi.getAdminFeeds(),
         cattleApi.getCattleListings(),
+        reportApi.getReports(),
       ]);
 
       setStats(statsData);
@@ -62,10 +65,73 @@ export const AdminDashboard = () => {
       setOrdersList(ordersData);
       setFeedsList(feedsDataRes);
       setCattleList(cattleData);
+      if (reportsData && reportsData.success) {
+        setReportsList(reportsData.data || []);
+      } else {
+        setReportsList(reportsData || []);
+      }
     } catch (err) {
       toastService.error('Failed to load dashboard data.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDismissReport = async (reportId) => {
+    try {
+      const res = await reportApi.dismissReport(reportId);
+      if (res && res.success) {
+        toastService.success('Report dismissed successfully.');
+        loadData();
+      } else {
+        toastService.error(res?.message || 'Failed to dismiss report.');
+      }
+    } catch (e) {
+      toastService.error('Failed to dismiss report.');
+    }
+  };
+
+  const handleActionReport = async (reportId) => {
+    if (!window.confirm('Are you sure you want to remove this listing?')) return;
+    try {
+      const res = await reportApi.actionReport(reportId);
+      if (res && res.success) {
+        toastService.success('Report actioned and listing removed.');
+        loadData();
+      } else {
+        toastService.error(res?.message || 'Failed to action report.');
+      }
+    } catch (e) {
+      toastService.error('Failed to action report.');
+    }
+  };
+
+  const handleSuspendUser = async (phone) => {
+    if (!window.confirm(`Are you sure you want to suspend user ${phone}? This will delete all their listings.`)) return;
+    try {
+      const res = await reportApi.suspendUser(phone);
+      if (res && res.success) {
+        toastService.success('User account suspended.');
+        loadData();
+      } else {
+        toastService.error(res?.message || 'Failed to suspend user.');
+      }
+    } catch (e) {
+      toastService.error('Failed to suspend user.');
+    }
+  };
+
+  const handleUnsuspendUser = async (phone) => {
+    try {
+      const res = await reportApi.unsuspendUser(phone);
+      if (res && res.success) {
+        toastService.success('User account restored.');
+        loadData();
+      } else {
+        toastService.error(res?.message || 'Failed to restore user.');
+      }
+    } catch (e) {
+      toastService.error('Failed to restore user.');
     }
   };
 
@@ -182,6 +248,7 @@ export const AdminDashboard = () => {
     { id: 'orders', label: t('admin.orders'), icon: ClipboardList },
     { id: 'users', label: t('admin.users'), icon: Users },
     { id: 'cattle', label: t('admin.cattle'), icon: Users },
+    { id: 'moderation', label: t('compliance.adminModeration'), icon: ShieldAlert },
   ];
 
   return (
@@ -441,8 +508,10 @@ export const AdminDashboard = () => {
                               <th className="p-4">Full name</th>
                               <th className="p-4">Phone number</th>
                               <th className="p-4">Role</th>
+                              <th className="p-4">Status</th>
                               <th className="p-4">Village</th>
                               <th className="p-4">Registered Date</th>
+                              <th className="p-4 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border-light">
@@ -452,13 +521,38 @@ export const AdminDashboard = () => {
                                 <td className="p-4 text-xs font-bold">{usr.phone}</td>
                                 <td className="p-4">
                                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                                    usr.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                                    usr.role === 'admin' 
+                                      ? 'bg-purple-100 text-purple-700' 
+                                      : (usr.accountStatus || usr.account_status) === 'suspended'
+                                      ? 'bg-red-100 text-red-700 border border-red-200'
+                                      : (usr.accountStatus || usr.account_status) === 'deleted'
+                                      ? 'bg-gray-100 text-gray-400 line-through'
+                                      : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                   }`}>
-                                    {usr.role}
+                                    {usr.role === 'admin' ? usr.role : (usr.accountStatus || usr.account_status || 'active')}
                                   </span>
                                 </td>
                                 <td className="p-4 text-xs">{usr.villageName || '-'}</td>
                                 <td className="p-4 text-xs text-text-light">{new Date(usr.createdAt).toLocaleDateString()}</td>
+                                <td className="p-4 text-right">
+                                  {usr.role !== 'admin' && (usr.accountStatus || usr.account_status) !== 'deleted' && (
+                                    (usr.accountStatus || usr.account_status) === 'suspended' ? (
+                                      <button
+                                        onClick={() => handleUnsuspendUser(usr.phone)}
+                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 transition-colors"
+                                      >
+                                        {t('compliance.unsuspend')}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleSuspendUser(usr.phone)}
+                                        className="text-xs font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2.5 py-1 rounded border border-red-200 transition-colors"
+                                      >
+                                        {t('compliance.suspend')}
+                                      </button>
+                                    )
+                                  )}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -509,6 +603,92 @@ export const AdminDashboard = () => {
                                     >
                                       <Trash2 size={16} />
                                     </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. MODERATION TAB */}
+                {activeTab === 'moderation' && (
+                  <div className="space-y-4 animate-slide-up">
+                    <h3 className="text-lg font-bold text-text-dark px-1">{t('compliance.adminModeration')} ({reportsList.length})</h3>
+
+                    <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
+                      {reportsList.length === 0 ? (
+                        <p className="text-center text-text-light text-sm py-12">{t('compliance.noReports')}</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm border-collapse text-text-dark">
+                            <thead>
+                              <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
+                                <th className="p-4">Reported Listing</th>
+                                <th className="p-4">Reporter</th>
+                                <th className="p-4">Reason</th>
+                                <th className="p-4">Status</th>
+                                <th className="p-4 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border-light">
+                              {reportsList.map((report) => (
+                                <tr key={report.id} className="hover:bg-bg-light/40 transition-colors">
+                                  <td className="p-4 align-top">
+                                    <p className="font-bold text-sm">{report.cattleName}</p>
+                                    <p className="text-xs text-text-light">Listing ID: {report.cattleId}</p>
+                                    {report.sellerPhone && report.sellerPhone !== 'N/A' && (
+                                      <p className="text-xs font-semibold mt-1">Seller: {report.sellerPhone}</p>
+                                    )}
+                                  </td>
+                                  <td className="p-4 align-top">
+                                    <p className="font-semibold text-xs">{report.reporterName}</p>
+                                    <p className="text-xs text-text-light">{report.reporterPhone}</p>
+                                  </td>
+                                  <td className="p-4 align-top text-xs font-semibold max-w-[200px] break-words">
+                                    {t(`compliance.${report.reason}`) || report.reason}
+                                  </td>
+                                  <td className="p-4 align-top">
+                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                      report.status === 'pending'
+                                        ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                                        : report.status === 'dismissed'
+                                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                        : 'bg-red-100 text-red-700 border border-red-200'
+                                    }`}>
+                                      {report.status}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 align-top text-right">
+                                    {report.status === 'pending' ? (
+                                      <div className="flex justify-end gap-2">
+                                        <button
+                                          onClick={() => handleDismissReport(report.id)}
+                                          className="text-xs font-bold text-text-light hover:text-text-dark bg-bg-light hover:bg-border-light border border-border-light px-2.5 py-1.5 rounded-lg transition-all"
+                                        >
+                                          {t('compliance.dismiss')}
+                                        </button>
+                                        <button
+                                          onClick={() => handleActionReport(report.id)}
+                                          className="text-xs font-bold text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 px-2.5 py-1.5 rounded-lg transition-all"
+                                        >
+                                          {t('compliance.takeAction')}
+                                        </button>
+                                        {report.sellerPhone && report.sellerPhone !== 'N/A' && (
+                                          <button
+                                            onClick={() => handleSuspendUser(report.sellerPhone)}
+                                            className="text-xs font-bold text-red-800 hover:text-white hover:bg-red-800 border border-red-800/20 hover:border-red-800 px-2.5 py-1.5 rounded-lg transition-all"
+                                          >
+                                            {t('compliance.suspend')}
+                                          </button>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-text-light italic">No action needed</span>
+                                    )}
                                   </td>
                                 </tr>
                               ))}

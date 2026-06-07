@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
-import { Search, Filter, Phone, Calendar, Loader2, Clock } from 'lucide-react';
+import { reportApi } from '../services/api/reportApi';
+import { Search, Filter, Phone, Calendar, Loader2, Clock, ShieldAlert } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -62,6 +63,10 @@ export const SanteBuyPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 150000 });
   const [showFilter, setShowFilter] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingCattleId, setReportingCattleId] = useState(null);
+  const [reportReason, setReportReason] = useState('spam');
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     if (!santeName) {
@@ -104,6 +109,24 @@ export const SanteBuyPage = () => {
 
     return filtered;
   }, [posts, searchQuery, priceRange]);
+
+  const handleReportSubmit = async (e) => {
+    e.preventDefault();
+    if (!reportingCattleId) return;
+
+    setSubmittingReport(true);
+    try {
+      await reportApi.reportListing(reportingCattleId, reportReason);
+      toastService.success(t('compliance.reportSuccess') || 'Listing reported successfully.');
+      setShowReportModal(false);
+      setReportingCattleId(null);
+      setReportReason('spam');
+    } catch (err) {
+      toastService.error(err.message || 'Failed to file report.');
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
 
   if (!santeName) return null;
 
@@ -285,6 +308,18 @@ export const SanteBuyPage = () => {
                     {t('sante.callSeller')} ({post.contactNumber})
                   </Button>
 
+                  {/* Compliance Report Listing Button */}
+                  <button
+                    onClick={() => {
+                      setReportingCattleId(post.id);
+                      setShowReportModal(true);
+                    }}
+                    className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline"
+                  >
+                    <ShieldAlert size={14} />
+                    {t('compliance.reportListing')}
+                  </button>
+
                   {/* Posted Date */}
                   <div className="mt-3 flex items-center justify-center gap-1.5 text-text-light text-[10px] font-bold uppercase">
                     <Calendar size={12} />
@@ -305,6 +340,73 @@ export const SanteBuyPage = () => {
           </p>
         </div>
       </section>
+      {/* Report Listing Modal Dialog */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <Card className="w-full max-w-sm border border-border-light shadow-2xl animate-scale-up" padding="lg">
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <ShieldAlert size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-text-dark">
+                  {t('compliance.reportListing')}
+                </h3>
+                <p className="text-xs text-text-light mt-1">
+                  {t('compliance.selectReason')}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { value: 'spam', label: t('compliance.spam') || 'Spam' },
+                  { value: 'fake', label: t('compliance.fake') || 'Fake Listing' },
+                  { value: 'offensive', label: t('compliance.offensive') || 'Offensive' },
+                  { value: 'fraud', label: t('compliance.fraud') || 'Fraud / Scam' }
+                ].map((reason) => (
+                  <label key={reason.value} className="flex items-center gap-2.5 p-3 rounded-lg border border-border-light hover:bg-bg-light cursor-pointer select-none text-xs font-bold text-text-dark">
+                    <input
+                      type="radio"
+                      name="reportReason"
+                      value={reason.value}
+                      checked={reportReason === reason.value}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-primary"
+                    />
+                    <span>{reason.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  className="flex-1 bg-red-500 hover:bg-red-600 border-red-500 text-white font-bold text-xs"
+                  disabled={submittingReport}
+                >
+                  {submittingReport ? t('common.loading') : t('compliance.reportBtn')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  className="flex-1 font-bold text-xs"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportingCattleId(null);
+                    setReportReason('spam');
+                  }}
+                  disabled={submittingReport}
+                >
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

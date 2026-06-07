@@ -16,7 +16,11 @@ class User(Base):
     profile_image = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False)
     language = Column(String, default="kn")
+    account_status = Column(String, default="active") # active, suspended, deleted
+    consent_timestamp = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")

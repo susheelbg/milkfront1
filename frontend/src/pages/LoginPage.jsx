@@ -160,8 +160,23 @@ export const LoginPage = () => {
         </Card>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-text-light text-xs font-semibold">
+        <div className="mt-8 text-center text-text-light text-xs font-semibold flex flex-col gap-2">
           <p>{t('login.secureLogin') || 'Secure login with OTP verified phone numbers'}</p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => navigate('/privacy-policy')}
+              className="underline hover:text-text-dark transition-colors"
+            >
+              {t('compliance.privacyPolicy')}
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => navigate('/terms')}
+              className="underline hover:text-text-dark transition-colors"
+            >
+              {t('compliance.termsAndConditions')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

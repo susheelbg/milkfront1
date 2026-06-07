@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -47,7 +47,8 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         address=req.address or "",
         village=req.villageName or "",
         role="user" if req.phone != "+917795056391" else "admin", # Susheel is Admin
-        is_verified=True
+        is_verified=True,
+        consent_timestamp=datetime.fromisoformat(req.consent_timestamp) if req.consent_timestamp else datetime.now(timezone.utc).replace(tzinfo=None)
     )
     
     db.add(new_user)
@@ -110,6 +111,18 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid phone number or password. Check demo credentials."
+        )
+        
+    if user.account_status == "suspended":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been suspended by administration."
+        )
+        
+    if user.account_status == "deleted" or user.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This account has been deleted."
         )
         
     # Create JWT access token

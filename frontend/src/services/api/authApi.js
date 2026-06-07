@@ -65,6 +65,13 @@ export const authApi = {
     return await apiClient.post('/auth/forgot-password/reset', { phone, password });
   },
 
+  // Account Deletion: play store compliance
+  deleteAccount: async (password) => {
+    return await apiClient.delete('/profile/delete-account', {
+      body: JSON.stringify({ password })
+    });
+  },
+
   isAuthenticated: () => {
     return !!localStorage.getItem('authToken');
   },
