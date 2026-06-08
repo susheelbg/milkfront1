@@ -12,6 +12,7 @@ import {
   SanteBuyPage,
   SanteSellPage,
   ProfilePage,
+  OrdersPage,
   AdminDashboard,
   NandiniAIPage,
   PrivacyPolicy,
@@ -108,6 +109,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <OrderSummaryPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/orders',
+    element: (
+      <ProtectedRoute>
+        <OrdersPage />
       </ProtectedRoute>
     ),
   },

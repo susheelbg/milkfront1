@@ -8,6 +8,7 @@ export { SanteBuyPage } from './SanteBuyPage';
 export { SanteSellPage } from './SanteSellPage';
 export { RegisterPage } from './RegisterPage';
 export { ProfilePage } from './ProfilePage';
+export { OrdersPage } from './OrdersPage';
 export { AdminDashboard } from './AdminDashboard';
 export { NandiniAIPage } from './NandiniAIPage';
 export { ForgotPassword } from './auth/ForgotPassword';

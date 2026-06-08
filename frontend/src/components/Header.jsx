@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Menu, X, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { authApi } from '../services/api/authApi';
 import { Logo } from './Logo';
 import { useTranslation } from '../i18n/useTranslation';
@@ -8,17 +8,11 @@ import { useTranslation } from '../i18n/useTranslation';
 export const Header = ({ showBack = false, onBack = null }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     setCurrentUser(authApi.getCurrentUser());
   }, []);
-
-  const handleLogout = () => {
-    authApi.logout();
-    navigate('/login');
-  };
 
   const initial = currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : null;
 
@@ -51,22 +45,13 @@ export const Header = ({ showBack = false, onBack = null }) => {
         {/* Right side actions */}
         <div className="flex items-center gap-3">
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6 mr-3">
-            <button onClick={() => navigate('/home')} className="text-text-dark hover:opacity-75 font-semibold transition-opacity">
-              {t('common.home')}
-            </button>
-            <button onClick={() => navigate('/feeds')} className="text-text-dark hover:opacity-75 font-semibold transition-opacity">
-              {t('home.buyFeeds')}
-            </button>
-            <button onClick={() => navigate('/sante')} className="text-text-dark hover:opacity-75 font-semibold transition-opacity">
-              {t('home.sante')}
-            </button>
-            {currentUser?.role === 'admin' && (
+          {currentUser?.role === 'admin' && (
+            <nav className="hidden md:flex items-center gap-6 mr-3">
               <button onClick={() => navigate('/admin')} className="text-text-dark hover:opacity-75 font-semibold transition-opacity">
                 {t('common.admin')}
               </button>
-            )}
-          </nav>
+            </nav>
+          )}
 
           {/* Profile Circle Avatar (both desktop & mobile) */}
           {currentUser && (
@@ -78,48 +63,8 @@ export const Header = ({ showBack = false, onBack = null }) => {
               {initial ? initial : <User size={16} />}
             </button>
           )}
-
-          {/* Hamburger (Mobile) */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-text-dark p-1 bg-white/30 rounded-lg hover:bg-white/55 transition-colors"
-          >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="md:hidden bg-primary-light border-t border-primary-dark shadow-inner animate-slide-up">
-          <nav className="flex flex-col p-4 gap-2">
-            <button onClick={() => { navigate('/home'); setMenuOpen(false); }} className="text-text-dark hover:bg-primary/20 px-3 py-2 rounded-lg font-semibold text-left transition-colors">
-              {t('common.home')}
-            </button>
-            <button onClick={() => { navigate('/feeds'); setMenuOpen(false); }} className="text-text-dark hover:bg-primary/20 px-3 py-2 rounded-lg font-semibold text-left transition-colors">
-              {t('home.buyFeeds')}
-            </button>
-            <button onClick={() => { navigate('/sante'); setMenuOpen(false); }} className="text-text-dark hover:bg-primary/20 px-3 py-2 rounded-lg font-semibold text-left transition-colors">
-              {t('home.sante')}
-            </button>
-            <button onClick={() => { navigate('/profile'); setMenuOpen(false); }} className="text-text-dark hover:bg-primary/20 px-3 py-2 rounded-lg font-semibold text-left transition-colors">
-              {t('common.profile')}
-            </button>
-            {currentUser?.role === 'admin' && (
-              <button onClick={() => { navigate('/admin'); setMenuOpen(false); }} className="text-text-dark hover:bg-primary/20 px-3 py-2 rounded-lg font-semibold text-left transition-colors">
-                {t('admin.dashboard')}
-              </button>
-            )}
-            <button
-              onClick={() => { handleLogout(); setMenuOpen(false); }}
-              className="bg-red-500 text-white px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 justify-center font-bold text-sm mt-2"
-            >
-              <LogOut size={16} />
-              {t('common.logout')}
-            </button>
-          </nav>
-        </div>
-      )}
     </header>
   );
 };

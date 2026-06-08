@@ -182,7 +182,7 @@ export const BuyFeedsPage = () => {
 
       {/* Sticky Bottom Cart Footer */}
       {getTotalItems() > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-primary-dark/30 shadow-2xl z-40 animate-slide-up">
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+60px)] md:bottom-[76px] left-0 right-0 bg-white/95 backdrop-blur-md border-t border-primary-dark/30 shadow-2xl z-40 animate-slide-up md:max-w-2xl md:mx-auto md:rounded-xl md:border md:shadow-lg transition-all duration-300">
           <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary-light rounded-xl border border-primary-dark/35 flex items-center justify-center relative">

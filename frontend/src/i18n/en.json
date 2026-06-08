@@ -22,7 +22,8 @@
     "admin": "Admin",
     "active": "Active",
     "status": "Status",
-    "tagline": "For every dairy farmer, every day!"
+    "tagline": "For every dairy farmer, every day!",
+    "myOrders": "My Orders"
   },
   "home": {
     "quickServices": "Quick Services",
