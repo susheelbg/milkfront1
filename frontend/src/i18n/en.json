@@ -56,7 +56,10 @@
     "noAccount": "Don't have an account?",
     "signupLink": "Sign up",
     "demoCredentials": "Demo Credentials",
-    "forgotPasswordLink": "Forgot Password?"
+    "forgotPasswordLink": "Forgot Password?",
+    "showPassword": "Show Password",
+    "secureLogin": "Secure login with OTP verified phone numbers",
+    "welcomeToast": "Welcome back, {name}!"
   },
   "forgotPassword": {
     "title": "Forgot Password",
@@ -65,7 +68,7 @@
     "phonePlaceholder": "Enter 10-digit phone number",
     "sendOtpButton": "Send OTP",
     "otpTitle": "OTP Verification",
-    "otpSubtitle": "Enter the 4-digit code sent to {phone}",
+    "otpSubtitle": "Enter the 6-digit code sent to {phone}",
     "otpPlaceholder": "Enter OTP",
     "verifyOtpButton": "Verify OTP",
     "resendOtpButton": "Resend OTP",
@@ -90,14 +93,18 @@
     "addressPlaceholder": "House number, street etc",
     "villageName": "Village Name",
     "villagePlaceholder": "Enter village name",
-    "otpVerifyTitle": "WhatsApp OTP Verification",
-    "otpVerifySubtitle": "Enter the 4-digit OTP code sent to your mobile number",
-    "otpPlaceholder": "Enter OTP code (1234)",
+    "otpVerifyTitle": "SMS OTP Verification",
+    "otpVerifySubtitle": "Enter the 6-digit OTP code sent to your mobile number",
+    "otpPlaceholder": "Enter OTP code",
     "verifyButton": "Verify OTP",
     "resendOtp": "Resend OTP",
     "registerButton": "Complete Registration",
     "alreadyHaveAccount": "Already have an account?",
-    "loginLink": "Login"
+    "loginLink": "Login",
+    "sendOtpButton": "Send OTP",
+    "changePhone": "Change phone number",
+    "stepSendOtpTitle": "Confirm Mobile Number",
+    "stepSendOtpSubtitle": "We will send a 6-digit SMS OTP to verify: {phone}"
   },
   "feeds": {
     "title": "Buy Cow Feeds",

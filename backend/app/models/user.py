@@ -15,6 +15,7 @@ class User(Base):
     village = Column(String, nullable=True)
     profile_image = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False)
+    phone_verified = Column(Boolean, default=False)
     language = Column(String, default="kn")
     account_status = Column(String, default="active") # active, suspended, deleted
     consent_timestamp = Column(DateTime, nullable=True)

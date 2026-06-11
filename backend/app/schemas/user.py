@@ -29,6 +29,7 @@ class UserResponse(BaseModel):
     villageName: Optional[str] = Field("", validation_alias=AliasChoices("villageName", "village"))
     profile_image: Optional[str] = ""
     is_verified: bool
+    phone_verified: bool
     language: Optional[str] = "kn"
     account_status: Optional[str] = Field("active", validation_alias=AliasChoices("account_status", "accountStatus"))
     consent_timestamp: Optional[datetime] = Field(None, validation_alias=AliasChoices("consent_timestamp", "consentTimestamp"))

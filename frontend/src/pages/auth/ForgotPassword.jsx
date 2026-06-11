@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Input, Card, Logo } from '../../components';
 import { authApi } from '../../services/api/authApi';
 import { toastService } from '../../services/toastService';
-import { Check, ShieldCheck, KeyRound, ArrowRight, Smartphone, Lock } from 'lucide-react';
+import { Check, ShieldCheck, KeyRound, ArrowRight, Smartphone, Lock, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '../../i18n/useTranslation';
 
 export const ForgotPassword = () => {
@@ -21,6 +21,10 @@ export const ForgotPassword = () => {
   const [errors, setErrors] = useState({});
   const [countdown, setCountdown] = useState(0);
 
+  // Password visibility toggles
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Countdown for resending OTP
   useEffect(() => {
     let timer;
@@ -36,6 +40,10 @@ export const ForgotPassword = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear validation error when editing field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
+    }
   };
 
   const getCleanedPhone = () => {
@@ -59,10 +67,11 @@ export const ForgotPassword = () => {
   // Step 2 Validation: OTP
   const validateStep2 = () => {
     const errs = {};
+    const digits = formData.otp.replace(/[^0-9]/g, '');
     if (!formData.otp.trim()) {
       errs.otp = t('register.otpRequired') || 'OTP is required';
-    } else if (formData.otp.length !== 4) {
-      errs.otp = t('register.otpDigits') || 'OTP must be 4 digits';
+    } else if (digits.length < 4 || digits.length > 10) {
+      errs.otp = 'OTP must be between 4 and 10 digits';
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -93,7 +102,7 @@ export const ForgotPassword = () => {
     try {
       const formattedPhone = getCleanedPhone();
       await authApi.requestForgotPasswordOtp(formattedPhone);
-      toastService.success(t('register.otpSentToast') || 'Mock OTP sent to WhatsApp! Use code 1234');
+      toastService.success(t('register.otpSentToast') || 'SMS OTP sent successfully!');
       setStep(2);
       setCountdown(30); // 30 seconds cooldown
     } catch (err) {
@@ -110,7 +119,7 @@ export const ForgotPassword = () => {
     try {
       const formattedPhone = getCleanedPhone();
       await authApi.requestForgotPasswordOtp(formattedPhone);
-      toastService.success(t('register.otpSentToast') || 'Mock OTP resent to WhatsApp! Use code 1234');
+      toastService.success(t('register.otpSentToast') || 'SMS OTP sent successfully!');
       setCountdown(30);
     } catch (err) {
       toastService.error(err.message || 'Failed to resend OTP.');
@@ -131,7 +140,7 @@ export const ForgotPassword = () => {
       toastService.success(t('register.otpVerifiedToast') || 'OTP verified successfully!');
       setStep(3);
     } catch (err) {
-      toastService.error(err.message || 'Invalid OTP code.');
+      toastService.error(err.message || 'Invalid or expired OTP code.');
     } finally {
       setLoading(false);
     }
@@ -188,6 +197,7 @@ export const ForgotPassword = () => {
                 error={errors.phone}
                 required
                 type="tel"
+                disabled={loading}
                 icon={<Smartphone size={18} />}
               />
 
@@ -207,6 +217,7 @@ export const ForgotPassword = () => {
                   type="button"
                   onClick={() => navigate('/login')}
                   className="text-sm font-bold text-text-light hover:text-text-dark underline transition-colors"
+                  disabled={loading}
                 >
                   {t('common.back') || 'Back'}
                 </button>
@@ -219,22 +230,24 @@ export const ForgotPassword = () => {
               <h3 className="text-2xl font-bold text-text-dark mb-2 text-center">
                 {t('forgotPassword.otpTitle')}
               </h3>
-              <p className="text-sm text-text-light text-center mb-6">
+              <p className="text-sm text-text-light text-center mb-6 leading-relaxed px-2">
                 {t('forgotPassword.otpSubtitle').replace('{phone}', getCleanedPhone())}
               </p>
 
               <Input
-                label="OTP"
-                placeholder="1234"
+                label="SMS OTP"
+                placeholder={t('register.otpPlaceholder') || "Enter OTP code"}
                 name="otp"
                 value={formData.otp}
                 onChange={handleChange}
                 error={errors.otp}
                 required
-                maxLength={4}
+                maxLength={10}
                 type="text"
                 pattern="[0-9]*"
                 inputMode="numeric"
+                disabled={loading}
+                className="text-center text-2xl tracking-widest font-mono font-bold"
                 icon={<ShieldCheck size={18} />}
               />
 
@@ -253,6 +266,7 @@ export const ForgotPassword = () => {
                   type="button"
                   onClick={() => setStep(1)}
                   className="text-text-light hover:text-text-dark underline transition-colors"
+                  disabled={loading}
                 >
                   {t('common.back')}
                 </button>
@@ -281,29 +295,51 @@ export const ForgotPassword = () => {
                 {t('forgotPassword.newPasswordSubtitle')}
               </p>
 
-              <Input
-                label={t('common.password')}
-                type="password"
-                placeholder={t('forgotPassword.newPasswordPlaceholder')}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                error={errors.password}
-                required
-                icon={<Lock size={18} />}
-              />
+              <div className="relative">
+                <Input
+                  label={t('common.password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={t('forgotPassword.newPasswordPlaceholder')}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  error={errors.password}
+                  required
+                  disabled={loading}
+                  icon={<Lock size={18} />}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[38px] text-text-light hover:text-text-dark transition-colors"
+                  disabled={loading}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
 
-              <Input
-                label={t('register.confirmPassword') || 'Confirm Password'}
-                type="password"
-                placeholder={t('forgotPassword.confirmPasswordPlaceholder')}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={errors.confirmPassword}
-                required
-                icon={<KeyRound size={18} />}
-              />
+              <div className="relative">
+                <Input
+                  label={t('register.confirmPassword') || 'Confirm Password'}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder={t('forgotPassword.confirmPasswordPlaceholder')}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  error={errors.confirmPassword}
+                  required
+                  disabled={loading}
+                  icon={<KeyRound size={18} />}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-[38px] text-text-light hover:text-text-dark transition-colors"
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
 
               <Button
                 type="submit"

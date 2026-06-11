@@ -75,12 +75,30 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (errorData.detail) {
+          if (typeof errorData.detail === 'string') {
+            errorMessage = errorData.detail;
+          } else if (Array.isArray(errorData.detail)) {
+            // FastAPI validation errors are a list of dicts, format them nicely
+            errorMessage = errorData.detail.map(err => {
+              const location = err.loc ? err.loc.join('.') : 'field';
+              return `${location}: ${err.msg}`;
+            }).join(', ');
+          } else if (typeof errorData.detail === 'object') {
+            errorMessage = JSON.stringify(errorData.detail);
+          }
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
-      console.warn(`API call to ${url} failed. falling back to mock...`, error);
+      console.warn(`API call to ${url} failed.`, error);
       throw error; // Let the caller API handle fallback
     }
   },

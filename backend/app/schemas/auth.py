@@ -18,7 +18,7 @@ class OtpSendRequest(BaseModel):
 
 class OtpVerifyRequest(BaseModel):
     phone: str = Field(..., description="Mobile number being verified")
-    otp: str = Field(..., min_length=4, max_length=4, description="WhatsApp OTP code (e.g. 1234)")
+    otp: str = Field(..., min_length=4, max_length=10, description="SMS OTP code (e.g. 123456)")
 
 class TokenResponse(BaseModel):
     access_token: str

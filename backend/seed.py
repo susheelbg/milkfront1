@@ -36,7 +36,8 @@ async def seed_database():
                 role="admin",
                 address="Dairy Farm Road, Bengaluru",
                 village="Gokula",
-                is_verified=True
+                is_verified=True,
+                phone_verified=True
             )
             db.add(admin)
             await db.commit()

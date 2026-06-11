@@ -27,8 +27,10 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
-    # Mock OTP Config
-    MOCK_OTP: str = "1234"
+    # Twilio Verify SMS Config
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_VERIFY_SERVICE_SID: str = ""
 
     # Gemini API settings
     GEMINI_API_KEY: str = ""

@@ -22,7 +22,7 @@
     "admin": "ಅಡ್ಮಿನ್",
     "active": "ಸಕ್ರಿಯ",
     "status": "ಸ್ಥಿತಿ",
-    "tagline": "ಪ್ರತಿ ಹೈನುಗಾರರಿಗೆ, ಪ್ರತಿದಿನ!",
+    "tagline": "For every dairy farmer, every day!",
     "myOrders": "ನನ್ನ ಆರ್ಡರ್‌ಗಳು"
   },
   "home": {
@@ -56,7 +56,10 @@
     "noAccount": "ಖಾತೆ ಇಲ್ಲವೇ?",
     "signupLink": "ನೋಂದಣಿ ಮಾಡಿ",
     "demoCredentials": "ಡೆಮೊ ರುಜುವಾತುಗಳು",
-    "forgotPasswordLink": "ಪಾಸ್ವರ್ಡ್ ಮರೆತಿರಾ?"
+    "forgotPasswordLink": "ಪಾಸ್ವರ್ಡ್ ಮರೆತಿರಾ?",
+    "showPassword": "ಪಾಸ್‌ವರ್ಡ್ ತೋರಿಸಿ",
+    "secureLogin": "OTP ಪರಿಶೀಲಿಸಿದ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯೊಂದಿಗೆ ಸುರಕ್ಷಿತ ಲಾಗ್ ಇನ್",
+    "welcomeToast": "ಸ್ವಾಗತ, {name}!"
   },
   "forgotPassword": {
     "title": "ಪಾಸ್ವರ್ಡ್ ಮರೆತಿರಾ",
@@ -65,7 +68,7 @@
     "phonePlaceholder": "10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ",
     "sendOtpButton": "OTP ಕಳುಹಿಸಿ",
     "otpTitle": "OTP ಪರಿಶೀಲನೆ",
-    "otpSubtitle": "{phone} ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲಾದ 4-ಅಂಕಿಯ ಕೋಡ್ ನಮೂದಿಸಿ",
+    "otpSubtitle": "{phone} ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲಾದ 6-ಅಂಕಿಯ ಕೋಡ್ ನಮೂದಿಸಿ",
     "otpPlaceholder": "OTP ನಮೂದಿಸಿ",
     "verifyOtpButton": "OTP ಪರಿಶೀಲಿಸಿ",
     "resendOtpButton": "ಮತ್ತೆ OTP ಕಳುಹಿಸಿ",
@@ -90,14 +93,18 @@
     "addressPlaceholder": "ಮನೆ ಸಂಖ್ಯೆ, ಬೀದಿ ಇತ್ಯಾದಿ",
     "villageName": "ಗ್ರಾಮದ ಹೆಸರು",
     "villagePlaceholder": "ಗ್ರಾಮದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ",
-    "otpVerifyTitle": "WhatsApp OTP ಪರಿಶೀಲನೆ",
-    "otpVerifySubtitle": "ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲಾದ 4-ಅಂಕಿಯ OTP ಕೋಡ್ ಅನ್ನು ನಮೂದಿಸಿ",
-    "otpPlaceholder": "OTP ಕೋಡ್ ನಮೂದಿಸಿ (1234)",
+    "otpVerifyTitle": "SMS OTP ಪರಿಶೀಲನೆ",
+    "otpVerifySubtitle": "ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲಾದ 6-ಅಂಕಿಯ OTP ಕೋಡ್ ಅನ್ನು ನಮೂದಿಸಿ",
+    "otpPlaceholder": "OTP ಕೋಡ್ ನಮೂದಿಸಿ",
     "verifyButton": "OTP ಪರಿಶೀಲಿಸಿ",
     "resendOtp": "ಮತ್ತೆ OTP ಕಳುಹಿಸಿ",
     "registerButton": "ನೋಂದಣಿ ಪೂರ್ಣಗೊಳಿಸಿ",
     "alreadyHaveAccount": "ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?",
-    "loginLink": "ಲಾಗ್ ಇನ್ ಮಾಡಿ"
+    "loginLink": "ಲಾಗ್ ಇನ್ ಮಾಡಿ",
+    "sendOtpButton": "OTP ಕಳುಹಿಸಿ",
+    "changePhone": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಬದಲಾಯಿಸಿ",
+    "stepSendOtpTitle": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ದೃಢೀಕರಿಸಿ",
+    "stepSendOtpSubtitle": "ಪರಿಶೀಲಿಸಲು ನಾವು ನಿಮ್ಮ ಸಂಖ್ಯೆಗೆ 6-ಅಂಕಿಯ SMS OTP ಅನ್ನು ಕಳುಹಿಸುತ್ತೇವೆ: {phone}"
   },
   "feeds": {
     "title": "ಕೌ ಫೀಡ್ಸ್ ಖರೀದಿ",
