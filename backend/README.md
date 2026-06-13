@@ -39,7 +39,7 @@ backend/
 │   │   ├── order.py           # Order payload creations
 │   │   └── cattle.py          # Marketplace Sante schemas & aliases
 │   ├── routes/
-│   │   ├── auth_routes.py     # Signup, verify WhatsApp OTP, JWT login
+│   │   ├── auth_routes.py     # Signup, verify Twilio SMS OTP, JWT login
 │   │   ├── feed_routes.py     # Catalog search & admin item edits
 │   │   ├── order_routes.py    # Purchases & admin status dropdowns
 │   │   ├── cattle_routes.py   # Sante listings & direct camera uploads
@@ -49,7 +49,7 @@ backend/
 │   ├── services/
 │   │   ├── cloudinary_service.py # Cloudinary base64 media uploads
 │   │   ├── otp/
-│   │   │   └── otp_service.py    # WhatsApp OTP sender & verifier abstraction
+│   │   │   └── otp_service.py    # Twilio Verify SMS OTP abstraction
 │   │   └── ai/
 │   │       └── nandini_ai.py  # Google GenAI model config and dairy farming filters
 │   └── utils/
@@ -133,14 +133,18 @@ The backend verifies the key presence at startup. Nandini AI acts as a dedicated
 
 ---
 
-## 💬 WhatsApp OTP & Forgot Password
-The backend supports secure password resets via WhatsApp OTP verification:
+## 💬 Twilio Verify SMS OTP & Password Resets
+The backend supports secure onboarding and password resets via Twilio Verify SMS:
 * **Endpoints:**
-  * `POST /api/auth/forgot-password/request-otp`: Sends a mock OTP (code `1234`) to the registered phone number.
-  * `POST /api/auth/forgot-password/verify-otp`: Validates the submitted OTP.
+  * `POST /api/auth/send-otp`: Triggers a 6-digit SMS verification code to the farmer's mobile number.
+  * `POST /api/auth/verify-otp`: Securely checks the submitted registration verification code.
+  * `POST /api/auth/forgot-password/request-otp`: Triggers a password reset SMS verification code.
+  * `POST /api/auth/forgot-password/verify-otp`: Validates the reset verification code.
   * `POST /api/auth/forgot-password/reset`: Updates the user's password using standard bcrypt hashing.
-* **Abstraction Service (`otp_service.py`):**
-  * Built as a modular abstraction to allow replacing the mock `1234` code with a live Twilio WhatsApp integration later without refactoring backend routes or schemas.
+* **OTP Integration Service (`otp_service.py`):**
+  * Integrated directly with the Twilio REST API to trigger SMS-channel verifications and approve verification checks using your environment credentials.
+
+> ⚠️ **Twilio Trial Account Gotcha:** Twilio Trial accounts only allow sending SMS messages to **Verified Caller IDs**. If you run into a `TwilioRestException` (HTTP 403 error) during local registration, make sure you have added your testing phone number under **Phone Numbers > Verified Caller IDs** in your Twilio Console.
 
 ---
 

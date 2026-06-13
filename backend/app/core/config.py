@@ -27,10 +27,8 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
-    # Twilio Verify SMS Config
-    TWILIO_ACCOUNT_SID: str = ""
-    TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_VERIFY_SERVICE_SID: str = ""
+    # Admin Access PIN Config
+    ACCESS_PIN: str = "4512"
 
     # Gemini API settings
     GEMINI_API_KEY: str = ""

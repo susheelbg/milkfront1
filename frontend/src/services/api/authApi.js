@@ -61,8 +61,8 @@ export const authApi = {
   },
 
   // Forgot Password: Reset Password
-  resetPassword: async (phone, password) => {
-    return await apiClient.post('/auth/forgot-password/reset', { phone, password });
+  resetPassword: async (phone, password, access_pin) => {
+    return await apiClient.post('/auth/forgot-password/reset', { phone, password, access_pin });
   },
 
   // Account Deletion: play store compliance

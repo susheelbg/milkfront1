@@ -29,13 +29,16 @@ The header remains minimal (profile button only), and the bottom bar is always v
 
 ---
 
-### 3. 🔐 WhatsApp OTP Registration Flow
-A secure, step-by-step onboarding built for farmers:
+### 3. 🔐 Twilio Verify SMS OTP Registration Flow
+A secure, production-ready step-by-step onboarding built for farmers:
 
 1. **Step 1** — Enter name and 10-digit mobile number.
-2. **Step 2** — Verify a mock OTP (default: **`1234`**) simulating a WhatsApp gateway.
-3. **Step 3** — Set a password and add optional delivery address details.
-4. **Step 4** — Account confirmed and auto-redirected to login.
+2. **Step 2** — Confirm details and click **Send SMS OTP** (triggers Twilio Verify SMS).
+3. **Step 3** — Input the 6-digit verification code received on the mobile device (includes a 30s countdown timer and resend support).
+4. **Step 4** — System verifies the OTP code securely via Twilio Verify.
+5. **Step 5** — Set a password, add optional delivery address details, agree to terms, and complete registration.
+
+> 💡 **Developer testing tip:** If you are using a **Twilio Trial Account** to test the OTP flows, Twilio strictly blocks sending SMS OTPs to unverified phone numbers. You must add the phone number you are testing with to **Verified Caller IDs** inside your Twilio Console before triggering the OTP.
 
 ---
 
@@ -256,7 +259,9 @@ pip install -r requirements.txt
 # CLOUDINARY_CLOUD_NAME=your_cloud_name
 # CLOUDINARY_API_KEY=your_cloudinary_key
 # CLOUDINARY_API_SECRET=your_cloudinary_secret
-# MOCK_OTP=1234
+# TWILIO_ACCOUNT_SID=your_twilio_account_sid
+# TWILIO_AUTH_TOKEN=your_twilio_auth_token
+# TWILIO_VERIFY_SERVICE_SID=your_twilio_verify_service_sid
 
 # (Optional) Seed the database with test feed data
 python seed.py
@@ -308,7 +313,9 @@ Required environment variables on the Render Dashboard:
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
-| `MOCK_OTP` | OTP for testing (`1234`) |
+| `TWILIO_ACCOUNT_SID` | Twilio Account SID |
+| `TWILIO_AUTH_TOKEN` | Twilio Authentication Token |
+| `TWILIO_VERIFY_SERVICE_SID` | Twilio Verify Service SID |
 
 The frontend `.env` should point to the production backend:
 ```
@@ -326,7 +333,8 @@ All routes are prefixed with `/api`.
 | `GET` | `/` | — | Health check |
 | `POST` | `/api/auth/register` | — | Register a new user |
 | `POST` | `/api/auth/login` | — | Login and get JWT token |
-| `POST` | `/api/auth/verify-otp` | — | Verify OTP during registration |
+| `POST` | `/api/auth/send-otp` | — | Send SMS OTP using Twilio Verify |
+| `POST` | `/api/auth/verify-otp` | — | Verify OTP using Twilio Verify |
 | `GET` | `/api/feeds` | ✅ | List all feed products |
 | `POST` | `/api/orders` | ✅ | Place a new order |
 | `GET` | `/api/orders/my` | ✅ | Get current user's orders |
@@ -338,6 +346,14 @@ All routes are prefixed with `/api`.
 | `POST` | `/api/ai/nandini` | ✅ | Ask Nandini AI a dairy question |
 | `GET` | `/api/admin/stats` | ✅ Admin | Dashboard overview stats |
 | `GET` | `/api/reports` | ✅ | Get milk production reports |
+
+---
+
+## 🤖 Android Application (Capacitor)
+
+The MilkMaatu React + Vite web application is converted into a native Android app using Capacitor.
+
+For detailed instructions on setting up, versioning, and compiling signed release builds (APK and AAB), please refer to the [Android Build & Signing Instructions](file:///Users/susheel/milkfront1/ANDROID_BUILD.md) guide.
 
 ---
 

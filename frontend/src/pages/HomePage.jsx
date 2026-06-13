@@ -45,7 +45,7 @@ export const HomePage = () => {
       bg: 'bg-sky-100',
       border: 'border-sky-200',
       action: () => {
-        alert(t('home.ocrAlert') || 'OCR Feature is opening camera. Direct scanner integration is preparing...');
+        alert(t('home.ocrAlert') || 'Milk Record feature is preparing...');
       },
     },
     {

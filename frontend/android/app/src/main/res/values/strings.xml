@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MilkMaatu</string>
+    <string name="title_activity_main">MilkMaatu</string>
+    <string name="package_name">com.milkmaatu.app</string>
+    <string name="custom_url_scheme">com.milkmaatu.app</string>
+</resources>

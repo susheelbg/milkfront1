@@ -12,6 +12,7 @@ class RegisterRequest(BaseModel):
     address: str = Field(None, description="Optional street address details")
     villageName: str = Field(None, description="Optional village name")
     consent_timestamp: Optional[str] = Field(None, description="Timestamp when user agreed to T&C / Privacy Policy")
+    access_pin: str = Field(..., description="Access PIN value")
 
 class OtpSendRequest(BaseModel):
     phone: str = Field(..., description="Mobile number to send OTP to")
@@ -27,4 +28,5 @@ class TokenResponse(BaseModel):
 class PasswordResetRequest(BaseModel):
     phone: str = Field(..., description="Verified mobile number")
     password: str = Field(..., min_length=6, description="New password")
+    access_pin: str = Field(..., description="Access PIN value")
 

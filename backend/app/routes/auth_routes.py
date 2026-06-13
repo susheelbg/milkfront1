@@ -7,11 +7,11 @@ from sqlalchemy.future import select
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.dependencies import get_current_user
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, OtpSendRequest, OtpVerifyRequest, TokenResponse, PasswordResetRequest
 from app.schemas.user import UserResponse
 from app.utils.response import json_response
-from app.services.otp import otp_service
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +97,13 @@ def check_otp_rate_limit(phone: str):
 
 @router.post("/register")
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    # Validate Admin Access PIN
+    if req.access_pin != settings.ACCESS_PIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Access PIN. Contact admin."
+        )
+
     # Format and validate Indian number
     normalized_phone = clean_and_format_indian_phone(req.phone)
 
@@ -108,13 +115,6 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Phone number is already registered in our system."
-        )
-        
-    pending = PENDING_REGISTRATIONS.get(normalized_phone)
-    if not pending or not pending.get("verified"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="OTP verification required before completing registration."
         )
         
     # Save the user in Supabase
@@ -134,83 +134,9 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_user)
     
-    # Remove from pending store
-    PENDING_REGISTRATIONS.pop(normalized_phone, None)
-    
     return json_response(
         success=True,
         message="Farmer account created successfully.",
-        data={"phone": normalized_phone}
-    )
-
-@router.post("/send-otp")
-async def send_otp(req: OtpSendRequest):
-    # Format and validate Indian number
-    normalized_phone = clean_and_format_indian_phone(req.phone)
-
-    # Enforce rate limits
-    check_otp_rate_limit(normalized_phone)
-
-    # Send using Twilio Verify SMS service
-    try:
-        success = otp_service.send_otp(normalized_phone)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to send SMS OTP. Please try again."
-            )
-    except Exception as e:
-        logger.error(f"Error sending OTP to {normalized_phone}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Twilio Verify gateway error: {str(e)}"
-        )
-
-    PENDING_REGISTRATIONS[normalized_phone] = {"verified": False}
-    
-    return json_response(
-        success=True,
-        message="SMS verification OTP code sent successfully.",
-        data={"phone": normalized_phone}
-    )
-
-@router.post("/verify-otp")
-async def verify_otp(req: OtpVerifyRequest, db: AsyncSession = Depends(get_db)):
-    # Format and validate Indian number
-    normalized_phone = clean_and_format_indian_phone(req.phone)
-
-    # Verify using Twilio Verify SMS service
-    try:
-        verified = otp_service.verify_otp(normalized_phone, req.otp)
-        if not verified:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid or expired OTP verification code."
-            )
-    except Exception as e:
-        logger.error(f"Error checking OTP for {normalized_phone}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Twilio Verify check error: {str(e)}"
-        )
-        
-    pending = PENDING_REGISTRATIONS.get(normalized_phone)
-    if not pending:
-        # Check if the user is already registered
-        result = await db.execute(select(User).where(User.phone_number == normalized_phone))
-        if result.scalars().first():
-            return json_response(success=True, message="Phone already verified.", data={"phone": normalized_phone})
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration session expired. Please send OTP again."
-        )
-        
-    pending["verified"] = True
-    
-    return json_response(
-        success=True,
-        message="SMS OTP verified successfully.",
         data={"phone": normalized_phone}
     )
 
@@ -292,92 +218,18 @@ async def get_me(current_user: User = Depends(get_current_user)):
         data=user_payload
     )
 
-@router.post("/forgot-password/request-otp")
-async def forgot_password_request_otp(req: OtpSendRequest, db: AsyncSession = Depends(get_db)):
-    # Format and validate Indian number
-    normalized_phone = clean_and_format_indian_phone(req.phone)
-
-    # Verify phone exists in the database
-    result = await db.execute(select(User).where(User.phone_number == normalized_phone))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Phone number is not registered."
-        )
-    
-    # Enforce rate limits
-    check_otp_rate_limit(normalized_phone)
-
-    # Send OTP using Twilio Verify service
-    try:
-        success = otp_service.send_otp(normalized_phone)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to send SMS OTP. Please try again."
-            )
-    except Exception as e:
-        logger.error(f"Error sending forgot password OTP to {normalized_phone}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Twilio Verify gateway error: {str(e)}"
-        )
-
-    PENDING_PASSWORD_RESETS[normalized_phone] = {"verified": False}
-    
-    return json_response(
-        success=True,
-        message="Forgot password OTP sent via SMS.",
-        data={"phone": normalized_phone}
-    )
-
-@router.post("/forgot-password/verify-otp")
-async def forgot_password_verify_otp(req: OtpVerifyRequest):
-    # Format and validate Indian number
-    normalized_phone = clean_and_format_indian_phone(req.phone)
-
-    # Verify using Twilio Verify service
-    try:
-        verified = otp_service.verify_otp(normalized_phone, req.otp)
-        if not verified:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid or expired OTP verification code."
-            )
-    except Exception as e:
-        logger.error(f"Error checking forgot password OTP for {normalized_phone}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Twilio Verify check error: {str(e)}"
-        )
-    
-    # Check if we have a request tracking state
-    pending = PENDING_PASSWORD_RESETS.get(normalized_phone)
-    if not pending:
-        PENDING_PASSWORD_RESETS[normalized_phone] = {}
-        pending = PENDING_PASSWORD_RESETS[normalized_phone]
-        
-    pending["verified"] = True
-    
-    return json_response(
-        success=True,
-        message="SMS OTP verified successfully for password reset.",
-        data={"phone": normalized_phone}
-    )
-
 @router.post("/forgot-password/reset")
 async def forgot_password_reset(req: PasswordResetRequest, db: AsyncSession = Depends(get_db)):
+    # Validate Admin Access PIN
+    if req.access_pin != settings.ACCESS_PIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Access PIN. Contact admin."
+        )
+
     # Format and validate Indian number
     normalized_phone = clean_and_format_indian_phone(req.phone)
 
-    pending = PENDING_PASSWORD_RESETS.get(normalized_phone)
-    if not pending or not pending.get("verified"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="OTP verification is required before resetting password."
-        )
-    
     result = await db.execute(select(User).where(User.phone_number == normalized_phone))
     user = result.scalars().first()
     if not user:
@@ -389,9 +241,6 @@ async def forgot_password_reset(req: PasswordResetRequest, db: AsyncSession = De
     # Update password using hash function
     user.hashed_password = hash_password(req.password)
     await db.commit()
-    
-    # Clean up pending state
-    PENDING_PASSWORD_RESETS.pop(normalized_phone, None)
     
     return json_response(
         success=True,

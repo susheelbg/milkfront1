@@ -26,7 +26,7 @@ frontend/
 │   ├── pages/                 # Full screen page views
 │   │   ├── HomePage.jsx       # Services dashboard
 │   │   ├── LoginPage.jsx       # Safe JWT logins
-│   │   ├── RegisterPage.jsx    # User signups with OTP simulation
+│   │   ├── RegisterPage.jsx    # User signups with Twilio Verify SMS OTP
 │   │   ├── ProfilePage.jsx     # User details & order history
 │   │   ├── BuyFeedsPage.jsx    # Cattle feed shopping list
 │   │   ├── SanteSelectorPage.jsx # Sante main menu
@@ -83,3 +83,11 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 This client is optimized to deploy instantly on **Vercel** with client-side routing support:
 - [vercel.json](file:///Users/susheel/milkfront1/frontend/vercel.json) rewrites all sub-routes to `index.html` to prevent `404: NOT_FOUND` on page refreshes.
 - Ensure the production environment variable `VITE_API_URL` is set in your Vercel project settings, pointing to your active Render backend (e.g., `https://<render-backend-url>/api`).
+
+---
+
+## 🤖 Android Application (Capacitor)
+
+The frontend is converted into a native Android app using Capacitor. 
+
+To set up, configure, and compile signed release APKs and AABs, please see the [Android Build & Signing Instructions](file:///Users/susheel/milkfront1/ANDROID_BUILD.md) at the root of this project.
