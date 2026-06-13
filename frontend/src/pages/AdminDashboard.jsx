@@ -765,16 +765,16 @@ export const AdminDashboard = () => {
               <div>
                 <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.image')}</label>
                 {feedFormData.image ? (
-                  <div className="relative w-full max-w-xs mt-1">
+                  <div className="relative w-full max-w-xs aspect-[4/5] overflow-hidden rounded-lg mt-1 border-2 border-border-light">
                     <img
                       src={feedFormData.image}
                       alt="Preview"
-                      className="w-full h-32 object-cover rounded-lg border-2 border-border-light"
+                      className="w-full h-full object-cover"
                     />
                     <button
                       type="button"
                       onClick={() => setFeedFormData({ ...feedFormData, image: '' })}
-                      className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"
                     >
                       <X size={16} />
                     </button>

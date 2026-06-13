@@ -17,7 +17,7 @@ else:
     CLOUDINARY_ENABLED = False
 
 # Default premium cattle photo fallback
-DEFAULT_CATTLE_IMAGE = "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=500&h=400&fit=crop"
+DEFAULT_CATTLE_IMAGE = "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=640&h=360&fit=crop"
 
 def upload_image(image_data: str) -> str:
     """Upload base64 image, raw string, or remote URL to Cloudinary, returning the secure CDN URL."""

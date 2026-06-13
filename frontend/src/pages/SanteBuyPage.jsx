@@ -255,7 +255,7 @@ export const SanteBuyPage = () => {
             {filteredPosts.map(post => (
               <Card key={post.id} padding="0" hover className="overflow-hidden flex flex-col border border-border-light">
                 {/* Image */}
-                <div className="relative h-48 bg-gray-100 overflow-hidden">
+                <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
                   <img
                     src={post.image}
                     alt={post.animalName}

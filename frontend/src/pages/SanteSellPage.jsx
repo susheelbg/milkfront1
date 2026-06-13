@@ -128,7 +128,7 @@ export const SanteSellPage = () => {
         villageName: formData.villageName,
         santeName: santeName,
         description: formData.description,
-        image: formData.imagePreview || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop',
+        image: formData.imagePreview || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop',
       });
 
       toastService.success(t('sante.deleteSuccess') ? t('common.success') : 'Cattle posted successfully!');
@@ -168,11 +168,11 @@ export const SanteSellPage = () => {
               </label>
 
               {formData.imagePreview ? (
-                <div className="relative w-full max-w-xs">
+                <div className="relative w-full max-w-md aspect-[16/9] overflow-hidden rounded-lg">
                   <img
                     src={formData.imagePreview}
                     alt="Preview"
-                    className="w-full h-40 object-cover rounded-lg"
+                    className="w-full h-full object-cover"
                   />
                   <button
                     type="button"

@@ -117,7 +117,7 @@ export const BuyFeedsPage = () => {
               return (
                 <Card key={feed.id} className="flex flex-col overflow-hidden border border-border-light" padding="0">
                   {/* Product Image */}
-                  <div className="h-44 w-full bg-gray-100 overflow-hidden relative">
+                  <div className="aspect-[4/5] w-full bg-gray-100 overflow-hidden relative">
                     <img
                       src={feed.image}
                       alt={feed.name}

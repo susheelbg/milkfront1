@@ -111,7 +111,7 @@ const SEED_FEEDS = [
     name: 'Premium Dairy Feed',
     price: 450,
     description: 'High-quality dairy feed enriched with minerals and vitamins',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=500&fit=crop',
     category: 'Dairy',
   },
   {
@@ -119,7 +119,7 @@ const SEED_FEEDS = [
     name: 'Nutritious Fodder Mix',
     price: 320,
     description: 'Balanced nutritious fodder for cattle growth',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=500&fit=crop',
     category: 'Fodder',
   },
   {
@@ -127,7 +127,7 @@ const SEED_FEEDS = [
     name: 'Golden Grain Supplement',
     price: 580,
     description: 'Premium grain supplement for enhanced milk production',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=500&fit=crop',
     category: 'Supplement',
   },
   {
@@ -135,7 +135,7 @@ const SEED_FEEDS = [
     name: 'Organic Grass Hay',
     price: 280,
     description: 'Organic dried grass hay for nutritious feeding',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=500&fit=crop',
     category: 'Hay',
   },
   {
@@ -143,7 +143,7 @@ const SEED_FEEDS = [
     name: 'Mineral Mix Supplement',
     price: 350,
     description: 'Essential minerals for bone and milk development',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=500&fit=crop',
     category: 'Mineral',
   },
   {
@@ -151,7 +151,7 @@ const SEED_FEEDS = [
     name: 'Protein Concentrate',
     price: 620,
     description: 'High protein concentrate for muscle development',
-    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=500&fit=crop',
     category: 'Protein',
   },
 ];
@@ -167,7 +167,7 @@ const SEED_CATTLE = [
     villageName: 'Thendekere',
     santeName: 'Thendekere Sante',
     description: 'Healthy jersey cow with excellent milk production. Vaccinated and dewormed.',
-    image: 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop',
     postedDate: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   },
@@ -181,7 +181,7 @@ const SEED_CATTLE = [
     villageName: 'Belgaum',
     santeName: 'KRS Sante',
     description: 'Premium Holstein Friesian with best genetics. High milk quality assured.',
-    image: 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=500&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop',
     postedDate: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   },
