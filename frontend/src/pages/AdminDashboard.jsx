@@ -715,7 +715,7 @@ export const AdminDashboard = () => {
       {/* FEED PRODUCT ADD/EDIT MODAL */}
       {isFeedModalOpen && (
         <div className="fixed inset-0 bg-text-dark/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <Card className="w-full max-w-md border border-border-light shadow-2xl relative" padding="lg">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-border-light shadow-2xl relative" padding="lg">
             <button
               onClick={() => setIsFeedModalOpen(false)}
               className="absolute top-4 right-4 text-text-light hover:text-text-dark"
@@ -765,7 +765,7 @@ export const AdminDashboard = () => {
               <div>
                 <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.image')}</label>
                 {feedFormData.image ? (
-                  <div className="relative w-full max-w-xs aspect-[4/5] overflow-hidden rounded-lg mt-1 border-2 border-border-light">
+                  <div className="relative w-full max-w-[200px] aspect-[4/5] overflow-hidden rounded-lg mt-1 border-2 border-border-light">
                     <img
                       src={feedFormData.image}
                       alt="Preview"
