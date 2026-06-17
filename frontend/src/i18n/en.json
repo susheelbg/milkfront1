@@ -90,6 +90,7 @@
     "fullNamePlaceholder": "Enter full name",
     "phonePlaceholder": "E.g., +919876543210",
     "passwordPlaceholder": "At least 6 characters",
+    "confirmPassword": "Confirm Password",
     "addressPlaceholder": "House number, street etc",
     "villageName": "Village Name",
     "villagePlaceholder": "Enter village name",

@@ -85,11 +85,12 @@
   },
   "register": {
     "title": "ರೈತರ ನೋಂದಣಿ",
-    "subtitle": "ಹಾಲುಮಾತು ಅಪ್ಲಿಕೇಶನ್‌ಗೆ ಸುಲಭವಾಗಿ ನೋಂದಾಯಿಸಿ",
+    "subtitle": "Milkಮಾತು ಅಪ್ಲಿಕೇಶನ್‌ಗೆ ಸುಲಭವಾಗಿ ನೋಂದಾಯಿಸಿ",
     "fullName": "ಪೂರ್ಣ ಹೆಸರು",
     "fullNamePlaceholder": "ಹೆಸರನ್ನು ನಮೂದಿಸಿ",
     "phonePlaceholder": "ಉದಾ: +919876543210",
     "passwordPlaceholder": "ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳು",
+    "confirmPassword": "ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ",
     "addressPlaceholder": "ಮನೆ ಸಂಖ್ಯೆ, ಬೀದಿ ಇತ್ಯಾದಿ",
     "villageName": "ಗ್ರಾಮದ ಹೆಸರು",
     "villagePlaceholder": "ಗ್ರಾಮದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ",
