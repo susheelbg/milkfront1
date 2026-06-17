@@ -187,10 +187,11 @@ export const NandiniAIPage = () => {
               variant="primary"
               size="lg"
               onClick={() => handleSend()}
-              className="h-12 w-12 rounded-xl flex items-center justify-center p-0 shadow-md active:scale-95 shrink-0"
+              className="h-12 px-5 rounded-xl flex items-center justify-center shadow-md active:scale-95 shrink-0 font-bold gap-2 text-sm"
               disabled={loading || !inputText.trim()}
             >
-              <Send size={18} />
+              <span>{t('nandini.enter')}</span>
+              <Send size={16} />
             </Button>
           </div>
 

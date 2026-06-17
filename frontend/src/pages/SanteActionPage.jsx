@@ -5,19 +5,13 @@ import { ShoppingCart, Upload } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const SanteActionPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const santeName = location.state?.santeName;
-
-  if (!santeName) {
-    navigate('/sante');
-    return null;
-  }
+  const santeName = 'Sante';
 
   return (
     <div className="min-h-screen bg-bg-light">
-      <Header showBack onBack={() => navigate('/sante')} />
+      <Header showBack onBack={() => navigate('/home')} />
 
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">

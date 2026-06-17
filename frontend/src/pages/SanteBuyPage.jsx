@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
 import { reportApi } from '../services/api/reportApi';
@@ -53,10 +53,9 @@ const CattleCountdown = ({ expiresAt }) => {
 };
 
 export const SanteBuyPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const santeName = location.state?.santeName;
+  const santeName = 'Sante';
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,10 +68,6 @@ export const SanteBuyPage = () => {
   const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
-    if (!santeName) {
-      navigate('/sante');
-      return;
-    }
 
     const fetchPosts = async () => {
       setLoading(true);
@@ -132,7 +127,7 @@ export const SanteBuyPage = () => {
 
   return (
     <div className="min-h-screen bg-bg-light pb-12">
-      <Header showBack onBack={() => navigate('/sante-action', { state: { santeName } })} />
+      <Header showBack onBack={() => navigate('/sante')} />
 
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">

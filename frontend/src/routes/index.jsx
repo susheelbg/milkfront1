@@ -7,7 +7,6 @@ import {
   HomePage,
   BuyFeedsPage,
   OrderSummaryPage,
-  SanteSelectorPage,
   SanteActionPage,
   SanteBuyPage,
   SanteSellPage,
@@ -122,14 +121,6 @@ export const routes = [
   },
   {
     path: '/sante',
-    element: (
-      <ProtectedRoute>
-        <SanteSelectorPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/sante-action',
     element: (
       <ProtectedRoute>
         <SanteActionPage />
