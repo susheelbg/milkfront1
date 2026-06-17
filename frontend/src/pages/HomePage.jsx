@@ -164,7 +164,10 @@ export const HomePage = () => {
           </button>
         </div>
         <p className="text-[10px] text-text-light/60 font-bold uppercase tracking-wider">
-          © {new Date().getFullYear()} MilkMaatu. All rights reserved.
+          © 2026 MilkMaatu Dairy Tech Private Limited. All rights reserved.
+        </p>
+        <p className="text-[10px] text-text-light/60 font-bold uppercase tracking-wider mt-1">
+          MilkMaatu is a product and brand of MilkMaatu Dairy Tech Private Limited.
         </p>
       </footer>
     </div>
