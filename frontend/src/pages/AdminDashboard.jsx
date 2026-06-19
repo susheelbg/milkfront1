@@ -37,16 +37,93 @@ export const AdminDashboard = () => {
     is_hidden: false,
   });
 
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Form states (Admin Add)
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminFormData, setAdminFormData] = useState({
+    name: '',
+    phone: '',
+    password: '',
+    address: '',
+    villageName: '',
+  });
+  const [submittingAdmin, setSubmittingAdmin] = useState(false);
+
   useEffect(() => {
-    // Admin check
-    const currentUser = authApi.getCurrentUser();
-    if (!currentUser || currentUser.role !== 'admin') {
-      toastService.error('Unauthorized. Admin access only.');
-      navigate('/home');
+    const syncUserAndLoad = async () => {
+      try {
+        const freshUser = await authApi.getProfile();
+        if (freshUser) {
+          if (!['admin', 'super_admin'].includes(freshUser.role)) {
+            toastService.error('Unauthorized. Admin access only.');
+            navigate('/home');
+            return;
+          }
+          setCurrentUser(freshUser);
+          loadData();
+          return;
+        }
+      } catch (err) {
+        // Fallback to local storage if API fails
+      }
+
+      const user = authApi.getCurrentUser();
+      if (!user || !['admin', 'super_admin'].includes(user.role)) {
+        toastService.error('Unauthorized. Admin access only.');
+        navigate('/home');
+        return;
+      }
+      setCurrentUser(user);
+      loadData();
+    };
+
+    syncUserAndLoad();
+  }, [navigate]);
+
+  const handleAdminSubmit = async (e) => {
+    e.preventDefault();
+    if (!adminFormData.name || !adminFormData.phone || !adminFormData.password) {
+      toastService.error("Please fill in Name, Phone, and Password.");
       return;
     }
-    loadData();
-  }, [navigate]);
+
+    setSubmittingAdmin(true);
+    try {
+      await adminApi.createAdmin(adminFormData);
+      toastService.success("Successfully created new Admin!");
+      setIsAdminModalOpen(false);
+      setAdminFormData({
+        name: '',
+        phone: '',
+        password: '',
+        address: '',
+        villageName: '',
+      });
+      loadData();
+    } catch (err) {
+      toastService.error(err.message || "Failed to create Admin user.");
+    } finally {
+      setSubmittingAdmin(false);
+    }
+  };
+
+  const handleToggleAdminRole = async (phone, currentRole) => {
+    const targetRole = currentRole === 'admin' ? 'user' : 'admin';
+    const actionWord = targetRole === 'admin' ? 'promote to Admin' : 'demote to User';
+
+    if (!window.confirm(`Are you sure you want to ${actionWord} this user?`)) {
+      return;
+    }
+
+    try {
+      await adminApi.updateUserRole(phone, targetRole);
+      toastService.success(`User role successfully changed to ${targetRole}.`);
+      loadData();
+    } catch (err) {
+      toastService.error(err.message || "Failed to update user role.");
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -498,7 +575,17 @@ export const AdminDashboard = () => {
                 {/* 4. USERS TAB */}
                 {activeTab === 'users' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.users')} ({usersList.length})</h3>
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-lg font-bold text-text-dark">{t('admin.users')} ({usersList.length})</h3>
+                      {currentUser?.role === 'super_admin' && (
+                        <button
+                          onClick={() => setIsAdminModalOpen(true)}
+                          className="bg-[#e3af1e] hover:bg-[#c99815] text-text-dark font-black text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
+                        >
+                          <Plus size={14} /> Add New Admin
+                        </button>
+                      )}
+                    </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       <div className="overflow-x-auto">
@@ -521,11 +608,13 @@ export const AdminDashboard = () => {
                                 <td className="p-4 text-xs font-bold">{usr.phone}</td>
                                 <td className="p-4">
                                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                                    usr.role === 'admin' 
+                                    usr.role === 'super_admin'
+                                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                      : usr.role === 'admin' 
                                       ? 'bg-purple-100 text-purple-700 border border-purple-200' 
                                       : 'bg-blue-100 text-blue-700 border border-blue-200'
                                   }`}>
-                                    {usr.role || 'user'}
+                                    {usr.role === 'super_admin' ? 'Super Admin' : usr.role === 'admin' ? 'Admin' : 'User'}
                                   </span>
                                 </td>
                                 <td className="p-4">
@@ -541,8 +630,24 @@ export const AdminDashboard = () => {
                                 </td>
                                 <td className="p-4 text-xs">{usr.villageName || '-'}</td>
                                 <td className="p-4 text-xs text-text-light">{usr.createdAt ? new Date(usr.createdAt).toLocaleDateString() : '-'}</td>
-                                <td className="p-4 text-right">
-                                  {usr.role !== 'admin' && (usr.accountStatus || usr.account_status) !== 'deleted' && (
+                                <td className="p-4 text-right flex justify-end items-center gap-2">
+                                  {currentUser?.role === 'super_admin' && usr.phone !== currentUser?.phone && usr.role !== 'super_admin' && (
+                                    <button
+                                      onClick={() => handleToggleAdminRole(usr.phone, usr.role)}
+                                      className={`text-[11px] font-bold px-2 py-1 rounded border transition-colors ${
+                                        usr.role === 'admin'
+                                          ? 'text-purple-600 border-purple-200 hover:bg-purple-50'
+                                          : 'text-amber-600 border-amber-200 hover:bg-amber-50'
+                                      }`}
+                                    >
+                                      {usr.role === 'admin' ? 'Demote User' : 'Make Admin'}
+                                    </button>
+                                  )}
+
+                                  {usr.phone !== currentUser?.phone && 
+                                   usr.role !== 'super_admin' && 
+                                   (usr.role !== 'admin' || currentUser?.role === 'super_admin') && 
+                                   (usr.accountStatus || usr.account_status) !== 'deleted' && (
                                     (usr.accountStatus || usr.account_status) === 'suspended' ? (
                                       <button
                                         onClick={() => handleUnsuspendUser(usr.phone)}
@@ -821,6 +926,69 @@ export const AdminDashboard = () => {
 
               <Button type="submit" variant="primary" size="lg" className="w-full mt-4 font-bold">
                 {editingFeed ? t('admin.update') : t('admin.add')}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* ADMIN ADD MODAL */}
+      {isAdminModalOpen && (
+        <div className="fixed inset-0 bg-text-dark/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-border-light shadow-2xl relative" padding="lg">
+            <button
+              onClick={() => setIsAdminModalOpen(false)}
+              className="absolute top-4 right-4 text-text-light hover:text-text-dark"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 className="text-xl font-bold text-text-dark mb-6">
+              Create New Admin Account
+            </h3>
+
+            <form onSubmit={handleAdminSubmit} className="space-y-4">
+              <Input
+                label="Full Name"
+                placeholder="Enter full name"
+                value={adminFormData.name}
+                onChange={(e) => setAdminFormData({ ...adminFormData, name: e.target.value })}
+                required
+              />
+
+              <Input
+                label="Phone Number"
+                placeholder="e.g. +919876543210"
+                value={adminFormData.phone}
+                onChange={(e) => setAdminFormData({ ...adminFormData, phone: e.target.value })}
+                required
+              />
+
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Enter password (min 6 characters)"
+                value={adminFormData.password}
+                onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
+                required
+              />
+
+              <Input
+                label="Address"
+                placeholder="Enter administrative address"
+                value={adminFormData.address}
+                onChange={(e) => setAdminFormData({ ...adminFormData, address: e.target.value })}
+              />
+
+              <Input
+                label="Village Name"
+                placeholder="Enter village name"
+                value={adminFormData.villageName}
+                onChange={(e) => setAdminFormData({ ...adminFormData, villageName: e.target.value })}
+              />
+
+              <Button type="submit" variant="primary" size="lg" className="w-full mt-4 font-bold" disabled={submittingAdmin}>
+                {submittingAdmin ? "Creating Admin..." : "Create Admin User"}
               </Button>
             </form>
           </Card>

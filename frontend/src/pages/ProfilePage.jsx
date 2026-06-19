@@ -110,8 +110,9 @@ export const ProfilePage = () => {
           </div>
           <h1 className="text-3xl font-bold text-text-dark">{user.name}</h1>
           <p className="text-sm bg-text-dark text-white px-3 py-1 rounded-full mt-2 inline-block font-semibold capitalize">
-            {user.role === 'admin' ? t('common.admin') : t('common.farmer')}
+            {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? t('common.admin') : t('common.farmer')}
           </p>
+
         </div>
       </section>
 
@@ -123,7 +124,7 @@ export const ProfilePage = () => {
             <Card padding="lg">
               <div className="flex justify-between items-center mb-6 border-b border-border-light pb-4">
                 <h2 className="text-xl font-bold text-text-dark">{t('profile.personalDetails')}</h2>
-                {user.role === 'admin' && (
+                {['admin', 'super_admin'].includes(user.role) && (
                   <button
                     onClick={() => navigate('/admin')}
                     className="text-xs font-bold text-text-dark bg-primary-light hover:bg-primary px-3 py-1.5 rounded-lg border border-primary-dark transition-all"

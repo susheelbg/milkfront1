@@ -70,7 +70,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light to-primary flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#e3af1e] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8 animate-fade-in flex flex-col items-center">

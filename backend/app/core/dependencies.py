@@ -46,9 +46,20 @@ def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:
     """Assert that the authenticated user possesses admin privileges."""
-    if current_user.role != "admin":
+    if current_user.role not in ("admin", "super_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. Administrative privileges required.",
+        )
+    return current_user
+
+def get_current_super_admin(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Assert that the authenticated user possesses super admin privileges."""
+    if current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Super Administrative privileges required.",
         )
     return current_user

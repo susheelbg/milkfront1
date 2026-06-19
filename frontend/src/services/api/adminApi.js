@@ -18,4 +18,17 @@ export const adminApi = {
     const res = await apiClient.get('/admin/stats');
     return res && res.success ? res.data : res;
   },
+
+  // Create a new administrative user (Super Admin only)
+  createAdmin: async (adminData) => {
+    const res = await apiClient.post('/admin/create-admin', adminData);
+    return res && res.success ? res.data : res;
+  },
+
+  // Update user role (Super Admin only)
+  updateUserRole: async (phone, role) => {
+    const res = await apiClient.put(`/admin/users/${phone}/role`, { role });
+    return res && res.success ? res.data : res;
+  },
 };
+

@@ -124,7 +124,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         hashed_password=hash_password(req.password),
         address=req.address or "",
         village=req.villageName or "",
-        role="user" if normalized_phone != "+917795056391" else "admin", # Susheel is Admin
+        role="user" if normalized_phone != "+917795056391" else "super_admin", # Susheel is Super Admin
         is_verified=True,
         phone_verified=True,
         consent_timestamp=datetime.fromisoformat(req.consent_timestamp.replace("Z", "+00:00")).replace(tzinfo=None) if req.consent_timestamp else datetime.now(timezone.utc).replace(tzinfo=None)

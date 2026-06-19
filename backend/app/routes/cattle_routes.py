@@ -116,7 +116,7 @@ async def delete_cattle_listing(
         )
         
     # Check permissions (Owner or Admin)
-    if cattle.user_id != current_user.id and current_user.role != "admin":
+    if cattle.user_id != current_user.id and current_user.role not in ("admin", "super_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unauthorized. Only listing owners or administrators can delete posts."

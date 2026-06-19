@@ -39,3 +39,16 @@ class UserResponse(BaseModel):
         from_attributes = True
         populate_by_name = True
 
+
+class AdminCreate(BaseModel):
+    name: str
+    phone: str
+    password: str
+    address: Optional[str] = ""
+    villageName: Optional[str] = ""
+
+
+class UserRoleUpdate(BaseModel):
+    role: str
+
+

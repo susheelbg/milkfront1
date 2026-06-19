@@ -45,7 +45,7 @@ export const Header = ({ showBack = false, onBack = null }) => {
         {/* Right side actions */}
         <div className="flex items-center gap-3">
           {/* Desktop Nav */}
-          {currentUser?.role === 'admin' && (
+          {['admin', 'super_admin'].includes(currentUser?.role) && (
             <nav className="hidden md:flex items-center gap-6 mr-3">
               <button onClick={() => navigate('/admin')} className="text-text-dark hover:opacity-75 font-semibold transition-opacity">
                 {t('common.admin')}

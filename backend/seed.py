@@ -33,7 +33,7 @@ async def seed_database():
                 full_name="Susheel",
                 phone_number="+917795056391",
                 hashed_password=hash_password("Susheel@451"),
-                role="admin",
+                role="super_admin",
                 address="Dairy Farm Road, Bengaluru",
                 village="Gokula",
                 is_verified=True,

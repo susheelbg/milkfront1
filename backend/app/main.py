@@ -9,6 +9,7 @@ from sqlalchemy.future import select
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.models.cattle import Cattle
+from app.models.user import User
 
 # Modular routers
 from app.routes.auth_routes import router as auth_router
@@ -56,6 +57,21 @@ async def lifespan(app: FastAPI):
         # Create all tables on startup if they don't exist yet
         await conn.run_sync(Base.metadata.create_all)
     print("[SERVER INITS] Tables created successfully.")
+
+    # Ensure Susheel is super_admin in DB
+    print("[SERVER INITS] Verifying Super Admin status...")
+    async with SessionLocal() as db:
+        stmt = select(User).where(User.phone_number == "+917795056391")
+        result = await db.execute(stmt)
+        admin_user = result.scalars().first()
+        if admin_user and admin_user.role != "super_admin":
+            admin_user.role = "super_admin"
+            await db.commit()
+            print("[SERVER INITS] Promoted Susheel to super_admin successfully.")
+        elif admin_user:
+            print("[SERVER INITS] Susheel is already super_admin.")
+        else:
+            print("[SERVER INITS] Susheel not found in database yet.")
 
     # 2. Start background worker task
     worker_task = asyncio.create_task(clean_expired_listings_worker())

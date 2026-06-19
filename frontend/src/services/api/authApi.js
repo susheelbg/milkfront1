@@ -34,6 +34,17 @@ export const authApi = {
     return user ? JSON.parse(user) : null;
   },
 
+  // Fetch latest profile from DB and sync with localStorage
+  getProfile: async () => {
+    const res = await apiClient.get('/profile');
+    if (res && res.success && res.data) {
+      const sessionUser = res.data;
+      localStorage.setItem('user', JSON.stringify(sessionUser));
+      return sessionUser;
+    }
+    return null;
+  },
+
   // Update profile details
   updateProfile: async (profileData) => {
     const res = await apiClient.put('/profile', profileData);

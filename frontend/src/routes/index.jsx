@@ -28,10 +28,9 @@ export const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Admin route component
 export const AdminRoute = ({ children }) => {
   const user = authApi.getCurrentUser();
-  if (!authApi.isAuthenticated() || user?.role !== 'admin') {
+  if (!authApi.isAuthenticated() || !['admin', 'super_admin'].includes(user?.role)) {
     return <Navigate to="/home" replace />;
   }
   return children;
