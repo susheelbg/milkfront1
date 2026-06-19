@@ -7,5 +7,8 @@
     "allowNavigation": [
       "https://milkfront1.onrender.com"
     ]
+  },
+  "android": {
+    "zoomEnabled": false
   }
 }
