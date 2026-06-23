@@ -1,13 +1,38 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer, BottomNavigation } from './components';
 import { routes } from './routes/index.jsx';
 import { authApi } from './services/api/authApi';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const backButtonListener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if (
+        location.pathname === '/home' ||
+        location.pathname === '/login' ||
+        location.pathname === '/' ||
+        !canGoBack
+      ) {
+        CapacitorApp.exitApp();
+      } else {
+        navigate(-1);
+      }
+    });
+
+    return () => {
+      backButtonListener.then((listener) => listener.remove());
+    };
+  }, [location.pathname, navigate]);
 
   // Pages where we show the bottom footer navigation for user experience
+
   const userPages = [
     '/home',
     '/sante',
