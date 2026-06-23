@@ -64,7 +64,7 @@ export const apiClient = {
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
-    console.log(`[API Request] URL: ${url}`);
+    console.log(`[API CALL - START] Method: ${options.method || 'GET'} | URL: ${url}`);
     const headers = getHeaders(options);
 
     try {
@@ -73,9 +73,15 @@ export const apiClient = {
         headers,
       });
 
+      console.log(`[API CALL - RESPONSE] Status: ${response.status} | URL: ${url}`);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        if (response.status === 401 || response.status === 403) {
+          console.error(`[API CALL - AUTH ERROR] Status: ${response.status} | URL: ${url} | Detail:`, errorData);
+        }
         
         if (errorData.detail) {
           if (typeof errorData.detail === 'string') {
@@ -98,7 +104,7 @@ export const apiClient = {
 
       return await response.json();
     } catch (error) {
-      console.warn(`API call to ${url} failed.`, error);
+      console.error(`[API CALL - EXCEPTION] URL: ${url} | Error:`, error);
       throw error; // Let the caller API handle fallback
     }
   },

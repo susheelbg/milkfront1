@@ -5,7 +5,10 @@
   "server": {
     "androidScheme": "https",
     "allowNavigation": [
-      "https://milkfront1.onrender.com"
+      "milkfront1.onrender.com",
+      "*.onrender.com",
+      "milkmaatu.com",
+      "*.milkmaatu.com"
     ]
   },
   "android": {
