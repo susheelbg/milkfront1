@@ -22,6 +22,7 @@ class UserUpdate(BaseModel):
     language: Optional[str] = None
 
 class UserResponse(BaseModel):
+    id: int
     phone: str = Field(..., validation_alias=AliasChoices("phone", "phone_number"))
     name: str = Field(..., validation_alias=AliasChoices("name", "full_name"))
     role: str

@@ -19,6 +19,12 @@ export const orderApi = {
     return res && res.success ? res.data : res;
   },
 
+  // Cancel order (Owner action)
+  cancelOrder: async (orderId) => {
+    const res = await apiClient.put(`/orders/${orderId}/cancel`);
+    return res && res.success ? res.data : res;
+  },
+
   // Update status (Admin action)
   updateOrderStatus: async (orderId, status) => {
     const res = await apiClient.put(`/admin/orders/${orderId}/status`, { status });

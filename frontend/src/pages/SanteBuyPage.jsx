@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
 import { reportApi } from '../services/api/reportApi';
-import { Search, Filter, Phone, Calendar, Loader2, Clock, ShieldAlert } from 'lucide-react';
+import { authApi } from '../services/api/authApi';
+import { Search, Filter, Phone, Calendar, Loader2, Clock, ShieldAlert, Trash2 } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -56,9 +57,25 @@ export const SanteBuyPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const santeName = 'Sante';
+  const currentUser = authApi.getCurrentUser();
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm(t('common.confirmDeleteListing') || 'Are you sure you want to delete this cattle listing?')) {
+      return;
+    }
+    
+    try {
+      await cattleApi.deleteCattleListing(postId);
+      toastService.success(t('common.deleteListingSuccess') || 'Cattle listing deleted successfully.');
+      setPosts(prev => prev.filter(post => post.id !== postId));
+    } catch (err) {
+      console.error('Failed to delete post:', err);
+      toastService.error(err.message || 'Failed to delete post.');
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 150000 });
   const [showFilter, setShowFilter] = useState(false);
@@ -303,17 +320,29 @@ export const SanteBuyPage = () => {
                     {t('sante.callSeller')} ({post.contactNumber})
                   </Button>
 
-                  {/* Compliance Report Listing Button */}
-                  <button
-                    onClick={() => {
-                      setReportingCattleId(post.id);
-                      setShowReportModal(true);
-                    }}
-                    className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline"
-                  >
-                    <ShieldAlert size={14} />
-                    {t('compliance.reportListing')}
-                  </button>
+                  {/* Owner Delete vs. Compliance Report */}
+                  {currentUser && (post.userId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'super_admin') ? (
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      className="w-full mt-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-700 font-bold flex items-center justify-center gap-2 transition-all"
+                      onClick={() => handleDeletePost(post.id)}
+                    >
+                      <Trash2 size={16} />
+                      {t('common.deleteListing') || 'Delete Listing'}
+                    </Button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setReportingCattleId(post.id);
+                        setShowReportModal(true);
+                      }}
+                      className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline"
+                    >
+                      <ShieldAlert size={14} />
+                      {t('compliance.reportListing')}
+                    </button>
+                  )}
 
                   {/* Posted Date */}
                   <div className="mt-3 flex items-center justify-center gap-1.5 text-text-light text-[10px] font-bold uppercase">

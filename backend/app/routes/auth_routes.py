@@ -178,6 +178,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     
     # Return user details alongside token
     user_payload = {
+        "id": user.id,
         "phone": user.phone_number,
         "name": user.full_name,
         "role": user.role,

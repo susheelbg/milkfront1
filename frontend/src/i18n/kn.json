@@ -23,7 +23,13 @@
     "active": "ಸಕ್ರಿಯ",
     "status": "ಸ್ಥಿತಿ",
     "tagline": "For every dairy farmer, every day!",
-    "myOrders": "ನನ್ನ ಆರ್ಡರ್‌ಗಳು"
+    "myOrders": "ನನ್ನ ಆರ್ಡರ್‌ಗಳು",
+    "cancelOrder": "ಆರ್ಡರ್ ರದ್ದುಮಾಡಿ",
+    "confirmCancelOrder": "ಈ ಆರ್ಡರ್ ರದ್ದುಗೊಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?",
+    "cancelOrderSuccess": "ಆರ್ಡರ್ ಯಶಸ್ವಿಯಾಗಿ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ.",
+    "deleteListing": "ಪೋಸ್ಟ್ ಅಳಿಸಿ",
+    "confirmDeleteListing": "ಈ ಜಾನುವಾರು ಪೋಸ್ಟ್ ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?",
+    "deleteListingSuccess": "ಜಾನುವಾರು ಪೋಸ್ಟ್ ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ."
   },
   "home": {
     "quickServices": "ತ್ವರಿತ ಸೇವೆಗಳು",

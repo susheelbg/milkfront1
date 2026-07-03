@@ -125,6 +125,57 @@ async def get_my_orders(
         data=payload
     )
 
+@router.put("/orders/{id}/cancel")
+async def cancel_order(
+    id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Cancel a pending order by the owner, restoring feed stock levels."""
+    stmt = (
+        select(Order)
+        .where(Order.id == id, Order.user_id == current_user.id)
+        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+    )
+    result = await db.execute(stmt)
+    order = result.scalars().first()
+    
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found or access denied."
+        )
+        
+    if order.order_status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Only pending orders can be cancelled. Current status is: {order.order_status}."
+        )
+        
+    # Restore stock for each item in the order
+    for item in order.items:
+        if item.feed:
+            item.feed.stock_quantity += item.quantity
+            
+    order.order_status = "cancelled"
+    await db.commit()
+    
+    # Reload order
+    reload_stmt = (
+        select(Order)
+        .where(Order.id == id)
+        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+    )
+    reload_res = await db.execute(reload_stmt)
+    updated_order = reload_res.scalars().first()
+    
+    payload = OrderResponse.model_validate(updated_order).model_dump()
+    return json_response(
+        success=True,
+        message="Order cancelled successfully and stock restored.",
+        data=payload
+    )
+
 # --- ADMIN WRITE ENDPOINTS (Protected by Admin Role check) ---
 
 @router.get("/admin/orders")

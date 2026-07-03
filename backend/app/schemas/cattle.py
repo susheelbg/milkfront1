@@ -15,6 +15,7 @@ class CattleCreate(BaseModel):
 
 class CattleResponse(BaseModel):
     id: int
+    userId: int = Field(..., validation_alias="user_id", serialization_alias="userId")
     animalName: str = Field(..., validation_alias="animal_name", serialization_alias="animalName")
     price: int
     age: int

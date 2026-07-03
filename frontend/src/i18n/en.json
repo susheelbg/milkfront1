@@ -23,7 +23,13 @@
     "active": "Active",
     "status": "Status",
     "tagline": "For every dairy farmer, every day!",
-    "myOrders": "My Orders"
+    "myOrders": "My Orders",
+    "cancelOrder": "Cancel Order",
+    "confirmCancelOrder": "Are you sure you want to cancel this order?",
+    "cancelOrderSuccess": "Order cancelled successfully.",
+    "deleteListing": "Delete Listing",
+    "confirmDeleteListing": "Are you sure you want to delete this cattle listing?",
+    "deleteListingSuccess": "Cattle listing deleted successfully."
   },
   "home": {
     "quickServices": "Quick Services",

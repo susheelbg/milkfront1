@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Card, Button } from '../components';
 import { orderApi } from '../services/api/orderApi';
 import { authApi } from '../services/api/authApi';
-import { ShoppingBag, Tag, IndianRupee, Loader2, Package } from 'lucide-react';
+import { toastService } from '../services/toastService';
+import { ShoppingBag, Tag, IndianRupee, Loader2, Package, XCircle } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const OrdersPage = () => {
@@ -33,6 +34,25 @@ export const OrdersPage = () => {
 
     fetchOrders();
   }, [navigate]);
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm(t('common.confirmCancelOrder') || 'Are you sure you want to cancel this order?')) {
+      return;
+    }
+    
+    try {
+      await orderApi.cancelOrder(orderId);
+      toastService.success(t('common.cancelOrderSuccess') || 'Order cancelled successfully.');
+      setOrders(prev =>
+        prev.map(order =>
+          order.id === orderId ? { ...order, status: 'cancelled' } : order
+        )
+      );
+    } catch (err) {
+      console.error('Failed to cancel order:', err);
+      toastService.error(err.message || 'Failed to cancel order.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg-light pb-20">
@@ -147,6 +167,20 @@ export const OrdersPage = () => {
                       </p>
                     </div>
                   </div>
+
+                  {order.status === 'pending' && (
+                    <div className="mt-3.5 flex justify-end">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-700 font-bold flex items-center gap-1.5 transition-all text-xs"
+                        onClick={() => handleCancelOrder(order.id)}
+                      >
+                        <XCircle size={14} />
+                        {t('common.cancelOrder') || 'Cancel Order'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
