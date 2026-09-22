@@ -51,7 +51,9 @@
     "doctorNearMe": "ಹತ್ತಿರದ ವೈದ್ಯರು",
     "doctorNearMeDesc": "ಹತ್ತಿರದ ಪಶು ಆಸ್ಪತ್ರೆ ಪತ್ತೆಹಚ್ಚಿ",
     "expertAdvice": "ತಜ್ಞರ ಸಲಹೆ",
-    "expertAdviceDesc": "ತಜ್ಞರೊಂದಿಗೆ ನೇರ ಸಮಾಲೋಚನೆ"
+    "expertAdviceDesc": "ತಜ್ಞರೊಂದಿಗೆ ನೇರ ಸಮಾಲೋಚನೆ",
+    "recommendedFeeds": "🌾 ಶಿಫಾರಸು ಮೇವು",
+    "viewAll": "ಎಲ್ಲವನ್ನೂ ನೋಡಿ →"
   },
   "login": {
     "title": "ಲಾಗ್ ಇನ್",

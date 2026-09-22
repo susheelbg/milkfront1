@@ -2,16 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { authApi } from '../services/api/authApi';
-import { ShieldCheck, Heart, Truck, Users, HelpCircle } from 'lucide-react';
+import { feedsApi } from '../services/api/feedsApi';
+import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const HomePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState(null);
+  const [feeds, setFeeds] = useState([]);
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
 
   useEffect(() => {
     setCurrentUser(authApi.getCurrentUser());
+
+    // Load feeds for the recommendation ticker
+    feedsApi.getFeeds()
+      .then(data => { if (Array.isArray(data)) setFeeds(data); })
+      .catch(() => {}); // silent fail — ticker is non-critical
   }, []);
 
   const upcomingFeatures = [
@@ -60,6 +68,9 @@ export const HomePage = () => {
     },
   ];
 
+  // Duplicate feed list so the marquee loops seamlessly
+  const tickerFeeds = feeds.length > 0 ? [...feeds, ...feeds] : [];
+
   return (
     <div className="min-h-screen bg-bg-light pb-12">
       <Header />
@@ -74,29 +85,58 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Top Banner Card (Left Pic, Right Content) */}
-      <section className="max-w-4xl mx-auto px-4 pt-6">
-        <div className="bg-gradient-to-r from-primary-light via-primary/30 to-amber-100 rounded-2xl border border-primary-dark/30 p-5 flex flex-row items-center gap-4 md:gap-6 shadow-sm overflow-hidden relative">
-          {/* Left Side: Portrait Photo */}
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-primary-dark/40 overflow-hidden shadow-sm flex-shrink-0 bg-white">
-            <img 
-              src="https://res.cloudinary.com/drj9c8kpj/image/upload/v1780207723/milkmaatu_sante/gzgmvhcns8fo8uaf25sq.png" 
-              alt="Susheel" 
-              className="w-full h-full object-cover"
-            />
+      {/* ── Recommended Feeds Ticker (above Quick Services) ─────────── */}
+      {feeds.length > 0 && (
+        <section className="max-w-4xl mx-auto px-4 pt-6 pb-2">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-lg font-bold text-text-dark">{t('home.recommendedFeeds')}</h3>
+            <button
+              onClick={() => navigate('/feeds')}
+              className="text-xs font-bold text-primary-dark hover:underline flex items-center gap-1 transition-colors"
+            >
+              {t('home.viewAll')}
+            </button>
           </div>
 
-          {/* Right Side: Text Content */}
-          <div className="flex-1 space-y-1.5 text-left">
-            <p className="text-sm font-black text-text-dark tracking-tight">
-              Susheel
-            </p>
-            <p className="text-xs md:text-sm font-semibold text-text-dark/90 leading-relaxed">
-              {t('home.welcomeMessage')}
-            </p>
+          {/* Ticker container — overflow-hidden prevents horizontal scroll */}
+          <div className="overflow-hidden rounded-2xl border border-border-light bg-gradient-to-r from-amber-50 via-white to-amber-50 shadow-sm py-3">
+            <div className="flex animate-marquee gap-4 px-4" style={{ width: 'max-content' }}>
+              {tickerFeeds.map((feed, idx) => (
+                <button
+                  key={`${feed.id}-${idx}`}
+                  onClick={() => navigate('/feeds')}
+                  aria-label={feed.name}
+                  className="flex-shrink-0 flex items-center gap-3 bg-white rounded-xl border border-amber-200/70 shadow-sm px-4 py-3 hover:shadow-md hover:border-primary-dark/40 active:scale-95 transition-all duration-200 w-52 text-left"
+                >
+                  {/* Feed image or emoji fallback */}
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-amber-100 border border-amber-200 flex-shrink-0">
+                    {feed.image ? (
+                      <img
+                        src={feed.image}
+                        alt={feed.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">🌾</div>
+                    )}
+                  </div>
+
+                  {/* Text */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black text-text-dark truncate leading-tight">{feed.name}</p>
+                    {feed.category && (
+                      <p className="text-[10px] text-text-light font-semibold uppercase tracking-wider mt-0.5 truncate">{feed.category}</p>
+                    )}
+                    <p className="text-sm font-black text-primary-dark mt-1">₹{feed.price}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Circular Round Action Buttons Grid */}
       <section className="max-w-4xl mx-auto px-4 py-8">
@@ -120,10 +160,29 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Coming Soon Section */}
+      {/* ── Coming Soon — Collapsible ────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-4 py-4">
-        <h3 className="text-lg font-bold text-text-dark mb-4 px-1">{t('home.comingSoon')}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Collapsible heading */}
+        <button
+          onClick={() => setUpcomingOpen(prev => !prev)}
+          aria-expanded={upcomingOpen}
+          aria-controls="upcoming-features-panel"
+          className="flex items-center justify-between w-full px-1 mb-4 group"
+        >
+          <h3 className="text-lg font-bold text-text-dark">{t('home.comingSoon')}</h3>
+          <ChevronDown
+            size={20}
+            className={`text-text-light transition-transform duration-300 group-hover:text-primary-dark ${upcomingOpen ? 'rotate-0' : '-rotate-90'}`}
+          />
+        </button>
+
+        {/* Collapsible content with smooth transition */}
+        <div
+          id="upcoming-features-panel"
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-hidden transition-all duration-300 ${
+            upcomingOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+          }`}
+        >
           {upcomingFeatures.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -145,6 +204,30 @@ export const HomePage = () => {
               </Card>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── About MilkMaatu by Susheel (moved lower) ─────────────────── */}
+      <section className="max-w-4xl mx-auto px-4 pt-4 pb-2">
+        <div className="bg-gradient-to-r from-primary-light via-primary/30 to-amber-100 rounded-2xl border border-primary-dark/30 p-5 flex flex-row items-center gap-4 md:gap-6 shadow-sm overflow-hidden relative">
+          {/* Left Side: Portrait Photo */}
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-primary-dark/40 overflow-hidden shadow-sm flex-shrink-0 bg-white">
+            <img
+              src="https://res.cloudinary.com/drj9c8kpj/image/upload/v1780207723/milkmaatu_sante/gzgmvhcns8fo8uaf25sq.png"
+              alt="Susheel"
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Right Side: Text Content */}
+          <div className="flex-1 space-y-1.5 text-left">
+            <p className="text-sm font-black text-text-dark tracking-tight">
+              Susheel
+            </p>
+            <p className="text-xs md:text-sm font-semibold text-text-dark/90 leading-relaxed">
+              {t('home.welcomeMessage')}
+            </p>
+          </div>
         </div>
       </section>
 
@@ -173,5 +256,3 @@ export const HomePage = () => {
     </div>
   );
 };
-
-

@@ -51,7 +51,9 @@
     "doctorNearMe": "Doctor Near Me",
     "doctorNearMeDesc": "Find nearest veterinary clinic",
     "expertAdvice": "Expert Advice",
-    "expertAdviceDesc": "One-on-one expert consultations"
+    "expertAdviceDesc": "One-on-one expert consultations",
+    "recommendedFeeds": "🌾 Recommended Feeds",
+    "viewAll": "View All →"
   },
   "login": {
     "title": "Login",
