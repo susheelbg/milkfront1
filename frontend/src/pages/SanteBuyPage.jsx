@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
 import { reportApi } from '../services/api/reportApi';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { Search, Filter, Phone, Calendar, Loader2, Clock, ShieldAlert, Trash2 } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
@@ -56,8 +56,8 @@ const CattleCountdown = ({ expiresAt }) => {
 export const SanteBuyPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user: currentUser, isAdmin } = useAuth();
   const santeName = 'Sante';
-  const currentUser = authApi.getCurrentUser();
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -324,8 +324,9 @@ export const SanteBuyPage = () => {
                   {(() => {
                     const myListings = JSON.parse(localStorage.getItem('my_cattle_listings') || '[]');
                     const isOwner = myListings.includes(post.id) || 
+                      (currentUser?.id && post.userId && String(currentUser.id) === String(post.userId)) ||
                       (currentUser?.phone && post.contactNumber && currentUser.phone.replace(/\D/g, '').endsWith(post.contactNumber.replace(/\D/g, ''))) ||
-                      authApi.isAdminAuthenticated();
+                      isAdmin;
 
                     return isOwner ? (
                       <Button

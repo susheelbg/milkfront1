@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { feedsApi } from '../services/api/feedsApi';
 import { newsApi } from '../services/api/newsApi';
 import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useTranslation } from '../i18n/useTranslation';
 export const HomePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser } = useAuth();
   const [feeds, setFeeds] = useState([]);
   const [upcomingOpen, setUpcomingOpen] = useState(false);
   const [news, setNews] = useState([]);
@@ -19,8 +19,6 @@ export const HomePage = () => {
   const newsScrollRef = useRef(null);
 
   useEffect(() => {
-    setCurrentUser(authApi.getCurrentUser());
-
     // Load feeds for the recommendation ticker
     feedsApi.getFeeds()
       .then(data => { if (Array.isArray(data)) setFeeds(data); })

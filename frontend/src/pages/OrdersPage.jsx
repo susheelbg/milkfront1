@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Card, Button } from '../components';
 import { orderApi } from '../services/api/orderApi';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { toastService } from '../services/toastService';
 import { ShoppingBag, Tag, IndianRupee, Loader2, Package, XCircle } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
@@ -10,6 +10,7 @@ import { useTranslation } from '../i18n/useTranslation';
 export const OrdersPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
@@ -17,11 +18,10 @@ export const OrdersPage = () => {
     const fetchOrders = async () => {
       setLoadingOrders(true);
       try {
-        const savedProfile = authApi.getCurrentUser() || {};
         const savedOrderIds = JSON.parse(localStorage.getItem('my_orders') || '[]');
         
         const data = await orderApi.getMyOrders({
-          phone: savedProfile.phone || '',
+          phone: user?.phone || '',
           ids: savedOrderIds,
         });
         setOrders(data || []);
@@ -33,7 +33,7 @@ export const OrdersPage = () => {
     };
 
     fetchOrders();
-  }, []);
+  }, [user]);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm(t('common.confirmCancelOrder') || 'Are you sure you want to cancel this order?')) {

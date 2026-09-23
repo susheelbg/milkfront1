@@ -85,4 +85,26 @@ export const authApi = {
     }
     return data;
   },
+
+  // Safe backward-compatible helper to avoid runtime TypeError if called
+  getCurrentUser: () => {
+    try {
+      const keys = Object.keys(localStorage);
+      for (const k of keys) {
+        if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          const item = JSON.parse(localStorage.getItem(k) || '{}');
+          if (item?.user) return item.user;
+        }
+      }
+    } catch {}
+    return null;
+  },
+
+  isAdminAuthenticated: () => {
+    return false;
+  },
+
+  isAuthenticated: () => {
+    return Boolean(authApi.getCurrentUser());
+  },
 };

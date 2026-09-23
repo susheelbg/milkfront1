@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { toastService } from '../services/toastService';
 import { Camera, X } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
@@ -10,6 +10,7 @@ import { useTranslation } from '../i18n/useTranslation';
 export const SanteSellPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user, updateProfile } = useAuth();
   const santeName = 'Sante';
 
   const [formData, setFormData] = useState({
@@ -29,15 +30,14 @@ export const SanteSellPage = () => {
 
   useEffect(() => {
     // Prefill user details
-    const user = authApi.getCurrentUser();
     if (user) {
       setFormData(prev => ({
         ...prev,
-        contactNumber: user.phone || '',
-        villageName: user.villageName || '',
+        contactNumber: user.phone || prev.contactNumber,
+        villageName: user.address || prev.villageName,
       }));
     }
-  }, []);
+  }, [user]);
 
 
 
@@ -134,10 +134,12 @@ export const SanteSellPage = () => {
         } catch {}
       }
 
-      authApi.updateProfile({
-        phone: formData.contactNumber,
-        villageName: formData.villageName,
-      });
+      if (updateProfile && (formData.contactNumber || formData.villageName)) {
+        updateProfile({
+          phone: formData.contactNumber,
+          address: formData.villageName,
+        }).catch(() => {});
+      }
 
       toastService.success(t('sante.deleteSuccess') ? t('common.success') : 'Cattle posted successfully!');
       
