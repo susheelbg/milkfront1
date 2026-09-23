@@ -57,7 +57,7 @@ export const RegisterPage = () => {
 
     setLoading(true);
     try {
-      await signUp({
+      const res = await signUp({
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
@@ -65,8 +65,13 @@ export const RegisterPage = () => {
         password: formData.password,
       });
 
-      toastService.success(t('register.success') || 'Account created successfully! Welcome to MilkMaatu.');
-      navigate('/home', { replace: true });
+      if (res?.session) {
+        toastService.success(t('register.success') || 'Account created successfully! Welcome to MilkMaatu.');
+        navigate('/home', { replace: true });
+      } else {
+        toastService.success(t('register.checkEmail') || 'Account created! Please check your email to verify your account, then sign in.');
+        navigate('/login', { replace: true });
+      }
     } catch (err) {
       console.error('Registration error:', err);
       const isDuplicate =

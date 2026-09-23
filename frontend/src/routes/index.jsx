@@ -22,8 +22,8 @@ import {
 } from '../pages';
 import { ShieldAlert } from 'lucide-react';
 
-// Loading screen
-const RouteLoader = () => (
+// MilkMaatu App Loading Screen
+export const RouteLoader = () => (
   <div className="min-h-screen bg-[#0A2E1F] flex items-center justify-center">
     <div className="text-center space-y-3">
       <div className="w-10 h-10 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -32,7 +32,8 @@ const RouteLoader = () => (
   </div>
 );
 
-// ProtectedRoute: requires logged-in user
+// ProtectedRoute: Requires active Supabase session.
+// Waits for session verification to resolve (loading === false) before deciding to render or redirect.
 export const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
@@ -43,6 +44,22 @@ export const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+// PublicOnlyRoute: Prevents logged-in users from seeing Login/Register again.
+// If valid session exists, passes directly to /home.
+export const PublicOnlyRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <RouteLoader />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/home" replace />;
   }
 
   return children;
@@ -74,7 +91,7 @@ export const AdminRoute = ({ children }) => {
           </p>
           <button
             onClick={() => window.location.href = '/home'}
-            className="w-full py-2.5 px-4 bg-primary text-text-dark font-black rounded-xl hover:opacity-90 transition-all text-xs"
+            className="w-full py-2.5 px-4 bg-primary text-text-dark font-black rounded-xl hover:opacity-90 transition-all text-xs cursor-pointer"
           >
             Return to Home
           </button>
@@ -101,60 +118,118 @@ export const routes = [
     path: '/support',
     element: <Support />,
   },
-  // Auth routes
+  // Auth routes (Guests only — redirect to /home if already logged in)
   {
     path: '/login',
-    element: <LoginPage />,
+    element: (
+      <PublicOnlyRoute>
+        <LoginPage />
+      </PublicOnlyRoute>
+    ),
   },
   {
     path: '/register',
-    element: <RegisterPage />,
+    element: (
+      <PublicOnlyRoute>
+        <RegisterPage />
+      </PublicOnlyRoute>
+    ),
   },
   {
     path: '/forgot-password',
+    element: (
+      <PublicOnlyRoute>
+        <ForgotPassword />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: '/reset-password',
     element: <ForgotPassword />,
   },
-  // Core Marketplace routes
+
+  // Core Marketplace routes (Protected by Supabase Auth session)
   {
     path: '/home',
-    element: <HomePage />,
+    element: (
+      <ProtectedRoute>
+        <HomePage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/nandini-ai',
-    element: <NandiniAIPage />,
+    element: (
+      <ProtectedRoute>
+        <NandiniAIPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/news',
-    element: <DairyNewsPage />,
+    element: (
+      <ProtectedRoute>
+        <DairyNewsPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/feeds',
-    element: <BuyFeedsPage />,
+    element: (
+      <ProtectedRoute>
+        <BuyFeedsPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/order-summary',
-    element: <OrderSummaryPage />,
+    element: (
+      <ProtectedRoute>
+        <OrderSummaryPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/orders',
-    element: <OrdersPage />,
+    element: (
+      <ProtectedRoute>
+        <OrdersPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/profile',
-    element: <ProfilePage />,
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/sante',
-    element: <SanteActionPage />,
+    element: (
+      <ProtectedRoute>
+        <SanteActionPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/sante-buy',
-    element: <SanteBuyPage />,
+    element: (
+      <ProtectedRoute>
+        <SanteBuyPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/sante-sell',
-    element: <SanteSellPage />,
+    element: (
+      <ProtectedRoute>
+        <SanteSellPage />
+      </ProtectedRoute>
+    ),
   },
+
   // Cattle route aliases and fallbacks for cattle-buying navigation
   {
     path: '/cattle',
@@ -176,10 +251,7 @@ export const routes = [
     path: '/sante/sell',
     element: <Navigate to="/sante-sell" replace />,
   },
-  {
-    path: '/reset-password',
-    element: <ForgotPassword />,
-  },
+
   // Admin dashboard (Protected by Supabase Auth RBAC)
   {
     path: '/admin',
@@ -189,7 +261,8 @@ export const routes = [
       </AdminRoute>
     ),
   },
-  // Fallbacks
+
+  // Root and fallback routes
   {
     path: '/',
     element: <Navigate to="/home" replace />,

@@ -51,7 +51,7 @@ export const ProfilePage = () => {
     try {
       await signOut();
       toastService.info('Signed out successfully.');
-      navigate('/home');
+      navigate('/login', { replace: true });
     } catch (err) {
       toastService.error('Sign out error.');
     }
