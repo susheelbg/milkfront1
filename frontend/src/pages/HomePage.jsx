@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { authApi } from '../services/api/authApi';
 import { feedsApi } from '../services/api/feedsApi';
-import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, ShoppingBag } from 'lucide-react';
+import { newsApi } from '../services/api/newsApi';
+import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const HomePage = () => {
@@ -12,6 +13,10 @@ export const HomePage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [feeds, setFeeds] = useState([]);
   const [upcomingOpen, setUpcomingOpen] = useState(false);
+  const [news, setNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState(false);
+  const newsScrollRef = useRef(null);
 
   useEffect(() => {
     setCurrentUser(authApi.getCurrentUser());
@@ -20,6 +25,17 @@ export const HomePage = () => {
     feedsApi.getFeeds()
       .then(data => { if (Array.isArray(data)) setFeeds(data); })
       .catch(() => {}); // silent fail — ticker is non-critical
+
+    // Load latest news for the compact home widget
+    newsApi.getLatest(6)
+      .then(data => {
+        setNews(data?.items || []);
+        setNewsLoading(false);
+      })
+      .catch(() => {
+        setNewsError(true);
+        setNewsLoading(false);
+      });
   }, []);
 
   const upcomingFeatures = [
@@ -160,7 +176,106 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* ── Coming Soon — Collapsible ────────────────────────────────── */}
+      {/* ── 📰 ಡೈರಿ ರೈತರ ಸುದ್ದಿ — below Quick Services ─────────── */}
+      <section className="max-w-4xl mx-auto px-4 pb-6">
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <Newspaper size={18} className="text-amber-600" />
+            <h3 className="text-lg font-bold text-text-dark">ಡೈರಿ ರೈತರ ಸುದ್ದಿ</h3>
+          </div>
+          <button
+            onClick={() => navigate('/news')}
+            className="text-xs font-bold text-primary-dark hover:underline transition-colors"
+          >
+            ಎಲ್ಲಾ ಸುದ್ದಿ →
+          </button>
+        </div>
+
+        {/* Outer premium container */}
+        <div className="bg-white/80 backdrop-blur-sm border border-border-light rounded-2xl shadow-sm overflow-hidden">
+          {newsLoading ? (
+            /* Skeleton loading */
+            <div className="flex gap-3 p-4 overflow-hidden">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex-shrink-0 w-64 h-40 bg-gray-100 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : newsError ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-xs text-text-light font-semibold">
+                ಸುದ್ದಿಗಳನ್ನು ಈಗ ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+              </p>
+            </div>
+          ) : news.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-xs text-text-light font-semibold">
+                ಈಗ ಯಾವುದೇ ಹೊಸ ಹೈನುಗಾರಿಕೆ ಸುದ್ದಿಗಳು ಲಭ್ಯವಿಲ್ಲ.
+              </p>
+            </div>
+          ) : (
+            /* Horizontal scroll-snap card track — no page overflow */
+            <div
+              ref={newsScrollRef}
+              className="flex gap-3 p-4 overflow-x-auto scroll-smooth snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {news.map(article => (
+                <div
+                  key={article.id}
+                  className="flex-shrink-0 w-64 snap-start bg-gradient-to-b from-amber-50 to-white border border-amber-200/60 rounded-xl p-3 flex flex-col gap-2"
+                >
+                  {/* Alert indicator */}
+                  {article.is_alert && (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full w-fit">
+                      <Bell size={8} /> ಮಹತ್ವದ
+                    </span>
+                  )}
+
+                  {/* Category */}
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full w-fit">
+                    {article.category_kn}
+                  </span>
+
+                  {/* Kannada headline */}
+                  <p className="text-xs font-black text-text-dark leading-snug line-clamp-3 flex-1">
+                    {article.kannada_title}
+                  </p>
+
+                  {/* Footer: source + read more */}
+                  <div className="flex items-center justify-between mt-auto pt-2 border-t border-amber-200/50">
+                    <p className="text-[9px] font-bold text-text-light uppercase tracking-wider truncate max-w-[100px]">
+                      {article.source_name}
+                    </p>
+                    <a
+                      href={article.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary-dark hover:underline flex-shrink-0"
+                    >
+                      ಓದಿ <ExternalLink size={9} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Subtitle + CTA bar at bottom */}
+          <div className="px-4 py-2 bg-amber-50/60 border-t border-amber-200/40 flex items-center justify-between">
+            <p className="text-[10px] text-text-light font-semibold">
+              ಹೈನುಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಸುದ್ದಿ
+            </p>
+            <button
+              onClick={() => navigate('/news')}
+              className="text-[10px] font-bold text-primary-dark hover:underline"
+            >
+              ಎಲ್ಲಾ ಸುದ್ದಿ ನೋಡಿ →
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className="max-w-4xl mx-auto px-4 py-4">
         {/* Collapsible heading */}
         <button

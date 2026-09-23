@@ -14,6 +14,7 @@ import {
   OrdersPage,
   AdminDashboard,
   NandiniAIPage,
+  DairyNewsPage,
   PrivacyPolicy,
   TermsAndConditions,
   Support,
@@ -75,6 +76,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <NandiniAIPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/news',
+    element: (
+      <ProtectedRoute>
+        <DairyNewsPage />
       </ProtectedRoute>
     ),
   },

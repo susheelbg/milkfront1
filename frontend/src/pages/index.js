@@ -10,6 +10,7 @@ export { ProfilePage } from './ProfilePage';
 export { OrdersPage } from './OrdersPage';
 export { AdminDashboard } from './AdminDashboard';
 export { NandiniAIPage } from './NandiniAIPage';
+export { DairyNewsPage } from './DairyNewsPage';
 export { ForgotPassword } from './auth/ForgotPassword';
 export { PrivacyPolicy } from './compliance/PrivacyPolicy';
 export { TermsAndConditions } from './compliance/TermsAndConditions';

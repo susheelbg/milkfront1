@@ -116,3 +116,12 @@ body {
 .toast.info {
   border-left: 4px solid #3b82f6;
 }
+
+/* Hide scrollbar while keeping scroll functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
