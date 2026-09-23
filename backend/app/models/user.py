@@ -1,28 +1,24 @@
+import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
-class User(Base):
-    __tablename__ = "users"
+class Profile(Base):
+    __tablename__ = "profiles"
 
-    id = Column(Integer, primary_key=True, index=True)
-    full_name = Column(String, nullable=False)
-    phone_number = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    role = Column(String, default="user") # admin or user
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
     address = Column(String, nullable=True)
-    village = Column(String, nullable=True)
-    profile_image = Column(String, nullable=True)
-    is_verified = Column(Boolean, default=False)
-    phone_verified = Column(Boolean, default=False)
-    language = Column(String, default="kn")
-    account_status = Column(String, default="active") # active, suspended, deleted
-    consent_timestamp = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    deleted_at = Column(DateTime, nullable=True)
+    role = Column(String, nullable=False, default="user") # user, admin, super_admin
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    # Relationships
-    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
-    cattle_listings = relationship("Cattle", back_populates="user", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="profile", foreign_keys="Order.user_id")
+    cattle_listings = relationship("Cattle", back_populates="profile", foreign_keys="Cattle.user_id")
+
+# Alias for backwards compatibility where User was imported
+User = Profile

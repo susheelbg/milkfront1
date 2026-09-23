@@ -1,74 +1,88 @@
-// Farmer profile & Local Preferences helper
-// MilkMaatu operates without mandatory user login or registration.
-// Farmer contact details (name, phone, village, address) are stored in localStorage for convenient pre-filling.
+import { supabase } from '../../lib/supabase';
+import { apiClient } from './apiClient';
 
 export const authApi = {
-  // Get farmer profile from local storage
-  getCurrentUser: () => {
+  // Sign up a new user with Supabase Auth and initialize public.profiles row
+  signUp: async ({ email, password, name, phone, address }) => {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          phone,
+          address,
+        },
+      },
+    });
+
+    if (authError) {
+      throw new Error(authError.message);
+    }
+
+    // If an active session was created, sync the profile immediately to backend
+    if (authData.session) {
+      try {
+        await apiClient.post('/auth/sync-profile', { name, phone, address });
+      } catch (err) {
+        console.warn('Profile sync post-signup note:', err);
+      }
+    }
+
+    return authData;
+  },
+
+  // Sign in existing user with email and password
+  signIn: async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    // Fetch the backend profile including assigned role (user / admin / super_admin)
+    let profile = null;
     try {
-      const user = localStorage.getItem('farmer_profile');
-      return user ? JSON.parse(user) : null;
-    } catch {
-      return null;
+      const resp = await apiClient.get('/auth/me');
+      profile = resp?.data || null;
+    } catch (err) {
+      console.warn('Could not fetch backend profile on login:', err);
+    }
+
+    return { ...data, profile };
+  },
+
+  // Sign out user from Supabase Auth
+  signOut: async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Supabase signOut error:', error);
     }
   },
 
-  // Save/update farmer profile details locally
-  updateProfile: async (profileData) => {
-    try {
-      const current = authApi.getCurrentUser() || {};
-      const updated = {
-        ...current,
-        ...profileData,
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('farmer_profile', JSON.stringify(updated));
-      return updated;
-    } catch (e) {
-      console.error('Failed to update farmer profile:', e);
-      throw new Error('Failed to save profile details');
-    }
-  },
-
+  // Fetch current user's profile from FastAPI backend
   getProfile: async () => {
-    return authApi.getCurrentUser();
+    const resp = await apiClient.get('/auth/me');
+    return resp?.data || null;
   },
 
-  saveProfile: (profileData) => {
-    return authApi.updateProfile(profileData);
+  // Update profile details (name, phone, address)
+  updateProfile: async (profileData) => {
+    const resp = await apiClient.put('/auth/profile', profileData);
+    return resp?.data || null;
   },
 
-  // Reset local farmer details if requested
-  clearProfile: () => {
-    localStorage.removeItem('farmer_profile');
-  },
-
-  // Legacy compatibility helpers
-  logout: () => {
-    localStorage.removeItem('farmer_profile');
-    localStorage.removeItem('admin_session');
-  },
-
-  isAuthenticated: () => {
-    // Application is public for all farmers
-    return true;
-  },
-
-  // Admin access helpers
-  isAdminAuthenticated: () => {
-    return localStorage.getItem('admin_session') === 'active';
-  },
-
-  adminLogin: (pin) => {
-    // Validated against ACCESS_PIN (4512)
-    if (pin === '4512') {
-      localStorage.setItem('admin_session', 'active');
-      return true;
+  // Send password reset email
+  resetPassword: async (email) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      throw new Error(error.message);
     }
-    return false;
-  },
-
-  adminLogout: () => {
-    localStorage.removeItem('admin_session');
+    return data;
   },
 };

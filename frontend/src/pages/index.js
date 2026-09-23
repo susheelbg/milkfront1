@@ -12,3 +12,6 @@ export { DairyNewsPage } from './DairyNewsPage';
 export { PrivacyPolicy } from './compliance/PrivacyPolicy';
 export { TermsAndConditions } from './compliance/TermsAndConditions';
 export { Support } from './compliance/Support';
+export { LoginPage } from './LoginPage';
+export { RegisterPage } from './RegisterPage';
+export { ForgotPassword } from './auth/ForgotPassword';

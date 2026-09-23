@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer, BottomNavigation } from './components';
 import { routes } from './routes/index.jsx';
-import { authApi } from './services/api/authApi';
+import { AuthProvider } from './context/AuthContext';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
@@ -65,8 +65,10 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <ToastContainer />
-      <AppContent />
+      <AuthProvider>
+        <ToastContainer />
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 }

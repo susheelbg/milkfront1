@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -11,7 +12,8 @@ class Cattle(Base):
     __tablename__ = "cattle"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    legacy_user_id = Column(Integer, nullable=True) # Historical user ID preserved for legacy cattle listings
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)
     animal_name = Column(String, nullable=False)
     animal_type = Column(String, default="Cow") # Cow, Buffalo, Calf
     age = Column(Integer, nullable=False)
@@ -26,4 +28,5 @@ class Cattle(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     # Relationships
-    user = relationship("User", back_populates="cattle_listings")
+    profile = relationship("Profile", back_populates="cattle_listings", foreign_keys=[user_id])
+    user = relationship("Profile", foreign_keys=[user_id], viewonly=True)

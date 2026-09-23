@@ -3,15 +3,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { feedsApi } from '../services/api/feedsApi';
 import { orderApi } from '../services/api/orderApi';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { toastService } from '../services/toastService';
-import { ShoppingBag, Loader2, MapPin } from 'lucide-react';
+import { ShoppingBag, Loader2, MapPin, CheckCircle } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const OrderSummaryPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const cart = location.state?.cart || {};
 
   const [feeds, setFeeds] = useState([]);
@@ -35,15 +36,14 @@ export const OrderSummaryPage = () => {
       return;
     }
 
-    // Prefill user details
-    const user = authApi.getCurrentUser();
+    // Prefill user details from AuthContext or localStorage
     if (user) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         customerName: user.name || '',
         phoneNumber: user.phone || '',
-        villageName: user.villageName || '',
         address: user.address || '',
-      });
+      }));
     }
 
     // Fetch catalog feeds
@@ -59,7 +59,7 @@ export const OrderSummaryPage = () => {
       }
     };
     loadFeeds();
-  }, [cart, navigate, t]);
+  }, [cart, navigate, t, user]);
 
   const getCartItems = () => {
     return feeds
@@ -113,6 +113,9 @@ export const OrderSummaryPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Prevent duplicate submissions while in progress
+    if (loadingSubmit) return;
+
     if (!validateForm()) {
       toastService.error('Please verify delivery details form.');
       return;
@@ -121,13 +124,14 @@ export const OrderSummaryPage = () => {
     setLoadingSubmit(true);
 
     try {
+      // 1. Submit order to backend
       const result = await orderApi.createOrder({
         items: getCartItems(),
         totalPrice: getTotalPrice(),
         ...formData,
       });
 
-      // Save order ID to local storage for My Orders tracking
+      // Save order ID to local storage for quick tracking
       if (result?.id) {
         try {
           const existing = JSON.parse(localStorage.getItem('my_orders') || '[]');
@@ -136,47 +140,46 @@ export const OrderSummaryPage = () => {
         } catch {}
       }
 
-      // Save entered details to local profile for future prefilling
-      authApi.updateProfile({
-        name: formData.customerName,
-        phone: formData.phoneNumber,
-        villageName: formData.villageName,
-        address: formData.address,
-      });
-
-      toastService.success(t('orderSummary.successMessage') || 'Order placed successfully!');
-      
-      // Clear active cart
+      // Clear active cart from storage
       localStorage.removeItem('active_cart');
-      setSubmitted(true);
 
+      // 2. Only show "Order Confirmed!" after the backend successfully creates the order
+      setSubmitted(true);
+      toastService.success(t('orderSummary.successMessage') || 'Order placed successfully!');
+
+      // 3. Keep confirmation screen for exactly 5000ms, then navigate to /home
       setTimeout(() => {
-        navigate('/orders');
-      }, 2500);
+        navigate('/home', { replace: true });
+      }, 5000);
+
     } catch (error) {
-      toastService.error('Failed to place order. Please try again.');
-    } finally {
+      console.error('Order creation failed:', error);
+      toastService.error(error.message || 'Failed to place order. Please try again.');
       setLoadingSubmit(false);
     }
   };
 
   const items = getCartItems();
 
+  // Exactly 5000ms Order Confirmation Screen
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center p-4">
-        <Card padding="lg" className="text-center max-w-md border border-emerald-200 shadow-xl animate-fade-in">
-          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-4">
-            ✓
+      <div className="min-h-screen bg-gradient-to-br from-[#041D12] via-[#0A2E1F] to-[#041D12] flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-xl border border-emerald-500/30 text-center max-w-md w-full p-8 rounded-3xl shadow-2xl shadow-black/50 animate-fade-in space-y-5">
+          <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-4xl border border-emerald-500/40 animate-bounce">
+            <CheckCircle size={44} />
           </div>
-          <h1 className="text-2xl font-black text-emerald-800 mb-2">Order Confirmed!</h1>
-          <p className="text-text-light text-sm mb-6 leading-relaxed">
-            {t('orderSummary.successMessage')}
-          </p>
-          <div className="bg-white/80 p-3 rounded-lg text-xs font-bold text-text-dark border border-emerald-200">
-            Auto redirecting back to home page...
+          <div>
+            <h1 className="text-2xl font-black text-white mb-2">Order Confirmed!</h1>
+            <p className="text-emerald-200/80 text-xs sm:text-sm leading-relaxed">
+              {t('orderSummary.successMessage') || 'Your cattle feed order has been received and is being processed for prompt dispatch.'}
+            </p>
           </div>
-        </Card>
+          <div className="bg-emerald-950/60 p-3.5 rounded-2xl text-xs font-bold text-amber-300 border border-emerald-500/20 flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+            <span>Redirecting to Home in a moment (5s)...</span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -188,7 +191,7 @@ export const OrderSummaryPage = () => {
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-extrabold text-text-dark">{t('orderSummary.title')}</h1>
+          <h1 className="text-3xl font-extrabold text-text-dark">{t('orderSummary.title') || 'Order Checkout'}</h1>
         </div>
       </section>
 
@@ -206,13 +209,13 @@ export const OrderSummaryPage = () => {
               <Card padding="lg" className="border border-border-light shadow-sm">
                 <div className="flex items-center gap-2 border-b border-border-light pb-4 mb-6">
                   <MapPin className="text-primary-dark" size={22} />
-                  <h2 className="text-xl font-bold text-text-dark">{t('orderSummary.deliveryDetails')}</h2>
+                  <h2 className="text-xl font-bold text-text-dark">{t('orderSummary.deliveryDetails') || 'Delivery Details'}</h2>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Input
-                    label={t('orderSummary.fullName')}
-                    placeholder="Enter your full name"
+                    label={t('orderSummary.fullName') || 'Full Name'}
+                    placeholder="Enter customer name"
                     name="customerName"
                     value={formData.customerName}
                     onChange={handleChange}
@@ -221,7 +224,7 @@ export const OrderSummaryPage = () => {
                   />
 
                   <Input
-                    label={t('orderSummary.phoneNumber')}
+                    label={t('orderSummary.phoneNumber') || 'Phone Number'}
                     placeholder="+91 9876543210"
                     name="phoneNumber"
                     value={formData.phoneNumber}
@@ -231,7 +234,7 @@ export const OrderSummaryPage = () => {
                   />
 
                   <Input
-                    label={t('orderSummary.village')}
+                    label={t('orderSummary.village') || 'Village / Taluk'}
                     placeholder="e.g., Thendekere"
                     name="villageName"
                     value={formData.villageName}
@@ -241,7 +244,7 @@ export const OrderSummaryPage = () => {
                   />
 
                   <Input
-                    label={t('orderSummary.deliveryAddress')}
+                    label={t('orderSummary.deliveryAddress') || 'Delivery Address'}
                     placeholder="Street, door no, landmarks..."
                     name="address"
                     value={formData.address}
@@ -254,10 +257,17 @@ export const OrderSummaryPage = () => {
                     type="submit"
                     variant="primary"
                     size="lg"
-                    className="w-full font-bold shadow-md hover:scale-[1.01] transition-transform mt-6"
+                    className="w-full font-black shadow-md hover:scale-[1.01] transition-transform mt-6 flex items-center justify-center gap-2"
                     disabled={loadingSubmit}
                   >
-                    {loadingSubmit ? t('orderSummary.placingOrder') : `${t('orderSummary.placeOrderButton')} (₹${getTotalPrice().toLocaleString()})`}
+                    {loadingSubmit ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>{t('orderSummary.placingOrder') || 'Processing Order...'}</span>
+                      </>
+                    ) : (
+                      `${t('orderSummary.placeOrderButton') || 'Confirm & Place Order'} (₹${getTotalPrice().toLocaleString()})`
+                    )}
                   </Button>
                 </form>
               </Card>
@@ -268,7 +278,7 @@ export const OrderSummaryPage = () => {
               <Card padding="lg" className="sticky top-20 border border-border-light shadow-sm">
                 <div className="flex items-center gap-2 border-b border-border-light pb-4 mb-5">
                   <ShoppingBag className="text-primary-dark" size={20} />
-                  <h2 className="text-lg font-bold text-text-dark">{t('orderSummary.orderItems')}</h2>
+                  <h2 className="text-lg font-bold text-text-dark">{t('orderSummary.orderItems') || 'Order Items'}</h2>
                 </div>
 
                 <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
@@ -291,15 +301,15 @@ export const OrderSummaryPage = () => {
                 {/* Total Calc */}
                 <div className="border-t-2 border-primary-light pt-4 space-y-2.5">
                   <div className="flex justify-between items-center text-xs text-text-light font-bold uppercase">
-                    <span>{t('orderSummary.subtotal')}</span>
+                    <span>{t('orderSummary.subtotal') || 'Subtotal'}</span>
                     <span>₹{getTotalPrice().toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs text-text-light font-bold uppercase">
-                    <span>{t('orderSummary.shipping')}</span>
-                    <span className="text-emerald-600 font-extrabold">{t('orderSummary.free')}</span>
+                    <span>{t('orderSummary.shipping') || 'Delivery'}</span>
+                    <span className="text-emerald-600 font-extrabold">{t('orderSummary.free') || 'FREE'}</span>
                   </div>
                   <div className="flex justify-between items-center pt-3 border-t border-border-light">
-                    <span className="text-sm font-black text-text-dark uppercase">{t('orderSummary.grandTotal')}</span>
+                    <span className="text-sm font-black text-text-dark uppercase">{t('orderSummary.grandTotal') || 'Grand Total'}</span>
                     <span className="text-2xl font-black text-primary-dark">₹{getTotalPrice().toLocaleString()}</span>
                   </div>
                 </div>
@@ -311,3 +321,4 @@ export const OrderSummaryPage = () => {
     </div>
   );
 };
+export default OrderSummaryPage;

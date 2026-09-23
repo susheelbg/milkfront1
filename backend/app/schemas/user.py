@@ -1,55 +1,39 @@
+import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel, Field, AliasChoices
 
-class UserBase(BaseModel):
-    full_name: str
-    phone_number: str
-    role: str = "user"
-    address: Optional[str] = None
-    village: Optional[str] = None
-    profile_image: Optional[str] = None
-    language: Optional[str] = "kn"
-
-class UserCreate(UserBase):
-    password: str
-
-class UserUpdate(BaseModel):
+class ProfileBase(BaseModel):
     name: Optional[str] = None
+    phone: Optional[str] = None
     address: Optional[str] = None
-    villageName: Optional[str] = None
-    profile_image: Optional[str] = None
-    language: Optional[str] = None
 
-class UserResponse(BaseModel):
-    id: int
-    phone: str = Field(..., validation_alias=AliasChoices("phone", "phone_number"))
-    name: str = Field(..., validation_alias=AliasChoices("name", "full_name"))
-    role: str
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+class ProfileSyncRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+class UserRoleUpdate(BaseModel):
+    role: str = Field(..., pattern="^(user|admin|super_admin)$")
+
+class ProfileResponse(BaseModel):
+    id: str
+    email: Optional[str] = ""
+    name: Optional[str] = ""
+    phone: Optional[str] = ""
     address: Optional[str] = ""
-    villageName: Optional[str] = Field("", validation_alias=AliasChoices("villageName", "village"))
-    profile_image: Optional[str] = ""
-    is_verified: bool
-    phone_verified: bool
-    language: Optional[str] = "kn"
-    account_status: Optional[str] = Field("active", validation_alias=AliasChoices("account_status", "accountStatus"))
-    consent_timestamp: Optional[datetime] = Field(None, validation_alias=AliasChoices("consent_timestamp", "consentTimestamp"))
-    createdAt: datetime = Field(..., validation_alias=AliasChoices("createdAt", "created_at"))
+    role: str = "user"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
-        populate_by_name = True
 
-
-class AdminCreate(BaseModel):
-    name: str
-    phone: str
-    password: str
-    address: Optional[str] = ""
-    villageName: Optional[str] = ""
-
-
-class UserRoleUpdate(BaseModel):
-    role: str
-
-
+# Backwards compatibility alias
+UserResponse = ProfileResponse
+UserUpdate = ProfileUpdate

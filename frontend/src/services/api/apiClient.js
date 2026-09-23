@@ -1,6 +1,8 @@
 // Central API client wrapper for FastAPI/Supabase/JWT integration
 // Fallbacks to localStorage-based mock database when server is not running
 
+import { supabase } from '../../lib/supabase';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 console.log("Production API Base URL configured:", API_BASE_URL);
@@ -9,20 +11,23 @@ if (!API_BASE_URL) {
   throw new Error("VITE_API_URL is not defined in production environment");
 }
 
-// Check if backend server is available (can be toggled manually or set via ENV)
-// By default we check if we should run in mock mode
-const USE_MOCK_API = false; // Set to false to force real API calls to FastAPI
+const USE_MOCK_API = false;
 
-// Helper to construct request headers
-const getHeaders = (options = {}) => {
+// Helper to construct request headers with Supabase Bearer token
+const getHeaders = async (options = {}) => {
   const headers = new Headers({
     'Content-Type': 'application/json',
     ...options.headers,
   });
 
-  // If an administrative session is active, pass Admin PIN for admin endpoint verification
-  if (localStorage.getItem('admin_session') === 'active') {
-    headers.set('X-Admin-PIN', '4512');
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+  } catch (err) {
+    console.warn("Could not retrieve Supabase session token:", err);
   }
 
   return headers;
@@ -62,7 +67,7 @@ export const apiClient = {
 
     const url = `${API_BASE_URL}${endpoint}`;
     console.log(`[API CALL - START] Method: ${options.method || 'GET'} | URL: ${url}`);
-    const headers = getHeaders(options);
+    const headers = await getHeaders(options);
 
     try {
       const response = await fetch(url, {

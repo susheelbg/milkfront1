@@ -7,13 +7,14 @@ import { orderApi } from '../services/api/orderApi';
 import { cattleApi } from '../services/api/cattleApi';
 import { reportApi } from '../services/api/reportApi';
 import { toastService } from '../services/toastService';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user: currentUser, isAdmin, isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, users, orders, cattle
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,57 +38,16 @@ export const AdminDashboard = () => {
     is_hidden: false,
   });
 
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Form states (Admin Add)
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [adminFormData, setAdminFormData] = useState({
-    name: '',
-    phone: '',
-    password: '',
-    address: '',
-    villageName: '',
-  });
-  const [submittingAdmin, setSubmittingAdmin] = useState(false);
-
   useEffect(() => {
-    if (!authApi.isAdminAuthenticated()) {
+    if (!isAdmin) {
       toastService.error('Unauthorized. Admin access only.');
       navigate('/home');
       return;
     }
-    setCurrentUser({ name: 'Administrator', role: 'super_admin' });
     loadData();
-  }, [navigate]);
+  }, [isAdmin, navigate]);
 
-  const handleAdminSubmit = async (e) => {
-    e.preventDefault();
-    if (!adminFormData.name || !adminFormData.phone || !adminFormData.password) {
-      toastService.error("Please fill in Name, Phone, and Password.");
-      return;
-    }
-
-    setSubmittingAdmin(true);
-    try {
-      await adminApi.createAdmin(adminFormData);
-      toastService.success("Successfully created new Admin!");
-      setIsAdminModalOpen(false);
-      setAdminFormData({
-        name: '',
-        phone: '',
-        password: '',
-        address: '',
-        villageName: '',
-      });
-      loadData();
-    } catch (err) {
-      toastService.error(err.message || "Failed to create Admin user.");
-    } finally {
-      setSubmittingAdmin(false);
-    }
-  };
-
-  const handleToggleAdminRole = async (phone, currentRole) => {
+  const handleToggleAdminRole = async (userId, currentRole) => {
     const targetRole = currentRole === 'admin' ? 'user' : 'admin';
     const actionWord = targetRole === 'admin' ? 'promote to Admin' : 'demote to User';
 
@@ -96,7 +56,7 @@ export const AdminDashboard = () => {
     }
 
     try {
-      await adminApi.updateUserRole(phone, targetRole);
+      await adminApi.updateUserRole(userId, targetRole);
       toastService.success(`User role successfully changed to ${targetRole}.`);
       loadData();
     } catch (err) {
@@ -556,14 +516,9 @@ export const AdminDashboard = () => {
                   <div className="space-y-4 animate-slide-up">
                     <div className="flex items-center justify-between px-1">
                       <h3 className="text-lg font-bold text-text-dark">{t('admin.users')} ({usersList.length})</h3>
-                      {currentUser?.role === 'super_admin' && (
-                        <button
-                          onClick={() => setIsAdminModalOpen(true)}
-                          className="bg-[#e3af1e] hover:bg-[#c99815] text-text-dark font-black text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
-                        >
-                          <Plus size={14} /> Add New Admin
-                        </button>
-                      )}
+                      <span className="text-xs text-text-light font-medium">
+                        {isSuperAdmin ? 'Super Admin Mode: You can promote/demote administrators' : 'Admin Mode'}
+                      </span>
                     </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
@@ -571,20 +526,22 @@ export const AdminDashboard = () => {
                         <table className="w-full text-left text-sm border-collapse text-text-dark">
                           <thead>
                             <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
-                              <th className="p-4">Full name</th>
-                              <th className="p-4">Phone number</th>
+                              <th className="p-4">User</th>
+                              <th className="p-4">Phone</th>
                               <th className="p-4">Role</th>
-                              <th className="p-4">Status</th>
-                              <th className="p-4">Village</th>
-                              <th className="p-4">Registered Date</th>
+                              <th className="p-4">Address</th>
+                              <th className="p-4">Joined</th>
                               <th className="p-4 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border-light">
-                            {usersList.map((usr, idx) => (
-                              <tr key={idx} className="hover:bg-bg-light/40 transition-colors">
-                                <td className="p-4 font-bold">{usr.name}</td>
-                                <td className="p-4 text-xs font-bold">{usr.phone}</td>
+                            {usersList.map((usr) => (
+                              <tr key={usr.id} className="hover:bg-bg-light/40 transition-colors">
+                                <td className="p-4 font-bold">
+                                  <p className="text-sm font-black">{usr.name || 'Farmer'}</p>
+                                  <p className="text-xs text-text-light font-normal">{usr.email || 'No email'}</p>
+                                </td>
+                                <td className="p-4 text-xs font-bold">{usr.phone || '-'}</td>
                                 <td className="p-4">
                                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
                                     usr.role === 'super_admin'
@@ -596,52 +553,25 @@ export const AdminDashboard = () => {
                                     {usr.role === 'super_admin' ? 'Super Admin' : usr.role === 'admin' ? 'Admin' : 'User'}
                                   </span>
                                 </td>
-                                <td className="p-4">
-                                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                                    (usr.accountStatus || usr.account_status) === 'suspended'
-                                      ? 'bg-red-100 text-red-700 border border-red-200'
-                                      : (usr.accountStatus || usr.account_status) === 'deleted'
-                                      ? 'bg-gray-100 text-gray-400 border border-gray-200 line-through'
-                                      : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                  }`}>
-                                    {usr.accountStatus || usr.account_status || 'active'}
-                                  </span>
+                                <td className="p-4 text-xs">{usr.address || '-'}</td>
+                                <td className="p-4 text-xs text-text-light">
+                                  {usr.created_at ? new Date(usr.created_at).toLocaleDateString() : '-'}
                                 </td>
-                                <td className="p-4 text-xs">{usr.villageName || '-'}</td>
-                                <td className="p-4 text-xs text-text-light">{usr.createdAt ? new Date(usr.createdAt).toLocaleDateString() : '-'}</td>
-                                <td className="p-4 text-right flex justify-end items-center gap-2">
-                                  {currentUser?.role === 'super_admin' && usr.phone !== currentUser?.phone && usr.role !== 'super_admin' && (
+                                <td className="p-4 text-right">
+                                  {isSuperAdmin && usr.id !== currentUser?.id && usr.role !== 'super_admin' && (
                                     <button
-                                      onClick={() => handleToggleAdminRole(usr.phone, usr.role)}
-                                      className={`text-[11px] font-bold px-2 py-1 rounded border transition-colors ${
+                                      onClick={() => handleToggleAdminRole(usr.id, usr.role)}
+                                      className={`text-[11px] font-bold px-2.5 py-1 rounded border transition-colors ${
                                         usr.role === 'admin'
                                           ? 'text-purple-600 border-purple-200 hover:bg-purple-50'
                                           : 'text-amber-600 border-amber-200 hover:bg-amber-50'
                                       }`}
                                     >
-                                      {usr.role === 'admin' ? 'Demote User' : 'Make Admin'}
+                                      {usr.role === 'admin' ? 'Demote to User' : 'Make Admin'}
                                     </button>
                                   )}
-
-                                  {usr.phone !== currentUser?.phone && 
-                                   usr.role !== 'super_admin' && 
-                                   (usr.role !== 'admin' || currentUser?.role === 'super_admin') && 
-                                   (usr.accountStatus || usr.account_status) !== 'deleted' && (
-                                    (usr.accountStatus || usr.account_status) === 'suspended' ? (
-                                      <button
-                                        onClick={() => handleUnsuspendUser(usr.phone)}
-                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 transition-colors"
-                                      >
-                                        {t('compliance.unsuspend')}
-                                      </button>
-                                    ) : (
-                                      <button
-                                        onClick={() => handleSuspendUser(usr.phone)}
-                                        className="text-xs font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-2.5 py-1 rounded border border-red-200 transition-colors"
-                                      >
-                                        {t('compliance.suspend')}
-                                      </button>
-                                    )
+                                  {usr.role === 'super_admin' && (
+                                    <span className="text-[11px] text-amber-600 font-bold">Super Admin</span>
                                   )}
                                 </td>
                               </tr>
@@ -911,68 +841,6 @@ export const AdminDashboard = () => {
         </div>
       )}
 
-      {/* ADMIN ADD MODAL */}
-      {isAdminModalOpen && (
-        <div className="fixed inset-0 bg-text-dark/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-border-light shadow-2xl relative" padding="lg">
-            <button
-              onClick={() => setIsAdminModalOpen(false)}
-              className="absolute top-4 right-4 text-text-light hover:text-text-dark"
-            >
-              <X size={20} />
-            </button>
-
-            <h3 className="text-xl font-bold text-text-dark mb-6">
-              Create New Admin Account
-            </h3>
-
-            <form onSubmit={handleAdminSubmit} className="space-y-4">
-              <Input
-                label="Full Name"
-                placeholder="Enter full name"
-                value={adminFormData.name}
-                onChange={(e) => setAdminFormData({ ...adminFormData, name: e.target.value })}
-                required
-              />
-
-              <Input
-                label="Phone Number"
-                placeholder="e.g. +919876543210"
-                value={adminFormData.phone}
-                onChange={(e) => setAdminFormData({ ...adminFormData, phone: e.target.value })}
-                required
-              />
-
-              <Input
-                label="Password"
-                type="password"
-                placeholder="Enter password (min 6 characters)"
-                value={adminFormData.password}
-                onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
-                required
-              />
-
-              <Input
-                label="Address"
-                placeholder="Enter administrative address"
-                value={adminFormData.address}
-                onChange={(e) => setAdminFormData({ ...adminFormData, address: e.target.value })}
-              />
-
-              <Input
-                label="Village Name"
-                placeholder="Enter village name"
-                value={adminFormData.villageName}
-                onChange={(e) => setAdminFormData({ ...adminFormData, villageName: e.target.value })}
-              />
-
-              <Button type="submit" variant="primary" size="lg" className="w-full mt-4 font-bold" disabled={submittingAdmin}>
-                {submittingAdmin ? "Creating Admin..." : "Create Admin User"}
-              </Button>
-            </form>
-          </Card>
-        </div>
-      )}
-    </div>
+      </div>
   );
 };

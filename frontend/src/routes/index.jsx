@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   HomePage,
   BuyFeedsPage,
@@ -15,70 +16,79 @@ import {
   PrivacyPolicy,
   TermsAndConditions,
   Support,
+  LoginPage,
+  RegisterPage,
+  ForgotPassword,
 } from '../pages';
-import { authApi } from '../services/api/authApi';
-import { Lock, ArrowRight } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
-// AdminRoute: Guarded by Admin Access PIN without requiring farmer user accounts
-export const AdminRoute = ({ children }) => {
-  const [isAdmin, setIsAdmin] = useState(() => authApi.isAdminAuthenticated());
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
+// Loading screen
+const RouteLoader = () => (
+  <div className="min-h-screen bg-[#0A2E1F] flex items-center justify-center">
+    <div className="text-center space-y-3">
+      <div className="w-10 h-10 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
+      <p className="text-xs font-bold text-emerald-200">Loading MilkMaatu...</p>
+    </div>
+  </div>
+);
 
-  if (isAdmin) {
-    return children;
+// ProtectedRoute: requires logged-in user
+export const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <RouteLoader />;
   }
 
-  const handleUnlock = (e) => {
-    e.preventDefault();
-    if (authApi.adminLogin(pin.trim())) {
-      setIsAdmin(true);
-      setError('');
-    } else {
-      setError('Invalid Admin PIN. Please try again.');
-    }
-  };
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
-  return (
-    <div className="min-h-screen bg-bg-light flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-border-light shadow-xl p-8 max-w-sm w-full text-center animate-fade-in">
-        <div className="w-14 h-14 bg-primary-light text-primary-dark rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Lock size={28} />
-        </div>
-        <h2 className="text-xl font-black text-text-dark mb-1">Admin Access</h2>
-        <p className="text-xs text-text-light mb-6">Enter Admin PIN to manage feeds and orders</p>
-        
-        <form onSubmit={handleUnlock} className="space-y-4">
-          <input
-            type="password"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            value={pin}
-            onChange={(e) => {
-              setPin(e.target.value);
-              setError('');
-            }}
-            placeholder="Enter PIN (4512)"
-            autoFocus
-            className="w-full text-center text-2xl tracking-widest font-black py-3 px-4 rounded-xl border border-border-light focus:border-primary focus:outline-none bg-bg-light"
-          />
-          {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
-          <button
-            type="submit"
-            className="w-full py-3 px-4 bg-primary text-text-dark font-black rounded-xl hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
-          >
-            <span>Unlock Dashboard</span>
-            <ArrowRight size={16} />
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  return children;
 };
 
-// Routes configuration - completely open farmer experience
+// AdminRoute: Guarded by Supabase RBAC role (admin or super_admin)
+export const AdminRoute = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <RouteLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-bg-light flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-red-200 shadow-xl p-8 max-w-sm w-full text-center animate-fade-in">
+          <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <ShieldAlert size={28} />
+          </div>
+          <h2 className="text-xl font-black text-text-dark mb-1">Access Denied</h2>
+          <p className="text-xs text-text-light mb-6">
+            Administrator or Super Admin privileges are required to view this dashboard.
+          </p>
+          <button
+            onClick={() => window.location.href = '/home'}
+            className="w-full py-2.5 px-4 bg-primary text-text-dark font-black rounded-xl hover:opacity-90 transition-all text-xs"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+};
+
+// Routes configuration
 export const routes = [
+  // Public & compliance
   {
     path: '/privacy-policy',
     element: <PrivacyPolicy />,
@@ -91,6 +101,20 @@ export const routes = [
     path: '/support',
     element: <Support />,
   },
+  // Auth routes
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />,
+  },
+  // Core Marketplace routes
   {
     path: '/home',
     element: <HomePage />,
@@ -102,18 +126,6 @@ export const routes = [
   {
     path: '/news',
     element: <DairyNewsPage />,
-  },
-  {
-    path: '/profile',
-    element: <ProfilePage />,
-  },
-  {
-    path: '/admin',
-    element: (
-      <AdminRoute>
-        <AdminDashboard />
-      </AdminRoute>
-    ),
   },
   {
     path: '/feeds',
@@ -128,6 +140,10 @@ export const routes = [
     element: <OrdersPage />,
   },
   {
+    path: '/profile',
+    element: <ProfilePage />,
+  },
+  {
     path: '/sante',
     element: <SanteActionPage />,
   },
@@ -139,6 +155,16 @@ export const routes = [
     path: '/sante-sell',
     element: <SanteSellPage />,
   },
+  // Admin dashboard (Protected by Supabase Auth RBAC)
+  {
+    path: '/admin',
+    element: (
+      <AdminRoute>
+        <AdminDashboard />
+      </AdminRoute>
+    ),
+  },
+  // Fallbacks
   {
     path: '/',
     element: <Navigate to="/home" replace />,

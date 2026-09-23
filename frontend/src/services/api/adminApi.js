@@ -7,28 +7,27 @@ export const adminApi = {
     return res && res.success ? res.data : res;
   },
 
-  // Delete a user account (Admin action)
-  deleteUser: async (phone) => {
-    const res = await apiClient.delete(`/admin/users/${phone}`);
-    return res && res.success ? res.data : res;
-  },
-
   // Get admin stats / dashboard metrics
   getStats: async () => {
     const res = await apiClient.get('/admin/stats');
     return res && res.success ? res.data : res;
   },
 
-  // Create a new administrative user (Super Admin only)
-  createAdmin: async (adminData) => {
-    const res = await apiClient.post('/admin/create-admin', adminData);
+  // Update user role (Super Admin only) - pass UUID string
+  updateUserRole: async (userId, role) => {
+    const res = await apiClient.put(`/admin/users/${userId}/role`, { role });
     return res && res.success ? res.data : res;
   },
 
-  // Update user role (Super Admin only)
-  updateUserRole: async (phone, role) => {
-    const res = await apiClient.put(`/admin/users/${phone}/role`, { role });
+  // Get all system orders
+  getOrders: async () => {
+    const res = await apiClient.get('/admin/orders');
+    return res && res.success ? res.data : res;
+  },
+
+  // Update order status
+  updateOrderStatus: async (orderId, status) => {
+    const res = await apiClient.put(`/admin/orders/${orderId}/status`, { status });
     return res && res.success ? res.data : res;
   },
 };
-

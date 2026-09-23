@@ -87,12 +87,27 @@ Farmer taps article ─→ Original publisher website (direct link)
 
 ---
 
-### 5. 🔓 Frictionless Farmer Experience (Zero Login / Zero Registration)
-MilkMaatu is designed for maximum speed and simplicity for rural dairy farmers:
-- **No Sign-Up or Login**: No passwords to create or forget, and no SMS OTP delays.
-- **Immediate Browsing**: Directly launches into `/home`.
-- **Local Contact Preferences**: Farmers can optionally save their Name, Phone number, Village, and Delivery Address in the Profile tab (`localStorage`), which automatically pre-fills feed order checkouts and Sante cattle listings.
-- **Order Tracking**: Orders placed on the device are saved locally and synchronized live with backend status (`/orders`).
+### 5. 🔐 Supabase Authentication & Role-Based Access Control (RBAC)
+MilkMaatu implements cryptographically verified authentication and role-based authorization:
+- **Supabase Auth Integration**: User registration, login, session tokens, and password reset powered by Supabase Auth with persistent sessions across refreshes and Capacitor mobile restarts.
+- **Three Core Roles**:
+  - `user`: Default role for registering farmers. Can browse, purchase feeds, post cattle in Sante, and track orders. Cannot elevate own role.
+  - `admin`: Can access the Admin Dashboard, manage feeds (create, edit, hide, delete), audit and dispatch customer orders, and moderate Sante listings.
+  - `super_admin`: Full system control. Can promote users to `admin`, demote admins back to `user`, and manage administrative access. Protected by last Super Admin safeguards.
+- **Server-Side Security & Cryptographic JWKS Verification**:
+  - Tokens are cryptographically verified using Supabase JWKS public signing keys (ES256).
+  - No insecure JWT decoding without signature verification.
+  - All sensitive operations strictly guarded on FastAPI endpoints and database RLS.
+- **Idempotent Super Admin Bootstrap**:
+  - Reads `INITIAL_SUPER_ADMIN_EMAIL` and `INITIAL_SUPER_ADMIN_PASSWORD` from backend-only `.env`.
+  - Automatically verifies and upserts the Super Admin account and profile on startup.
+- **Historical Data Preservation**:
+  - Safely preserves all 27 historical orders, 33 order items, and 11 cattle listings.
+  - Historical integer user IDs preserved in `legacy_user_id` while new records link to UUID `user_id` referencing `public.profiles(id)`.
+- **Order Placement Experience**:
+  - Order confirmation screen displays only after the backend successfully creates the order.
+  - Submit button is disabled during submission to prevent duplicate requests.
+  - Confirmation screen displays for exactly 5000ms before auto-navigating to `/home`.
 
 ---
 
@@ -123,14 +138,16 @@ Powered by **Google Gemini 2.5 Flash**:
 ---
 
 ### 9. 🛡️ Admin Dashboard (`/admin`)
-Administrative functions are protected by an **Admin Access PIN** screen (`4512` by default):
-| Section | Capabilities |
-|---------|-------------|
-| Overview | Revenue, active listings, total orders, active cattle |
-| Feeds | Add / edit / hide / remove feed products |
-| Orders | Audit all customer orders, update dispatch status |
-| Cattle | Moderate / delete inappropriate Sante listings |
-| News | View aggregated articles and source stats |
+Administrative functions are protected by Supabase Auth RBAC (Admin or Super Admin required):
+| Section | Capabilities | Access |
+|---------|-------------|--------|
+| Overview | Revenue (₹35,960+), active listings, total orders (all 27+), active cattle | Admin & Super Admin |
+| Feeds | Add / edit / hide / remove feed products | Admin & Super Admin |
+| Orders | Audit all customer orders (including 27 historical orders), update dispatch status | Admin & Super Admin |
+| Users | View user directory, promote users to Admin, demote Admins | Super Admin only |
+| Cattle | Moderate / delete inappropriate Sante listings | Admin & Super Admin |
+| Moderation | Review compliance reports and suspend bad actors | Admin & Super Admin |
+
 
 ---
 

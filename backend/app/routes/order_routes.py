@@ -5,61 +5,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_
+
 from app.core.database import get_db
-from app.core.dependencies import get_current_admin
+from app.core.dependencies import get_current_user_optional, get_current_admin
 from app.models.order import Order, OrderItem
 from app.models.feed import Feed
-from app.models.user import User
+from app.models.user import Profile
 from app.schemas.order import OrderCreate, OrderResponse, OrderUpdate
 from app.utils.response import json_response
 
 router = APIRouter(tags=["Orders Operations"])
 
-async def get_or_create_farmer_user(
-    db: AsyncSession,
-    phone: str,
-    name: Optional[str] = None,
-    village: Optional[str] = None,
-    address: Optional[str] = None
-) -> int:
-    clean_phone = phone.strip() if phone else "guest_farmer"
-    res = await db.execute(select(User).where(User.phone_number == clean_phone))
-    user = res.scalars().first()
-    if not user:
-        user = User(
-            full_name=name or "Farmer",
-            phone_number=clean_phone,
-            hashed_password="guest_no_password",
-            role="user",
-            village=village or "",
-            address=address or "",
-            is_verified=True,
-            phone_verified=True
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    else:
-        updated = False
-        if name and user.full_name in ("Farmer", "", None):
-            user.full_name = name
-            updated = True
-        if village and not user.village:
-            user.village = village
-            updated = True
-        if address and not user.address:
-            user.address = address
-            updated = True
-        if updated:
-            await db.commit()
-    return user.id
-
 @router.post("/orders")
 async def place_order(
     req: OrderCreate,
+    current_user: Optional[Profile] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
-    """Place a new cattle feed order without requiring user login. Deducts stock quantity and creates lines."""
+    """
+    Place a new cattle feed order. Deducts stock quantity and creates lines.
+    If authenticated via Supabase Auth, links order to current_user.id (UUID).
+    """
     if not req.items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -102,20 +68,11 @@ async def place_order(
             )
         )
 
-    # 2. Get or create farmer record using customer details (no login needed)
-    user_id = await get_or_create_farmer_user(
-        db,
-        phone=req.phoneNumber,
-        name=req.customerName,
-        village=req.villageName,
-        address=req.address
-    )
-
-    # 3. Create Order Header
+    # 2. Create Order Header linked to user UUID if authenticated
     order_id = f"ORD-{int(time.time() * 1000)}"
     new_order = Order(
         id=order_id,
-        user_id=user_id,
+        user_id=current_user.id if current_user else None,
         total_amount=calculated_total,
         order_status="pending",
         delivery_address=req.address,
@@ -155,14 +112,24 @@ async def place_order(
 async def get_my_orders(
     phone: Optional[str] = Query(None),
     ids: Optional[str] = Query(None),
+    current_user: Optional[Profile] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve purchase history using phone number or order IDs without requiring user login."""
+    """
+    Retrieve purchase history for authenticated user or by phone/order IDs.
+    """
     conditions = []
+    
+    if current_user:
+        conditions.append(Order.user_id == current_user.id)
+        if current_user.phone:
+            conditions.append(Order.phone_number == current_user.phone)
+            
     if ids:
         id_list = [i.strip() for i in ids.split(",") if i.strip()]
         if id_list:
             conditions.append(Order.id.in_(id_list))
+            
     if phone and phone.strip():
         clean_phone = phone.strip()
         conditions.append(Order.phone_number == clean_phone)
@@ -186,7 +153,7 @@ async def get_my_orders(
     payload = [OrderResponse.model_validate(o).model_dump() for o in orders]
     return json_response(
         success=True,
-        message="Fetched farmer orders successfully",
+        message="Fetched orders successfully",
         data=payload
     )
 
@@ -232,11 +199,11 @@ async def cancel_order(
         data=payload
     )
 
-# --- ADMIN WRITE ENDPOINTS (Protected by Admin PIN / Admin check) ---
+# --- ADMIN WRITE ENDPOINTS (Protected by Supabase Auth Admin Role) ---
 
 @router.get("/admin/orders")
 async def get_all_orders(
-    admin_user: User = Depends(get_current_admin),
+    admin_user: Profile = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve all orders placed across the system (Admin only)."""
@@ -259,7 +226,7 @@ async def get_all_orders(
 async def update_order_status(
     id: str,
     req: OrderUpdate,
-    admin_user: User = Depends(get_current_admin),
+    admin_user: Profile = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Modify the dispatch status of an order (Admin only)."""

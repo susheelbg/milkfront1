@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
-import { authApi } from '../services/api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { toastService } from '../services/toastService';
-import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, RotateCcw } from 'lucide-react';
+import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, LogOut, LogIn, Mail } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useTranslation();
+  const { user, isAuthenticated, signOut, updateProfile, isAdmin, isSuperAdmin } = useAuth();
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: '',
-    villageName: '',
   });
 
   useEffect(() => {
-    const profile = authApi.getCurrentUser() || {};
-    setFormData({
-      name: profile.name || '',
-      phone: profile.phone || '',
-      address: profile.address || '',
-      villageName: profile.villageName || '',
-    });
-  }, []);
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        phone: user.phone || '',
+        address: user.address || '',
+      });
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,24 +39,21 @@ export const ProfilePage = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      await authApi.updateProfile(formData);
+      await updateProfile(formData);
       setIsEditing(false);
       toastService.success(t('profile.updateSuccess') || 'Details saved successfully!');
     } catch (err) {
-      toastService.error('Failed to save details.');
+      toastService.error(err.message || 'Failed to save details.');
     }
   };
 
-  const handleClear = () => {
-    if (window.confirm('Clear saved farmer details from this device?')) {
-      authApi.clearProfile();
-      setFormData({
-        name: '',
-        phone: '',
-        address: '',
-        villageName: '',
-      });
-      toastService.info('Saved details cleared.');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toastService.info('Signed out successfully.');
+      navigate('/home');
+    } catch (err) {
+      toastService.error('Sign out error.');
     }
   };
 
@@ -63,33 +61,93 @@ export const ProfilePage = () => {
     <div className="min-h-screen bg-bg-light pb-20">
       <Header showBack onBack={() => navigate('/home')} />
 
-      {/* Profile Header */}
-      <section className="bg-primary py-8 px-4 shadow-sm border-b border-primary-dark">
-        <div className="max-w-xl mx-auto flex items-center gap-4">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-primary-dark text-2xl text-text-dark font-black">
-            {formData.name ? formData.name.charAt(0).toUpperCase() : <User size={28} />}
+      {/* Profile Header Banner */}
+      <section className="bg-gradient-to-r from-[#041D12] via-[#0A2E1F] to-[#041D12] py-8 px-4 shadow-sm text-white">
+        <div className="max-w-xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white text-[#0A2E1F] rounded-2xl flex items-center justify-center shadow-lg border-2 border-amber-400 text-2xl font-black">
+              {user?.name ? user.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : <User size={28} />)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black text-white">
+                  {user?.name || (isAuthenticated ? 'Dairy Farmer' : 'Guest Farmer')}
+                </h1>
+                {user?.role && (
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                    user.role === 'super_admin'
+                      ? 'bg-amber-400 text-[#0A2E1F]'
+                      : user.role === 'admin'
+                      ? 'bg-emerald-400 text-[#0A2E1F]'
+                      : 'bg-white/20 text-white'
+                  }`}>
+                    {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Farmer'}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-emerald-200/80 font-medium mt-0.5">
+                {user?.email || 'Sign in to access your orders and account'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-black text-text-dark">
-              {formData.name || t('common.farmer') || 'Dairy Farmer'}
-            </h1>
-            <p className="text-xs text-text-dark/70 font-semibold mt-0.5">
-              {formData.phone ? formData.phone : 'Details saved on this device'}
-            </p>
-          </div>
+
+          {isAuthenticated ? (
+            <button
+              onClick={handleSignOut}
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-colors flex items-center gap-1.5 text-xs font-bold"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="px-3.5 py-2 rounded-xl bg-amber-400 text-[#0A2E1F] font-black text-xs flex items-center gap-1.5 shadow-sm hover:bg-amber-300 transition-all"
+            >
+              <LogIn size={15} />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </section>
 
-      {/* Profile Body */}
+      {/* Main Content */}
       <section className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        {/* Unauthenticated Alert Banner */}
+        {!isAuthenticated && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-amber-900">Sign in to MilkMaatu</h3>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Track your cattle feed orders, post cattle on Sante, and access full features.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate('/login')}
+                className="px-3 py-1.5 bg-amber-500 text-white font-extrabold text-xs rounded-xl hover:bg-amber-600 transition-colors shadow-xs"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 font-extrabold text-xs rounded-xl hover:bg-amber-100 transition-colors"
+              >
+                Register
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Personal Details Card */}
         <Card padding="lg" className="border border-border-light shadow-sm">
           <div className="flex justify-between items-center mb-5 border-b border-border-light pb-3">
             <div>
-              <h2 className="text-lg font-black text-text-dark">{t('profile.personalDetails') || 'My Farmer Details'}</h2>
-              <p className="text-xs text-text-light">Auto-fills your feed orders and Sante cattle listings</p>
+              <h2 className="text-lg font-black text-text-dark">{t('profile.personalDetails') || 'Profile Details'}</h2>
+              <p className="text-xs text-text-light">Auto-fills your feed orders and cattle listings</p>
             </div>
-            {!isEditing && (
+            {isAuthenticated && !isEditing && (
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
@@ -117,10 +175,23 @@ export const ProfilePage = () => {
               ) : (
                 <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
                   <User className="text-text-light" size={18} />
-                  <p className="font-semibold text-sm text-text-dark">{formData.name || 'Not provided'}</p>
+                  <p className="font-semibold text-sm text-text-dark">{user?.name || formData.name || 'Not provided'}</p>
                 </div>
               )}
             </div>
+
+            {/* Email (Read-only) */}
+            {user?.email && (
+              <div>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">
+                  Email Address
+                </label>
+                <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
+                  <Mail className="text-text-light" size={18} />
+                  <p className="font-semibold text-sm text-text-dark">{user.email}</p>
+                </div>
+              </div>
+            )}
 
             {/* Phone */}
             <div>
@@ -137,27 +208,7 @@ export const ProfilePage = () => {
               ) : (
                 <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
                   <Phone className="text-text-light" size={18} />
-                  <p className="font-semibold text-sm text-text-dark">{formData.phone || 'Not provided'}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Village */}
-            <div>
-              <label className="block text-xs text-text-light font-bold uppercase mb-1">
-                {t('profile.villageName') || 'Village / Town'}
-              </label>
-              {isEditing ? (
-                <Input
-                  name="villageName"
-                  value={formData.villageName}
-                  onChange={handleChange}
-                  placeholder={t('register.villagePlaceholder') || 'Enter village name'}
-                />
-              ) : (
-                <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
-                  <MapPin className="text-text-light" size={18} />
-                  <p className="font-semibold text-sm text-text-dark">{formData.villageName || 'Not provided'}</p>
+                  <p className="font-semibold text-sm text-text-dark">{user?.phone || formData.phone || 'Not provided'}</p>
                 </div>
               )}
             </div>
@@ -165,19 +216,19 @@ export const ProfilePage = () => {
             {/* Delivery Address */}
             <div>
               <label className="block text-xs text-text-light font-bold uppercase mb-1">
-                {t('orderSummary.deliveryAddress') || 'Delivery Address'}
+                {t('orderSummary.deliveryAddress') || 'Village / Address'}
               </label>
               {isEditing ? (
                 <Input
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder={t('profile.addressPlaceholder') || 'House number, landmark, taluk'}
+                  placeholder={t('profile.addressPlaceholder') || 'Village, taluk, door no...'}
                 />
               ) : (
                 <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
                   <MapPin className="text-text-light" size={18} />
-                  <p className="font-semibold text-sm text-text-dark">{formData.address || 'Not provided'}</p>
+                  <p className="font-semibold text-sm text-text-dark">{user?.address || formData.address || 'Not provided'}</p>
                 </div>
               )}
             </div>
@@ -226,21 +277,34 @@ export const ProfilePage = () => {
           </div>
         </Card>
 
-        {/* Management & Legal Links */}
+        {/* Quick Links Card */}
         <Card padding="lg" className="border border-border-light shadow-sm space-y-3">
           <h2 className="text-sm font-black uppercase text-text-light tracking-wider mb-2">
             Quick Links
           </h2>
 
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <Shield size={18} className="text-amber-700" />
+                <span className="text-sm font-black text-amber-900">Admin Dashboard</span>
+              </div>
+              <span className="text-xs text-amber-700 font-bold">Open Portal →</span>
+            </button>
+          )}
+
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/orders')}
             className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-bg-light transition-colors text-left"
           >
             <div className="flex items-center gap-3">
-              <Lock size={18} className="text-text-light" />
-              <span className="text-sm font-bold text-text-dark">Admin Portal</span>
+              <FileText size={18} className="text-text-light" />
+              <span className="text-sm font-bold text-text-dark">My Feed Orders</span>
             </div>
-            <span className="text-xs text-text-light font-semibold">PIN required →</span>
+            <span className="text-xs text-text-light">→</span>
           </button>
 
           <button
@@ -275,21 +339,9 @@ export const ProfilePage = () => {
             </div>
             <span className="text-xs text-text-light">→</span>
           </button>
-
-          {formData.name && (
-            <div className="border-t border-border-light pt-3 mt-3">
-              <button
-                type="button"
-                onClick={handleClear}
-                className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
-              >
-                <RotateCcw size={14} />
-                <span>Reset Saved Details from Device</span>
-              </button>
-            </div>
-          )}
         </Card>
       </section>
     </div>
   );
 };
+export default ProfilePage;

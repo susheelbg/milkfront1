@@ -1,6 +1,5 @@
 import os
 from typing import List
-from pydantic import AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
@@ -14,31 +13,30 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "MilkMaatu Backend API"
     
     # Database Settings
-    # Fallback to local async sqlite if not specified
     DATABASE_URL: str = "sqlite+aiosqlite:///./milkmaatu.db"
 
-    # Security Settings
-    JWT_SECRET: str = "super_secret_jwt_signature_key_change_me_in_production_123456"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24 Hours
+    # Supabase Settings
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL") or ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_JWT_SECRET: str = ""
+
+    # Initial Super Admin Bootstrap Credentials
+    INITIAL_SUPER_ADMIN_EMAIL: str = ""
+    INITIAL_SUPER_ADMIN_PASSWORD: str = ""
 
     # Cloudinary Config
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
-    # Admin Access PIN Config
-    ACCESS_PIN: str = "4512"
-
     # Gemini API settings
     GEMINI_API_KEY: str = ""
 
     # CORS Settings
-    # Load comma-separated origins from environment or default to allow all
     CORS_ORIGINS: List[str] = ["*"]
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=env_path,
         env_file_encoding="utf-8",
         extra="ignore"
     )

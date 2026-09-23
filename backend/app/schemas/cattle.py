@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Optional, Union
+from pydantic import BaseModel, Field, model_validator
 
 class CattleCreate(BaseModel):
     animalName: str = Field(..., validation_alias="animalName")
@@ -15,23 +15,42 @@ class CattleCreate(BaseModel):
 
 class CattleResponse(BaseModel):
     id: int
-    userId: int = Field(..., validation_alias="user_id", serialization_alias="userId")
-    animalName: str = Field(..., validation_alias="animal_name", serialization_alias="animalName")
+    userId: Optional[Union[str, int]] = None
+    animalName: str
     price: int
     age: int
-    milkCapacity: str = Field(..., validation_alias="milk_capacity", serialization_alias="milkCapacity")
-    contactNumber: str = Field(..., validation_alias="phone_number", serialization_alias="contactNumber")
-    villageName: str = Field(..., validation_alias="village", serialization_alias="villageName")
-    santeName: str = Field(..., validation_alias="sante_name", serialization_alias="santeName")
+    milkCapacity: str
+    contactNumber: str
+    villageName: str
+    santeName: str
     description: str
-    image: str = Field(..., validation_alias="image_url", serialization_alias="image")
-    postedDate: datetime = Field(..., validation_alias="created_at", serialization_alias="postedDate")
-    expiresAt: datetime = Field(..., validation_alias="expires_at", serialization_alias="expiresAt")
+    image: str
+    postedDate: datetime
+    expiresAt: datetime
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_db_fields(cls, values):
+        if hasattr(values, "__dict__") or hasattr(values, "__table__"):
+            d = {}
+            d["id"] = values.id
+            uid = getattr(values, "user_id", None)
+            leg_uid = getattr(values, "legacy_user_id", None)
+            d["userId"] = str(uid) if uid else (str(leg_uid) if leg_uid else None)
+            d["animalName"] = values.animal_name
+            d["price"] = values.price
+            d["age"] = values.age
+            d["milkCapacity"] = values.milk_capacity
+            d["contactNumber"] = values.phone_number
+            d["villageName"] = values.village
+            d["santeName"] = values.sante_name
+            d["description"] = values.description
+            d["image"] = values.image_url or ""
+            d["postedDate"] = values.created_at
+            d["expiresAt"] = values.expires_at
+            return d
+        return values
 
     class Config:
         from_attributes = True
         populate_by_name = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
-DefinitionName = "CattleResponse"

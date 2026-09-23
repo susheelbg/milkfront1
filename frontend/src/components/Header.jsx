@@ -1,20 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User } from 'lucide-react';
-import { authApi } from '../services/api/authApi';
+import { User, Shield } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const Header = ({ showBack = false, onBack = null }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user, isAdmin, isSuperAdmin } = useAuth();
 
-  useEffect(() => {
-    setCurrentUser(authApi.getCurrentUser());
-  }, []);
-
-  const initial = currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : null;
+  const initial = user?.name ? user.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : null);
 
   return (
     <header className="bg-primary sticky top-0 z-40 shadow-sm border-b border-primary-dark">
@@ -44,21 +40,23 @@ export const Header = ({ showBack = false, onBack = null }) => {
 
         {/* Right side actions */}
         <div className="flex items-center gap-3">
-          {/* Desktop Nav */}
-          {['admin', 'super_admin'].includes(currentUser?.role) && (
-            <nav className="hidden md:flex items-center gap-6 mr-3">
-              <button onClick={() => navigate('/admin')} className="text-text-dark hover:opacity-75 font-semibold transition-opacity">
-                {t('common.admin')}
-              </button>
-            </nav>
+          {/* Admin link if user has admin/super_admin role */}
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A2E1F] text-amber-400 font-extrabold text-xs rounded-xl shadow-xs hover:bg-[#041D12] transition-colors"
+            >
+              <Shield size={14} />
+              <span>Admin</span>
+            </button>
           )}
 
-          {/* Profile Circle Avatar (both desktop & mobile) - always accessible */}
+          {/* Profile Circle Avatar (both desktop & mobile) */}
           <button
             onClick={() => navigate('/profile')}
             className="w-9 h-9 rounded-full bg-white text-text-dark font-bold border-2 border-text-dark flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-all"
-            title="Farmer Profile & Settings"
-            aria-label="Farmer Profile & Settings"
+            title="Profile & Settings"
+            aria-label="Profile & Settings"
           >
             {initial ? initial : <User size={16} />}
           </button>
@@ -67,4 +65,3 @@ export const Header = ({ showBack = false, onBack = null }) => {
     </header>
   );
 };
-

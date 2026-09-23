@@ -71,27 +71,14 @@ async def news_refresh_worker():
 # Lifespan Context Manager (replaces startup/shutdown events)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Startup: Bootstrapping database tables automatically
-    print("[SERVER INITS] Bootstrapping SQLAlchemy tables...")
-    async with engine.begin() as conn:
-        # Create all tables on startup if they don't exist yet
-        await conn.run_sync(Base.metadata.create_all)
-    print("[SERVER INITS] Tables created successfully.")
-
-    # Ensure Susheel is super_admin in DB
-    print("[SERVER INITS] Verifying Super Admin status...")
-    async with SessionLocal() as db:
-        stmt = select(User).where(User.phone_number == "+917795056391")
-        result = await db.execute(stmt)
-        admin_user = result.scalars().first()
-        if admin_user and admin_user.role != "super_admin":
-            admin_user.role = "super_admin"
-            await db.commit()
-            print("[SERVER INITS] Promoted Susheel to super_admin successfully.")
-        elif admin_user:
-            print("[SERVER INITS] Susheel is already super_admin.")
-        else:
-            print("[SERVER INITS] Susheel not found in database yet.")
+    # 1. Startup: Run idempotent Super Admin bootstrap (No auto-migrations)
+    print("[SERVER INITS] Running idempotent Super Admin bootstrap...")
+    try:
+        from app.services.super_admin_bootstrap import bootstrap_super_admin
+        await bootstrap_super_admin()
+        print("[SERVER INITS] Super Admin bootstrap verified.")
+    except Exception as e:
+        print(f"[SERVER INITS WARNING] Super admin bootstrap issue: {e}")
 
     # 2. Start background worker tasks
     worker_task = asyncio.create_task(clean_expired_listings_worker())
