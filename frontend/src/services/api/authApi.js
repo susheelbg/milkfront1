@@ -17,13 +17,34 @@ export const authApi = {
     });
 
     if (authError) {
+      const msg = (authError.message || '').toLowerCase();
+      if (
+        msg.includes('already registered') ||
+        msg.includes('user already exists') ||
+        msg.includes('already in use') ||
+        authError.code === 'user_already_exists'
+      ) {
+        const err = new Error('EMAIL_ALREADY_REGISTERED');
+        err.code = 'EMAIL_ALREADY_REGISTERED';
+        throw err;
+      }
       throw new Error(authError.message);
     }
 
+    // Supabase anti-enumeration protection returns empty identities if email is already registered
+    if (authData?.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+      const err = new Error('EMAIL_ALREADY_REGISTERED');
+      err.code = 'EMAIL_ALREADY_REGISTERED';
+      throw err;
+    }
+
     // If an active session was created, sync the profile immediately to backend
-    if (authData.session) {
+    if (authData?.session) {
       try {
-        await apiClient.post('/auth/sync-profile', { name, phone, address });
+        const token = authData.session.access_token;
+        await apiClient.post('/auth/sync-profile', { name, phone, address }, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
       } catch (err) {
         console.warn('Profile sync post-signup note:', err);
       }
@@ -46,7 +67,10 @@ export const authApi = {
     // Fetch the backend profile including assigned role (user / admin / super_admin)
     let profile = null;
     try {
-      const resp = await apiClient.get('/auth/me');
+      const token = data?.session?.access_token;
+      const resp = await apiClient.get('/auth/me', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       profile = resp?.data || null;
     } catch (err) {
       console.warn('Could not fetch backend profile on login:', err);

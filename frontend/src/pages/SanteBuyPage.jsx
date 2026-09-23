@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { cattleApi } from '../services/api/cattleApi';
 import { reportApi } from '../services/api/reportApi';
 import { useAuth } from '../context/AuthContext';
-import { Search, Filter, Phone, Calendar, Loader2, Clock, ShieldAlert, Trash2 } from 'lucide-react';
+import { Search, Filter, Phone, Calendar, Loader2, Clock, ShieldAlert, Trash2, ArrowLeft } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -55,12 +55,24 @@ const CattleCountdown = ({ expiresAt }) => {
 
 export const SanteBuyPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { user: currentUser, isAdmin } = useAuth();
-  const santeName = 'Sante';
+  
+  // Always default to 'Sante' to avoid null rendering issues
+  const santeName = location.state?.santeName || 'Sante';
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/sante');
+    }
+  };
 
   const handleDeletePost = async (postId) => {
     if (!window.confirm(t('common.confirmDeleteListing') || 'Are you sure you want to delete this cattle listing?')) {
@@ -70,12 +82,13 @@ export const SanteBuyPage = () => {
     try {
       await cattleApi.deleteCattleListing(postId);
       toastService.success(t('common.deleteListingSuccess') || 'Cattle listing deleted successfully.');
-      setPosts(prev => prev.filter(post => post.id !== postId));
+      setPosts(prev => Array.isArray(prev) ? prev.filter(post => post && post.id !== postId) : []);
     } catch (err) {
       console.error('Failed to delete post:', err);
       toastService.error(err.message || 'Failed to delete post.');
     }
   };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 150000 });
   const [showFilter, setShowFilter] = useState(false);
@@ -84,39 +97,47 @@ export const SanteBuyPage = () => {
   const [reportReason, setReportReason] = useState('spam');
   const [submittingReport, setSubmittingReport] = useState(false);
 
+  const fetchPosts = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await cattleApi.getCattleListings(santeName);
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      setPosts(list);
+    } catch (err) {
+      console.error('Failed to load listings:', err);
+      setLoadError('Failed to load cattle listings. Please check your connection.');
+      toastService.error('Failed to load listings');
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const data = await cattleApi.getCattleListings(santeName);
-        setPosts(data);
-      } catch (err) {
-        toastService.error('Failed to load listings');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPosts();
-  }, [santeName, navigate]);
+  }, [santeName]);
 
-  // Filter posts dynamically in client
+  // Filter posts safely in client
   const filteredPosts = useMemo(() => {
-    let filtered = [...posts];
+    const list = Array.isArray(posts) ? posts : [];
+    let filtered = [...list];
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
         post =>
-          post.animalName.toLowerCase().includes(query) ||
-          post.villageName.toLowerCase().includes(query) ||
-          post.description.toLowerCase().includes(query)
+          (post?.animalName || '').toLowerCase().includes(query) ||
+          (post?.villageName || '').toLowerCase().includes(query) ||
+          (post?.description || '').toLowerCase().includes(query)
       );
     }
 
     filtered = filtered.filter(
-      post => post.price >= priceRange.min && post.price <= priceRange.max
+      post => {
+        const price = Number(post?.price) || 0;
+        return price >= priceRange.min && price <= priceRange.max;
+      }
     );
 
     return filtered;
@@ -140,11 +161,9 @@ export const SanteBuyPage = () => {
     }
   };
 
-  if (!santeName) return null;
-
   return (
     <div className="min-h-screen bg-bg-light pb-12">
-      <Header showBack onBack={() => navigate('/sante')} />
+      <Header showBack onBack={handleBack} />
 
       {/* Page Header */}
       <section className="bg-primary py-8 px-4">
@@ -251,115 +270,153 @@ export const SanteBuyPage = () => {
             <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
             <p className="font-semibold text-sm">{t('common.loading')}</p>
           </div>
+        ) : loadError ? (
+          <div className="text-center py-16 bg-white border border-border-light rounded-2xl p-6 max-w-lg mx-auto">
+            <div className="text-4xl mb-3 text-red-500">⚠️</div>
+            <h2 className="text-lg font-bold text-text-dark mb-2">Unable to Load Cattle Listings</h2>
+            <p className="text-text-light text-xs mb-5">{loadError}</p>
+            <div className="flex items-center justify-center gap-3">
+              <Button variant="primary" size="sm" onClick={fetchPosts}>
+                Try Again
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/sante')}>
+                Return to Sante
+              </Button>
+            </div>
+          </div>
         ) : filteredPosts.length === 0 ? (
           <div className="text-center py-16 bg-white border border-border-light rounded-2xl p-6">
             <div className="text-5xl mb-4">🔍</div>
             <h2 className="text-xl font-bold text-text-dark mb-2">{t('sante.noCattle')}</h2>
             <p className="text-text-light text-sm mb-6">
-              Try adjusting your filters.
+              Try adjusting your filters or post a new cattle ad.
             </p>
-            <Button variant="primary" onClick={() => { setSearchQuery(''); setPriceRange({ min: 0, max: 150000 }); }}>
-              Reset Filters
-            </Button>
+            <div className="flex items-center justify-center gap-3">
+              <Button variant="primary" onClick={() => { setSearchQuery(''); setPriceRange({ min: 0, max: 150000 }); }}>
+                Reset Filters
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/sante-sell', { state: { santeName } })}>
+                + {t('sante.sellCattle')}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPosts.map(post => (
-              <Card key={post.id} padding="0" hover className="overflow-hidden flex flex-col border border-border-light">
-                {/* Image */}
-                <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
-                  <img
-                    src={post.image}
-                    alt={post.animalName}
-                    className="w-full h-full object-cover"
-                  />
-                  <CattleCountdown expiresAt={post.expiresAt} />
-                </div>
+            {filteredPosts.map(post => {
+              if (!post) return null;
+              const animalName = post.animalName || 'Cattle';
+              const villageName = post.villageName || 'Local Village';
+              const age = post.age || '-';
+              const milkCapacity = post.milkCapacity || '-';
+              const price = Number(post.price) || 0;
+              const description = post.description || '';
+              const contactNumber = post.contactNumber || '';
+              const image = post.image || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop';
+              const postedDate = post.postedDate ? new Date(post.postedDate).toLocaleDateString() : 'Recent';
 
-                {/* Content */}
-                <div className="p-4 flex flex-col flex-1">
-                  <div className="flex justify-between items-start mb-1.5">
-                    <h3 className="text-lg font-black text-text-dark">
-                      {post.animalName}
-                    </h3>
-                    <span className="bg-primary-light text-text-dark px-2.5 py-1 rounded-lg text-xs font-bold border border-primary-dark/20">
-                      {post.age} {t('sante.years')}
-                    </span>
+              return (
+                <Card key={post.id} padding="0" hover className="overflow-hidden flex flex-col border border-border-light">
+                  {/* Image */}
+                  <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
+                    <img
+                      src={image}
+                      alt={animalName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop';
+                      }}
+                    />
+                    {post.expiresAt && <CattleCountdown expiresAt={post.expiresAt} />}
                   </div>
 
-                  <p className="text-text-light text-xs font-bold uppercase mb-3 tracking-wide">{post.villageName}</p>
-
-                  {/* Details Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-bg-light p-2.5 rounded-lg border border-border-light text-center">
-                      <p className="text-text-light text-[10px] font-bold uppercase">{t('sante.milkYield')}</p>
-                      <p className="font-extrabold text-sm text-text-dark">{post.milkCapacity}</p>
+                  {/* Content */}
+                  <div className="p-4 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-1.5">
+                      <h3 className="text-lg font-black text-text-dark">
+                        {animalName}
+                      </h3>
+                      <span className="bg-primary-light text-text-dark px-2.5 py-1 rounded-lg text-xs font-bold border border-primary-dark/20">
+                        {age} {t('sante.years')}
+                      </span>
                     </div>
-                    <div className="bg-primary-light/40 p-2.5 rounded-lg border border-primary-dark/10 text-center">
-                      <p className="text-text-light text-[10px] font-bold uppercase">{t('feeds.price')}</p>
-                      <p className="font-extrabold text-sm text-primary-dark">₹{post.price.toLocaleString()}</p>
+
+                    <p className="text-text-light text-xs font-bold uppercase mb-3 tracking-wide">{villageName}</p>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-bg-light p-2.5 rounded-lg border border-border-light text-center">
+                        <p className="text-text-light text-[10px] font-bold uppercase">{t('sante.milkYield')}</p>
+                        <p className="font-extrabold text-sm text-text-dark">{milkCapacity}</p>
+                      </div>
+                      <div className="bg-primary-light/40 p-2.5 rounded-lg border border-primary-dark/10 text-center">
+                        <p className="text-text-light text-[10px] font-bold uppercase">{t('feeds.price')}</p>
+                        <p className="font-extrabold text-sm text-primary-dark">₹{price.toLocaleString()}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <p className="text-text-light text-sm mb-5 flex-1 line-clamp-3 italic">
-                    "{post.description}"
-                  </p>
+                    {description && (
+                      <p className="text-text-light text-sm mb-5 flex-1 line-clamp-3 italic">
+                        "{description}"
+                      </p>
+                    )}
 
-                  {/* Contact Button */}
-                  <Button
-                    variant="primary"
-                    size="md"
-                    className="w-full flex items-center justify-center gap-2"
-                    onClick={() => {
-                      alert(
-                        `📞 ${t('sante.seller')}\n\nName: Seller at ${post.villageName}\nPhone: ${post.contactNumber}`
+                    {/* Contact Button */}
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => {
+                        alert(
+                          `📞 ${t('sante.seller')}\n\nName: Seller at ${villageName}\nPhone: ${contactNumber}`
+                        );
+                      }}
+                    >
+                      <Phone size={16} />
+                      {t('sante.callSeller')} ({contactNumber})
+                    </Button>
+
+                    {/* Owner Delete vs. Compliance Report */}
+                    {(() => {
+                      const myListings = JSON.parse(localStorage.getItem('my_cattle_listings') || '[]');
+                      const isOwner = myListings.includes(post.id) || 
+                        (currentUser?.id && post.userId && String(currentUser.id) === String(post.userId)) ||
+                        (currentUser?.phone && contactNumber && currentUser.phone.replace(/\D/g, '').endsWith(contactNumber.replace(/\D/g, ''))) ||
+                        isAdmin;
+
+                      return isOwner ? (
+                        <Button
+                          variant="secondary"
+                          size="md"
+                          className="w-full mt-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-700 font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                          onClick={() => handleDeletePost(post.id)}
+                        >
+                          <Trash2 size={16} />
+                          {t('common.deleteListing') || 'Delete Listing'}
+                        </Button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setReportingCattleId(post.id);
+                            setShowReportModal(true);
+                          }}
+                          className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline cursor-pointer"
+                        >
+                          <ShieldAlert size={14} />
+                          {t('compliance.reportListing')}
+                        </button>
                       );
-                    }}
-                  >
-                    <Phone size={16} />
-                    {t('sante.callSeller')} ({post.contactNumber})
-                  </Button>
+                    })()}
 
-                  {/* Owner Delete vs. Compliance Report */}
-                  {(() => {
-                    const myListings = JSON.parse(localStorage.getItem('my_cattle_listings') || '[]');
-                    const isOwner = myListings.includes(post.id) || 
-                      (currentUser?.id && post.userId && String(currentUser.id) === String(post.userId)) ||
-                      (currentUser?.phone && post.contactNumber && currentUser.phone.replace(/\D/g, '').endsWith(post.contactNumber.replace(/\D/g, ''))) ||
-                      isAdmin;
-
-                    return isOwner ? (
-                      <Button
-                        variant="secondary"
-                        size="md"
-                        className="w-full mt-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-700 font-bold flex items-center justify-center gap-2 transition-all"
-                        onClick={() => handleDeletePost(post.id)}
-                      >
-                        <Trash2 size={16} />
-                        {t('common.deleteListing') || 'Delete Listing'}
-                      </Button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setReportingCattleId(post.id);
-                          setShowReportModal(true);
-                        }}
-                        className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline"
-                      >
-                        <ShieldAlert size={14} />
-                        {t('compliance.reportListing')}
-                      </button>
-                    );
-                  })()}
-
-                  {/* Posted Date */}
-                  <div className="mt-3 flex items-center justify-center gap-1.5 text-text-light text-[10px] font-bold uppercase">
-                    <Calendar size={12} />
-                    <span>{t('sante.posted')}: {new Date(post.postedDate).toLocaleDateString()}</span>
+                    {/* Posted Date */}
+                    <div className="mt-3 flex items-center justify-center gap-1.5 text-text-light text-[10px] font-bold uppercase">
+                      <Calendar size={12} />
+                      <span>{t('sante.posted')}: {postedDate}</span>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
       </section>
@@ -372,6 +429,7 @@ export const SanteBuyPage = () => {
           </p>
         </div>
       </section>
+
       {/* Report Listing Modal Dialog */}
       {showReportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -442,3 +500,4 @@ export const SanteBuyPage = () => {
     </div>
   );
 };
+export default SanteBuyPage;

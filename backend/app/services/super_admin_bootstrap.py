@@ -88,7 +88,7 @@ async def bootstrap_super_admin():
         logger.error("[SUPER ADMIN BOOTSTRAP] Could not resolve auth_user_id.")
         return
 
-    # Step 3: Ensure public.profiles record has role='super_admin'
+    # Step 3: Ensure public.profiles record has role='super_admin' AND auth.users has role in raw_app_meta_data
     try:
         async with SessionLocal() as db:
             await db.execute(text("""
@@ -97,6 +97,17 @@ async def bootstrap_super_admin():
                 ON CONFLICT (id) DO UPDATE 
                 SET role = 'super_admin', email = :email, updated_at = now();
             """), {"id": auth_user_id, "email": email})
+
+            # Also sync role to auth.users.raw_app_meta_data so it appears directly in Supabase JWT claims
+            try:
+                await db.execute(text("""
+                    UPDATE auth.users 
+                    SET raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role": "super_admin"}'::jsonb
+                    WHERE id = :id;
+                """), {"id": auth_user_id})
+            except Exception as e_meta:
+                logger.debug(f"[SUPER ADMIN BOOTSTRAP] Direct raw_app_meta_data update note: {e_meta}")
+
             await db.commit()
             logger.info(f"[SUPER ADMIN BOOTSTRAP] Confirmed Super Admin role in public.profiles (ID: {auth_user_id}).")
     except Exception as e:

@@ -16,7 +16,13 @@ export const AdminDashboard = () => {
   const { t } = useTranslation();
   const { user: currentUser, isAdmin, isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, users, orders, cattle
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    usersCount: 0,
+    feedsCount: 0,
+    ordersCount: 0,
+    cattleCount: 0,
+    totalRevenue: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   // Data states
@@ -67,7 +73,14 @@ export const AdminDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, ordersData, feedsDataRes, cattleData, reportsData] = await Promise.all([
+      const [
+        statsRes,
+        usersRes,
+        ordersRes,
+        feedsRes,
+        cattleRes,
+        reportsRes,
+      ] = await Promise.allSettled([
         adminApi.getStats(),
         adminApi.getUsers(),
         orderApi.getOrders(),
@@ -76,17 +89,38 @@ export const AdminDashboard = () => {
         reportApi.getReports(),
       ]);
 
-      setStats(statsData);
-      setUsersList(usersData);
-      setOrdersList(ordersData);
-      setFeedsList(feedsDataRes);
-      setCattleList(cattleData);
-      if (reportsData && reportsData.success) {
-        setReportsList(reportsData.data || []);
+      const statsData = statsRes.status === 'fulfilled' ? statsRes.value : null;
+      const usersData = usersRes.status === 'fulfilled' ? usersRes.value : [];
+      const ordersData = ordersRes.status === 'fulfilled' ? ordersRes.value : [];
+      const feedsDataRes = feedsRes.status === 'fulfilled' ? feedsRes.value : [];
+      const cattleData = cattleRes.status === 'fulfilled' ? cattleRes.value : [];
+      const reportsData = reportsRes.status === 'fulfilled' ? reportsRes.value : [];
+
+      const parsedUsers = Array.isArray(usersData) ? usersData : (Array.isArray(usersData?.data) ? usersData.data : []);
+      const parsedOrders = Array.isArray(ordersData) ? ordersData : (Array.isArray(ordersData?.data) ? ordersData.data : []);
+      const parsedFeeds = Array.isArray(feedsDataRes) ? feedsDataRes : (Array.isArray(feedsDataRes?.data) ? feedsDataRes.data : []);
+      const parsedCattle = Array.isArray(cattleData) ? cattleData : (Array.isArray(cattleData?.data) ? cattleData.data : []);
+
+      setStats(statsData || {
+        usersCount: parsedUsers.length,
+        feedsCount: parsedFeeds.length,
+        ordersCount: parsedOrders.length,
+        cattleCount: parsedCattle.length,
+        totalRevenue: 0,
+      });
+
+      setUsersList(parsedUsers);
+      setOrdersList(parsedOrders);
+      setFeedsList(parsedFeeds);
+      setCattleList(parsedCattle);
+
+      if (reportsData && reportsData.success && Array.isArray(reportsData.data)) {
+        setReportsList(reportsData.data);
       } else {
-        setReportsList(reportsData || []);
+        setReportsList(Array.isArray(reportsData) ? reportsData : []);
       }
     } catch (err) {
+      console.error('Failed to load dashboard data:', err);
       toastService.error('Failed to load dashboard data.');
     } finally {
       setLoading(false);

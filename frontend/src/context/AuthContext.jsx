@@ -5,7 +5,15 @@ import { authApi } from '../services/api/authApi';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // Initialize user from cached profile if present for instantaneous render
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('milkmaatu_auth_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,6 +23,11 @@ export const AuthProvider = ({ children }) => {
       const profile = await authApi.getProfile();
       if (profile) {
         setUser(profile);
+        try {
+          localStorage.setItem('milkmaatu_auth_user', JSON.stringify(profile));
+        } catch (e) {
+          // ignore localStorage quota error
+        }
         return profile;
       }
     } catch (err) {
@@ -35,6 +48,9 @@ export const AuthProvider = ({ children }) => {
         setSession(initialSession);
         if (initialSession) {
           await fetchProfile();
+        } else {
+          setUser(null);
+          localStorage.removeItem('milkmaatu_auth_user');
         }
       } catch (err) {
         console.error('Error during initial auth setup:', err);
@@ -58,6 +74,7 @@ export const AuthProvider = ({ children }) => {
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        localStorage.removeItem('milkmaatu_auth_user');
       }
       setLoading(false);
     });
@@ -75,6 +92,7 @@ export const AuthProvider = ({ children }) => {
       setSession(res.session);
       if (res.profile) {
         setUser(res.profile);
+        localStorage.setItem('milkmaatu_auth_user', JSON.stringify(res.profile));
       } else {
         await fetchProfile();
       }
@@ -104,6 +122,7 @@ export const AuthProvider = ({ children }) => {
       await authApi.signOut();
       setUser(null);
       setSession(null);
+      localStorage.removeItem('milkmaatu_auth_user');
     } finally {
       setLoading(false);
     }
@@ -113,16 +132,28 @@ export const AuthProvider = ({ children }) => {
     const updated = await authApi.updateProfile(profileData);
     if (updated) {
       setUser(updated);
+      localStorage.setItem('milkmaatu_auth_user', JSON.stringify(updated));
     }
     return updated;
   };
 
-  const isAuthenticated = Boolean(session && user);
-  const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'super_admin'));
-  const isSuperAdmin = Boolean(user && user.role === 'super_admin');
+  // Construct effective user with safe fallback to session user metadata if backend profile is still loading
+  const effectiveUser = user || (session?.user ? {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.user_metadata?.name || '',
+    phone: session.user.user_metadata?.phone || '',
+    address: session.user.user_metadata?.address || '',
+    role: session.user.app_metadata?.role || session.user.user_metadata?.role || 'user',
+  } : null);
+
+  const userRole = effectiveUser?.role || session?.user?.app_metadata?.role || session?.user?.user_metadata?.role;
+  const isAuthenticated = Boolean(session || effectiveUser);
+  const isAdmin = Boolean(userRole === 'admin' || userRole === 'super_admin');
+  const isSuperAdmin = Boolean(userRole === 'super_admin');
 
   const value = {
-    user,
+    user: effectiveUser,
     session,
     loading,
     isAuthenticated,

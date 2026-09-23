@@ -94,7 +94,7 @@ export const HomePage = () => {
         <div className="max-w-4xl mx-auto">
           <p className="text-xs text-text-light font-bold uppercase tracking-wider">{t('common.namaste')}</p>
           <h2 className="text-2xl md:text-3xl font-extrabold text-text-dark">
-            {t('common.welcome')}, {currentUser?.name || t('common.farmer')}
+            {t('common.welcome')}, {currentUser?.name ? `${currentUser.name} 👋` : `${t('common.farmer')} 👋`}
           </h2>
         </div>
       </section>

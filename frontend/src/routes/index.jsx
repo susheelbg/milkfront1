@@ -155,6 +155,31 @@ export const routes = [
     path: '/sante-sell',
     element: <SanteSellPage />,
   },
+  // Cattle route aliases and fallbacks for cattle-buying navigation
+  {
+    path: '/cattle',
+    element: <Navigate to="/sante-buy" replace />,
+  },
+  {
+    path: '/cattle-buy',
+    element: <Navigate to="/sante-buy" replace />,
+  },
+  {
+    path: '/cattle-sell',
+    element: <Navigate to="/sante-sell" replace />,
+  },
+  {
+    path: '/sante/buy',
+    element: <Navigate to="/sante-buy" replace />,
+  },
+  {
+    path: '/sante/sell',
+    element: <Navigate to="/sante-sell" replace />,
+  },
+  {
+    path: '/reset-password',
+    element: <ForgotPassword />,
+  },
   // Admin dashboard (Protected by Supabase Auth RBAC)
   {
     path: '/admin',

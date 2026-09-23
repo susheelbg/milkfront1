@@ -6,6 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.auth import verify_supabase_jwt
 from app.models.user import Profile, User
@@ -36,25 +37,38 @@ async def get_current_user_optional(
         result = await db.execute(select(Profile).where(Profile.id == user_uuid))
         profile = result.scalars().first()
 
-        if not profile:
-            # If profile does not exist yet, create default user profile
-            email = payload.get("email")
-            user_metadata = payload.get("user_metadata", {})
-            name = user_metadata.get("name") or user_metadata.get("full_name")
-            phone = user_metadata.get("phone") or user_metadata.get("phone_number")
-            address = user_metadata.get("address")
+        admin_email = (settings.INITIAL_SUPER_ADMIN_EMAIL or "").strip().lower()
 
-            profile = Profile(
-                id=user_uuid,
-                email=email,
-                name=name,
-                phone=phone,
-                address=address,
-                role="user", # Default role is always user
-            )
-            db.add(profile)
-            await db.commit()
-            await db.refresh(profile)
+        if profile:
+            # Self-healing: if email matches configured Super Admin, ensure super_admin role
+            if admin_email and profile.email and profile.email.strip().lower() == admin_email:
+                if profile.role != "super_admin":
+                    profile.role = "super_admin"
+                    await db.commit()
+                    await db.refresh(profile)
+            return profile
+
+        # If profile does not exist yet, create default user profile
+        email = payload.get("email")
+        user_metadata = payload.get("user_metadata", {})
+        name = user_metadata.get("name") or user_metadata.get("full_name")
+        phone = user_metadata.get("phone") or user_metadata.get("phone_number")
+        address = user_metadata.get("address")
+
+        is_super = bool(admin_email and email and email.strip().lower() == admin_email)
+        assigned_role = "super_admin" if is_super else "user"
+
+        profile = Profile(
+            id=user_uuid,
+            email=email,
+            name=name,
+            phone=phone,
+            address=address,
+            role=assigned_role,
+        )
+        db.add(profile)
+        await db.commit()
+        await db.refresh(profile)
 
         return profile
     except Exception as e:
@@ -97,27 +111,38 @@ async def get_current_user(
     result = await db.execute(select(Profile).where(Profile.id == user_uuid))
     profile = result.scalars().first()
 
-    if not profile:
-        # Profile does not exist yet: create it with role='user'.
-        # Note: If it already existed with 'admin' or 'super_admin', the query above found it,
-        # so this NEVER downgrades an existing admin or super_admin!
-        email = payload.get("email")
-        user_metadata = payload.get("user_metadata", {})
-        name = user_metadata.get("name") or user_metadata.get("full_name")
-        phone = user_metadata.get("phone") or user_metadata.get("phone_number")
-        address = user_metadata.get("address")
+    admin_email = (settings.INITIAL_SUPER_ADMIN_EMAIL or "").strip().lower()
 
-        profile = Profile(
-            id=user_uuid,
-            email=email,
-            name=name,
-            phone=phone,
-            address=address,
-            role="user",
-        )
-        db.add(profile)
-        await db.commit()
-        await db.refresh(profile)
+    if profile:
+        # Self-healing: if email matches configured Super Admin, ensure super_admin role
+        if admin_email and profile.email and profile.email.strip().lower() == admin_email:
+            if profile.role != "super_admin":
+                profile.role = "super_admin"
+                await db.commit()
+                await db.refresh(profile)
+        return profile
+
+    # Profile does not exist yet: create it
+    email = payload.get("email")
+    user_metadata = payload.get("user_metadata", {})
+    name = user_metadata.get("name") or user_metadata.get("full_name")
+    phone = user_metadata.get("phone") or user_metadata.get("phone_number")
+    address = user_metadata.get("address")
+
+    is_super = bool(admin_email and email and email.strip().lower() == admin_email)
+    assigned_role = "super_admin" if is_super else "user"
+
+    profile = Profile(
+        id=user_uuid,
+        email=email,
+        name=name,
+        phone=phone,
+        address=address,
+        role=assigned_role,
+    )
+    db.add(profile)
+    await db.commit()
+    await db.refresh(profile)
 
     return profile
 
