@@ -154,24 +154,25 @@ export const HomePage = () => {
         </section>
       )}
 
-      {/* Circular Round Action Buttons Grid */}
-      <section className="max-w-4xl mx-auto px-4 py-8">
-        <h3 className="text-lg font-bold text-text-dark mb-4 px-1">{t('home.quickServices')}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Quick Services — 4 circles in one row */}
+      <section className="max-w-4xl mx-auto px-4 py-6">
+        <h3 className="text-lg font-bold text-text-dark mb-5 px-1">{t('home.quickServices')}</h3>
+        <div className="flex items-start justify-around gap-2">
           {mainActions.map((act) => (
-            <Card
+            <button
               key={act.id}
               onClick={act.action}
-              padding="md"
-              className="flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-md transition-all active:scale-95 duration-200 border-2 border-border-light hover:border-primary-dark"
+              className="flex flex-col items-center gap-2 flex-1 min-w-0 group"
             >
-              <div className={`w-16 h-16 ${act.bg} rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner border border-transparent`}>
+              {/* Circle */}
+              <div className={`w-16 h-16 ${act.bg} rounded-full flex items-center justify-center text-3xl shadow-md border-2 border-white group-hover:scale-105 group-active:scale-95 transition-transform duration-200`}>
                 {act.emoji}
               </div>
-              <span className="text-sm font-bold text-text-dark tracking-tight">
+              {/* Label */}
+              <span className="text-xs font-bold text-text-dark text-center leading-tight w-full truncate px-1">
                 {act.label}
               </span>
-            </Card>
+            </button>
           ))}
         </div>
       </section>
