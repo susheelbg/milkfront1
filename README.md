@@ -1,275 +1,367 @@
 # 🥛 MilkMaatu — Premium Dairy Farming Platform
 
-MilkMaatu is a **mobile-first, multilingual** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), and gives administrators control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
+MilkMaatu is a **mobile-first, multilingual** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), delivers daily farmer news, and gives administrators control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
 
-The project is structured as a monorepo containing a high-performance FastAPI backend, a responsive React web frontend, and native Android packaging configuration via Capacitor.
+The project is a monorepo containing a high-performance FastAPI backend, a responsive React + Vite frontend, and native Android packaging via Capacitor.
 
 🔗 **Production Deployments:**
-- **Frontend / Portal:** [https://milkfront1.onrender.com](https://milkfront1.onrender.com)
-- **API Documentation:** [https://milkfront1.onrender.com/docs](https://milkfront1.onrender.com/docs)
+- **App / Portal:** [https://milkfront1.onrender.com](https://milkfront1.onrender.com)
+- **API Docs (Swagger):** [https://milkfront1.onrender.com/docs](https://milkfront1.onrender.com/docs)
 
 ---
 
-## 🌟 Key Application Features
+## 🌟 Key Features
 
 ### 1. 📱 Mobile-First Bottom Navigation
-Designed primarily for mobile viewport usability, the layout utilizes a persistent bottom navigation bar ([BottomNavigation.jsx](file:///Users/susheel/milkfront1/frontend/src/components/BottomNavigation.jsx)) that provides single-thumb navigation across core sections:
-* **Home (`/home`):** Quick-action dashboard showing stats, quick links, and a shortcut card to the Nandini AI assistant.
-* **Sante Marketplace (`/sante`):** Expiring local cattle marketplace.
-* **Buy Feeds (`/feeds`):** Direct catalog shop for purchasing cattle feed.
-* **My Orders (`/orders`):** Live tracking of order shipment statuses.
-* **Profile (`/profile`):** Management of delivery addresses, language preferences, and profile pictures.
+Designed for single-thumb usage. A persistent bottom nav bar provides access to:
+| Tab | Route | Description |
+|-----|-------|-------------|
+| Home | `/home` | Dashboard — quick services, news, recommended feeds |
+| Sante | `/sante` | Local cattle marketplace |
+| Buy Feeds | `/feeds` | Cattle feed shop |
+| My Orders | `/orders` | Live order tracking |
+| Profile | `/profile` | Address, language, and photo management |
 
-### 2. 🌐 Localized Multilingual Experience
-- **Kannada by Default:** To ensure maximum accessibility for local farmers in Karnataka, all new registrations default to Kannada.
-- **Dynamic Toggle:** Users can instantly switch between English and ಕನ್ನಡ inside [ProfilePage.jsx](file:///Users/susheel/milkfront1/frontend/src/pages/ProfilePage.jsx) without forcing page refreshes.
-- **Persistent Preferences:** The selected locale is saved locally in `localStorage` and synchronized with the backend user profile database.
+---
 
-### 3. 🔐 Secure Twilio Verify OTP Onboarding
-A step-by-step secure registration & onboarding pipeline implemented inside [RegisterPage.jsx](file:///Users/susheel/milkfront1/frontend/src/pages/RegisterPage.jsx):
-1. **Details Entry:** The farmer inputs their name and 10-digit mobile number.
-2. **Send OTP:** Sends a 6-digit SMS verification code using **Twilio Verify**.
-3. **Verify OTP:** A verification input screen with a 30-second countdown timer and resend functionality.
-4. **Credential Setup:** On successful OTP verification, the user sets a secure login password and delivery address.
+### 2. 🌐 Multilingual — Kannada & English
+- **Kannada by default** for all new accounts — maximum accessibility for Karnataka farmers.
+- **Instant toggle** on the Profile page. No page refresh needed.
+- **Fully translated UI:** every label, message, button, and section heading switches language — including the Farmers News widget, Quick Services, Recommended Feeds, and all error states.
+- Translations live in [`src/i18n/kn.json`](frontend/src/i18n/kn.json) and [`src/i18n/en.json`](frontend/src/i18n/en.json).
+- Selected locale is persisted in `localStorage` and synced to the backend profile.
+
+---
+
+### 3. 🏠 Home Dashboard
+The home screen is organized into clean, stacked sections:
+
+#### 🌾 Recommended Feeds
+Horizontally scrollable card carousel showing top-rated feeds based on the farmer's profile.
+
+#### ⚡ Quick Services — 4 Circular Buttons
+Four large circular icon buttons in a single row for instant access:
+- 🌾 **Buy Feeds** — Feed shop
+- 🐄 **Sante** — Cattle marketplace
+- 🥛 **Milk Record** — OCR milk slip extraction *(coming soon)*
+- 🤖 **Nandini AI** — AI dairy assistant
+
+#### 📰 Farmers News (ರೈತರ ಸುದ್ದಿ)
+A horizontally scrollable news card widget sitting below Quick Services. Shows the latest farmer-relevant news articles fetched from trusted Karnataka news sources. Fully translates its heading and labels based on language setting.
+
+---
+
+### 4. 📰 Farmers News Feature
+A lightweight, reliable news aggregation system that **never generates or stores article content** — only metadata.
+
+#### Architecture
+```
+Prajavani RSS (Kannada) ──┐
+                          ├─→ Keyword filter ─→ Store metadata only ─→ DB
+The Hindu Agriculture ────┘   (no AI, no content copy)
+
+Farmer taps article ─→ Original publisher website (direct link)
+```
+
+#### How it works
+- **RSS-based** — fetches from verified Kannada and English agriculture news feeds every **3 hours**.
+- **Keyword filtering** — 55 Kannada + 36 English broad farmer keywords (dairy, cattle, crops, irrigation, government schemes, market prices, weather, etc.).
+- **Exclusion filter** — 13 patterns block cartoons, horoscopes, almanacs, letters to editor.
+- **Metadata only** — title, source name, source URL, category, published date. No article content is stored or reproduced.
+- **Auto-cleanup** — articles older than **7 days** are automatically deleted to keep the feed fresh.
+- **Direct links** — tapping any article opens the original publisher website.
+- **Language-aware UI** — section title/subtitle/buttons switch between Kannada and English.
+
+#### Relevance Categories
+| Category | ಕನ್ನಡ |
+|----------|-------|
+| `cattle_health` | ಹಸುಗಳ ಆರೋಗ್ಯ |
+| `government_scheme` | ಸರ್ಕಾರಿ ಯೋಜನೆ |
+| `weather_advisory` | ಹವಾಮಾನ & ನೀರಾವರಿ |
+| `milk_price` | ಹಾಲಿನ ಬೆಲೆ |
+| `farmer_advisory` | ರೈತ ಸಲಹೆ |
+| `disease_alert` | ರೋಗ ಎಚ್ಚರಿಕೆ |
+| `dairy_business` | ಮಾರುಕಟ್ಟೆ ಬೆಲೆ |
+
+---
+
+### 5. 🔐 Secure OTP Onboarding (Twilio Verify)
+Step-by-step registration:
+1. Enter name + 10-digit mobile number
+2. Receive a 6-digit SMS OTP (Twilio Verify)
+3. Verify with 30-second countdown + resend option
+4. Set secure password and delivery address
 
 > [!WARNING]
-> **Twilio Trial Account Limitation:** If you are testing Twilio OTP flows with a Twilio trial account, you **must** manually register the target phone numbers inside the **Verified Caller IDs** panel of your Twilio Console, otherwise Twilio will block the outgoing SMS.
+> **Twilio Trial Accounts:** You must register the target phone number in **Verified Caller IDs** in the Twilio Console before SMS can be sent.
 
-### 4. 🐄 Sante Cattle Marketplace
-A trusted local cattle marketplace with automated freshness controls:
-* **Geographical Scoping:** Listings are grouped under local hub market hubs (e.g. *KRS Sante*, *Thendekere Sante*) scoped within a 20 KM radius.
-* **24-Hour Expiry:** Listings are active for exactly **24 hours**. An automated background loop worker in the FastAPI server ([main.py](file:///Users/susheel/milkfront1/backend/app/main.py#L25-L50)) sweeps the database hourly to purge expired posts.
-* **Camera-Only Uploads:** Image uploads are restricted to direct environment capture (`capture="environment"`), preventing arbitrary gallery uploads and promoting trust.
+---
 
-### 5. 🛍️ Buy Feeds Shop & Glassmorphic Cart
-A shopping cart interface designed for high-friction environments:
-- Products are priced per bag (ಚೀಲ).
-- Interactive quantity adjustment buttons featuring oversized touch targets for mobile screens.
-- **Glassmorphic Cart Bar:** A floating, translucent checkout bar that aggregates prices and total counts in real time.
-- Pre-filled order summary checkouts matching saved profile delivery details.
+### 6. 🐄 Sante Cattle Marketplace
+- Listings scoped to local market hubs (e.g. *KRS Sante*, *Thendekere Sante*) within a 20 km radius.
+- **24-hour auto-expiry** — a background daemon sweeps the DB hourly to delete expired posts.
+- **Camera-only image capture** — prevents arbitrary gallery uploads, promotes trust.
 
-### 6. 🧠 Nandini AI Dairy Farming Assistant
-An AI chatbot powered by Google Gemini 2.5 Flash ([nandini_ai.py](file:///Users/susheel/milkfront1/backend/app/services/ai/nandini_ai.py)):
-- **Language Alignment:** Converses in the language actively chosen by the farmer (Kannada or English).
-- **Dairy Scoping:** Programmed with system instructions restricted to dairy husbandry, feed management, cattle vaccination schedules, milk fat optimization, and local Karnataka government schemes.
-- **Guardrails:** Politely declines non-agricultural or non-farming prompts.
+---
 
-### 7. 🛡️ Administrative Dashboard (`/admin`)
-A unified dashboard for platform operators ([AdminDashboard.jsx](file:///Users/susheel/milkfront1/frontend/src/pages/AdminDashboard.jsx)):
-- **Overview:** Summarized cards displaying total platform revenue, active cattle postings, users count, and pending orders.
-- **Feeds:** Add, update, or remove cattle feed products dynamically.
-- **Orders:** Audit customer deliveries and toggle statuses (`Pending`, `Confirmed`, `Shipped`, `Delivered`, `Cancelled`).
-- **Users:** Monitor accounts, addresses, roles (`user`, `admin`, `super_admin`).
-- **Cattle:** Moderation dashboard to flag or delete inappropriate Sante listings.
+### 7. 🛍️ Buy Feeds Shop
+- **2-column grid** on mobile, 3-column on desktop.
+- **Compact product cards** — image, name, price, and Add button only.
+- **Tap a card → bottom sheet detail view** slides up with full description and a large Add to Cart button.
+- **Glassmorphic floating cart bar** — real-time quantity + price totals.
+- Pre-filled checkout using saved profile delivery address.
+
+---
+
+### 8. 🧠 Nandini AI — Dairy Assistant
+Powered by **Google Gemini 2.5 Flash**:
+- Responds in the farmer's active language (Kannada or English).
+- Scoped to dairy husbandry, feed management, vaccination, milk fat, and Karnataka government schemes.
+- Politely declines non-farming topics.
+
+---
+
+### 9. 🛡️ Admin Dashboard (`/admin`)
+| Section | Capabilities |
+|---------|-------------|
+| Overview | Revenue, active listings, users, pending orders |
+| Feeds | Add / edit / remove feed products |
+| Orders | Audit orders, update status (Pending → Delivered) |
+| Users | Monitor accounts, roles (`user`, `admin`, `super_admin`) |
+| Cattle | Moderate / delete inappropriate Sante listings |
+| News | View aggregated articles and source stats |
 
 ---
 
 ## 🛠️ Technology Stack
 
-### Frontend Client
-- **React 18 & Vite:** Ultra-fast hot module replacement dev environment.
-- **Tailwind CSS:** Responsive layouts using utility classes styled around an emerald-green and gold color palette.
-- **React Router DOM v6:** Guarded client routing with authentication locks ([index.jsx](file:///Users/susheel/milkfront1/frontend/src/routes/index.jsx#L24-L37)).
-- **Capacitor JS:** Bridges the React bundle to compiled native Android configurations.
-- **Lucide React:** Icon packages.
+### Frontend
+| Technology | Purpose |
+|-----------|---------|
+| **React 18 + Vite** | Fast SPA with hot module replacement |
+| **Tailwind CSS** | Utility-first responsive styling (emerald + gold palette) |
+| **React Router DOM v6** | Auth-guarded client-side routing |
+| **Capacitor JS** | Native Android bridge |
+| **Lucide React** | Icon library |
+| **i18n (custom)** | Kannada/English translation context |
 
-### Backend Server
-- **FastAPI:** High-performance, asynchronous Python REST API framework.
-- **SQLAlchemy 2.0 (Async):** Object-Relational Mapper built for async context management.
-- **PostgreSQL / Supabase:** Primary production database.
-- **SQLite + aiosqlite:** Out-of-the-box local development database configuration requiring zero database installation.
-- **Google GenAI SDK:** Direct API hooks into Gemini 2.5 Flash.
-- **Cloudinary:** Base64 image parsing and storage CDN for user avatars.
-- **Twilio Verify API:** SMS verification triggers and validation.
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| **FastAPI** | Async Python REST API |
+| **SQLAlchemy 2.0 (Async)** | ORM with async session management |
+| **PostgreSQL / Supabase** | Production database |
+| **SQLite + aiosqlite** | Zero-config local development database |
+| **PyJWT + Passlib (Bcrypt)** | Auth token generation + password hashing |
+| **Cloudinary SDK** | Image CDN for cattle photos |
+| **Twilio Verify** | SMS OTP verification |
+| **Google GenAI SDK** | Gemini 2.5 Flash for Nandini AI |
+| **feedparser / xml.etree** | RSS parsing for Farmers News |
+| **anyio** | Async thread pool for blocking I/O |
 
 ---
 
-## 📂 Codebase Directory Map
+## 📂 Project Structure
 
 ```
 milkfront1/
-├── frontend/                     # React 18 Web App & Capacitor Packaging
+├── frontend/                         # React 18 + Vite frontend
 │   ├── src/
-│   │   ├── App.jsx               # App routing wrapper, handles bottom-nav visibility
-│   │   ├── main.jsx              # DOM mounting entrypoint
-│   │   ├── components/           # Modular UI widgets (Bottom Nav, Toast, Buttons)
-│   │   ├── pages/                # Screen layouts (Home, Sante, Feeds, Profile, Admin)
-│   │   ├── routes/
-│   │   │   └── index.jsx         # Routes mapping with Protected/AdminRoute guards
-│   │   ├── services/
-│   │   │   ├── api/
-│   │   │   │   ├── apiClient.js  # Centralized fetch wrapper adding JWT authorization headers
-│   │   │   │   └── authApi.js    # Auth state managers
-│   │   │   └── toastService.js   # Event alerts messaging service
-│   │   └── i18n/                 # Localization translation dictionaries (en.json, kn.json)
-│   ├── android/                  # Native Android wrapper project generated by Capacitor
-│   ├── capacitor.config.json     # App IDs and permissions navigation rules
-│   ├── tailwind.config.js        # Theme color palettes
-│   └── vite.config.js            # Asset compiler settings
+│   │   ├── components/               # Shared UI components (Header, Card, Button, BottomNav)
+│   │   ├── pages/
+│   │   │   ├── HomePage.jsx          # Dashboard with Quick Services + News + Feeds
+│   │   │   ├── BuyFeedsPage.jsx      # Feed shop (2-col grid + bottom sheet detail)
+│   │   │   ├── DairyNewsPage.jsx     # Full news listing page
+│   │   │   ├── SantePage.jsx         # Cattle marketplace
+│   │   │   ├── NandiniAIPage.jsx     # AI chat assistant
+│   │   │   ├── ProfilePage.jsx       # Profile + language toggle
+│   │   │   ├── AdminDashboard.jsx    # Admin control panel
+│   │   │   └── ...
+│   │   ├── i18n/
+│   │   │   ├── kn.json               # Kannada translations
+│   │   │   ├── en.json               # English translations
+│   │   │   ├── LanguageContext.jsx   # React context provider
+│   │   │   └── useTranslation.js     # Hook to access t()
+│   │   ├── services/api/
+│   │   │   ├── apiClient.js          # JWT-authenticated fetch wrapper
+│   │   │   ├── feedsApi.js           # Feed catalog API calls
+│   │   │   ├── newsApi.js            # Farmers News API calls
+│   │   │   └── ...
+│   │   └── styles/index.css          # Global styles + animations
+│   ├── android/                      # Capacitor Android native project
+│   └── .env                          # VITE_API_URL (not committed)
 │
-├── backend/                      # Python FastAPI REST API Server
+├── backend/                          # FastAPI backend
 │   ├── app/
-│   │   ├── main.py               # API Router mounts, CORS, and background worker sweep loops
+│   │   ├── main.py                   # App bootstrap + background workers (news, Sante cleanup)
 │   │   ├── core/
-│   │   │   ├── database.py       # Async SQLAlchemy database session pooler
-│   │   │   ├── config.py         # Pydantic Settings variable validation
-│   │   │   └── security.py       # Password bcrypt hashing and JWT encoders
-│   │   ├── models/               # SQLAlchemy Database schemas (User, Feed, Order, Cattle)
-│   │   ├── routes/               # API route collections (auth, order, cattle, profile, ai)
-│   │   ├── schemas/              # Pydantic serialization request/response schemas
-│   │   └── services/             # Core utilities (Cloudinary upload, Twilio OTP, Gemini integration)
-│   ├── seed.py                   # Script to bootstrap tables and verify super-admin credentials
-│   ├── requirements.txt          # Python packages list
-│   └── .env                      # Local server secrets (Not checked into source)
+│   │   │   ├── config.py             # Pydantic settings from environment
+│   │   │   ├── security.py           # JWT + Bcrypt helpers
+│   │   │   ├── database.py           # Async SQLAlchemy engine
+│   │   │   └── dependencies.py       # Auth guard dependencies
+│   │   ├── models/
+│   │   │   ├── user.py               # User ORM model
+│   │   │   ├── feed.py               # Feed product ORM model
+│   │   │   ├── order.py              # Order ORM model
+│   │   │   ├── cattle.py             # Sante cattle listing ORM model
+│   │   │   ├── report.py             # Milk report ORM model
+│   │   │   └── news.py               # NewsArticle ORM model
+│   │   ├── routes/
+│   │   │   ├── auth_routes.py        # Register, login, OTP, password reset
+│   │   │   ├── profile_routes.py     # Profile read/update
+│   │   │   ├── feed_routes.py        # Feed catalog
+│   │   │   ├── order_routes.py       # Orders + checkout
+│   │   │   ├── cattle_routes.py      # Sante marketplace
+│   │   │   ├── report_routes.py      # Milk records
+│   │   │   ├── ai_routes.py          # Nandini AI chat
+│   │   │   ├── news_routes.py        # Farmers News API
+│   │   │   └── admin_routes.py       # Admin dashboard
+│   │   └── services/
+│   │       ├── ai/nandini_ai.py      # Gemini integration
+│   │       ├── news/
+│   │       │   ├── news_sources.py   # RSS URLs, keywords, exclusions, categories
+│   │       │   └── news_service.py   # RSS fetch, filter, cleanup, DB storage
+│   │       └── ...                   # Cloudinary, Twilio helpers
+│   ├── requirements.txt
+│   └── .env                          # Backend secrets (not committed)
 │
-├── ANDROID_BUILD.md              # Android compilation & keystore signing guide
-└── README.md                     # Central documentation guide (this file)
+├── ANDROID_BUILD.md                  # Android keystore + APK/AAB guide
+└── README.md                         # This file
 ```
 
 ---
 
-## 🚀 Local Development Environment Setup
+## 🚀 Local Development Setup
 
-### 1. Backend Server Setup
-Make sure you have **Python 3.12+** installed on your development machine.
+### Backend
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Initialize a Python virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-   *(On Windows use: `venv\Scripts\activate`)*
-
-3. Install requirements:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-4. Create your local environmental file:
-   ```bash
-   cp .env.example .env
-   ```
-   *(By default, the SQLite database configuration `sqlite+aiosqlite:///./milkmaatu.db` will be used automatically. You do **not** need to install PostgreSQL or Supabase locally to run/test the code!)*
-
-5. Bootstrap the database and seed initial administrator credentials:
-   ```bash
-   python seed.py
-   ```
-   *This initializes the SQLite database tables and seeds a default Super Admin account:*
-   * **Phone:** `+917795056391`
-   * **Password:** `Susheel@451`
-
-6. Launch the FastAPI server:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-   * The server runs on **`http://localhost:8000`**
-   * View interactive OpenAPI Swagger docs at **`http://localhost:8000/docs`**
-
----
-
-### 2. Frontend Client Setup
-Make sure you have **Node.js (v18+)** installed.
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install Node dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create the frontend `.env` file pointing to your local FastAPI server:
-   ```bash
-   echo "VITE_API_URL=http://localhost:8000/api" > .env
-   ```
-
-4. Launch the local Vite development server:
-   ```bash
-   npm run dev
-   ```
-   * Open **`http://localhost:5173`** in your browser.
-   * To test responsive layouts on your phone over the local network, run:
-     ```bash
-     npm run dev -- --host
-     ```
-
----
-
-## 🤖 Android Compilation & Native Packaging
-The React codebase is compiled and synchronized into a native Android wrapper using **Capacitor**.
-
-For step-by-step setup checklists, versioning modifications, keystore keys, and signed release APK/AAB builds instructions, refer to the [Android Build & Signing Instructions](file:///Users/susheel/milkfront1/ANDROID_BUILD.md) guide.
-
-### Basic Sync Command Workflow:
 ```bash
-# 1. Compile Vite frontend build assets
-cd frontend
-npm run build
+cd backend
 
-# 2. Sync files and plugins to the native Android project directory
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Configure environment (SQLite used locally by default — no Postgres needed)
+cp .env.example .env
+
+# Seed super-admin account
+python seed.py
+
+# Run with hot-reload
+uvicorn app.main:app --reload --port 8000
+```
+
+- API available at **`http://localhost:8000`**
+- Swagger docs at **`http://localhost:8000/docs`**
+
+### Frontend
+
+```bash
+cd frontend
+
+npm install
+
+# Point to local backend
+echo "VITE_API_URL=http://localhost:8000/api" > .env
+
+# Start dev server (browser)
+npm run dev
+
+# OR expose on local network (for phone testing)
+npm run dev -- --host
+```
+
+Open **`http://localhost:5173`** in your browser.
+
+---
+
+## 🤖 Android Build
+
+The React bundle is packaged into a native Android app via **Capacitor**.
+
+```bash
+# 1. Build frontend
+cd frontend && npm run build
+
+# 2. Sync to Android project
 npx cap sync
 
-# 3. Open the native project in Android Studio to build or run on a device
+# 3. Open in Android Studio
 npx cap open android
 ```
 
+See [ANDROID_BUILD.md](ANDROID_BUILD.md) for keystore setup, versioning, and signed APK/AAB release instructions.
+
 ---
 
-## 🔑 Environment Variables Checklist
+## 🔑 Environment Variables
 
-Ensure these variables are defined inside your `backend/.env` file:
+### `backend/.env`
 
-| Variable | Dev / Fallback Value | Purpose |
-|----------|----------------------|---------|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./milkmaatu.db` | Async connection string to PostgreSQL (or SQLite local) |
-| `JWT_SECRET` | *(Random 32-character string)* | Secure hashing seed key for user JWT authorization tokens |
-| `JWT_ALGORITHM` | `HS256` | Token hashing algorithm |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (24 Hours) | Lifespan of logged-in sessions |
-| `GEMINI_API_KEY` | *(Get from Google AI Studio)* | API key to communicate with Gemini 2.5 Flash for Nandini AI |
-| `CLOUDINARY_CLOUD_NAME` | *(Optional / Cloudinary Account)* | Image CDN cloud name |
-| `CLOUDINARY_API_KEY` | *(Optional / Cloudinary Account)* | Image CDN API key |
-| `CLOUDINARY_API_SECRET` | *(Optional / Cloudinary Account)* | Image CDN secret key |
-| `TWILIO_ACCOUNT_SID` | *(Optional / Twilio Console)* | Account ID for Twilio SMS operations |
-| `TWILIO_AUTH_TOKEN` | *(Optional / Twilio Console)* | Authentication token for Twilio |
-| `TWILIO_VERIFY_SERVICE_SID` | *(Optional / Twilio Console)* | Verification Service SID for Twilio Verify OTP |
+| Variable | Default (Dev) | Purpose |
+|----------|--------------|---------|
+| `DATABASE_URL` | `sqlite+aiosqlite:///./milkmaatu.db` | DB connection string |
+| `JWT_SECRET` | *(random 32-char string)* | JWT signing secret |
+| `JWT_ALGORITHM` | `HS256` | JWT algorithm |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (24h) | Session lifespan |
+| `GEMINI_API_KEY` | *(Google AI Studio)* | Nandini AI |
+| `CLOUDINARY_CLOUD_NAME` | *(optional)* | Image CDN |
+| `CLOUDINARY_API_KEY` | *(optional)* | Image CDN |
+| `CLOUDINARY_API_SECRET` | *(optional)* | Image CDN |
+| `TWILIO_ACCOUNT_SID` | *(optional)* | SMS OTP |
+| `TWILIO_AUTH_TOKEN` | *(optional)* | SMS OTP |
+| `TWILIO_VERIFY_SERVICE_SID` | *(optional)* | SMS OTP |
 
 > [!NOTE]
-> **Mock Callbacks:** If `CLOUDINARY_CLOUD_NAME` or `TWILIO_ACCOUNT_SID` variables are left blank, the backend automatically activates fallback mocks (returning a default animal profile image URL and bypassing SMS delivery with mock OK approvals) to streamline rapid local developer onboarding!
+> If `CLOUDINARY_CLOUD_NAME` or `TWILIO_ACCOUNT_SID` are blank, the backend uses built-in fallback mocks (default image URL + bypass OTP approval) so you can develop without third-party accounts.
 
 ---
 
 ## 📋 API Routes Reference
 
-All backend service endpoints are prefixed with `/api`.
+All endpoints are prefixed with `/api`.
 
-| Method | Endpoint | Auth Guard | Description |
-|--------|----------|:----------:|-------------|
-| **GET** | `/` | — | Health check checking if API is online |
-| **POST** | `/api/auth/register` | — | Register a new profile |
-| **POST** | `/api/auth/login` | — | Validate credentials and receive JWT access token |
-| **POST** | `/api/auth/send-otp` | — | Send a Twilio Verify 6-digit SMS OTP |
-| **POST** | `/api/auth/verify-otp` | — | Validate Twilio Verify 6-digit OTP |
-| **POST** | `/api/auth/forgot-password/request-otp` | — | Request verification OTP for password resets |
-| **POST** | `/api/auth/forgot-password/verify-otp` | — | Verify password reset verification code |
-| **POST** | `/api/auth/forgot-password/reset` | — | Reset password on verified SMS session |
-| **GET** | `/api/profile` | ✅ User | Retrieve profile data & language configurations |
-| **PUT** | `/api/profile` | ✅ User | Update profile details (address, locale) |
-| **GET** | `/api/feeds` | ✅ User | Get cattle feed inventory catalog |
-| **POST** | `/api/orders` | ✅ User | Place a new cart purchase |
-| **GET** | `/api/orders/my` | ✅ User | Retrieve individual customer purchase history |
-| **GET** | `/api/cattle` | ✅ User | Browse active market cattle listings |
-| **POST** | `/api/cattle` | ✅ User | Post a cattle listing (requires camera capture link) |
-| **GET** | `/api/reports` | ✅ User | List daily milk logs |
-| **POST** | `/api/reports` | ✅ User | Add a daily milk logs entry |
-| **POST** | `/api/ai/nandini` | ✅ User | Query Nandini AI conversational chat endpoint |
-| **GET** | `/api/admin/stats` | 🛡️ Admin | Get aggregates dashboard metrics |
-| **DELETE**| `/api/cattle/{id}` | 🛡️ Admin | Moderation: delete a marketplace listing |
+| Method | Endpoint | Auth | Description |
+|--------|----------|:----:|-------------|
+| `GET` | `/` | — | Health check |
+| `POST` | `/api/auth/register` | — | Register new account |
+| `POST` | `/api/auth/login` | — | Login + get JWT |
+| `POST` | `/api/auth/send-otp` | — | Send Twilio OTP |
+| `POST` | `/api/auth/verify-otp` | — | Verify OTP |
+| `POST` | `/api/auth/forgot-password/request-otp` | — | Password reset OTP |
+| `POST` | `/api/auth/forgot-password/verify-otp` | — | Verify reset OTP |
+| `POST` | `/api/auth/forgot-password/reset` | — | Confirm new password |
+| `GET` | `/api/profile` | ✅ User | Get profile |
+| `PUT` | `/api/profile` | ✅ User | Update profile |
+| `GET` | `/api/feeds` | ✅ User | Feed product catalog |
+| `POST` | `/api/orders` | ✅ User | Place order |
+| `GET` | `/api/orders/my` | ✅ User | My order history |
+| `GET` | `/api/cattle` | ✅ User | Browse cattle listings |
+| `POST` | `/api/cattle` | ✅ User | Post cattle listing |
+| `GET` | `/api/reports` | ✅ User | Milk logs |
+| `POST` | `/api/reports` | ✅ User | Add milk log |
+| `POST` | `/api/ai/nandini` | ✅ User | Nandini AI chat |
+| `GET` | `/api/news/latest` | ✅ User | Latest 6 farmer news articles |
+| `GET` | `/api/news/all` | ✅ User | Paginated full news list |
+| `GET` | `/api/admin/stats` | 🛡️ Admin | Platform metrics |
+| `DELETE` | `/api/cattle/{id}` | 🛡️ Admin | Remove Sante listing |
+
+---
+
+## 🗺️ Background Workers
+
+Two long-running async daemons start automatically with the server ([`main.py`](backend/app/main.py)):
+
+| Worker | Interval | What it does |
+|--------|---------|-------------|
+| **Sante Sweeper** | Every 1 hour | Deletes cattle listings older than 24 hours |
+| **News Worker** | Every 3 hours | Fetches RSS feeds → keyword filter → stores metadata → cleans up articles >7 days old |
+
+---
+
+*Built with ❤️ for Karnataka's dairy farmers.*
