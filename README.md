@@ -1,6 +1,8 @@
 # 🥛 MilkMaatu — Premium Dairy Farming Platform
 
-MilkMaatu is a **mobile-first, multilingual** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), delivers daily farmer news, and gives administrators control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
+MilkMaatu is a **mobile-first, multilingual, and frictionless** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), delivers daily farmer news, and gives administrators control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
+
+**Zero Login Friction:** MilkMaatu does not require farmers to create accounts, remember passwords, or verify OTPs. Farmers open the app directly into `/home` and can immediately browse feeds, post cattle in Sante, consult Nandini AI, and place orders.
 
 The project is a monorepo containing a high-performance FastAPI backend, a responsive React + Vite frontend, and native Android packaging via Capacitor.
 
@@ -17,27 +19,27 @@ Designed for single-thumb usage. A persistent bottom nav bar provides access to:
 | Tab | Route | Description |
 |-----|-------|-------------|
 | Home | `/home` | Dashboard — quick services, news, recommended feeds |
-| Sante | `/sante` | Local cattle marketplace |
-| Buy Feeds | `/feeds` | Cattle feed shop |
-| My Orders | `/orders` | Live order tracking |
-| Profile | `/profile` | Address, language, and photo management |
+| Sante | `/sante` | Local cattle marketplace (Buy & Sell) |
+| Buy Feeds | `/feeds` | Cattle feed shop with 2-column mobile layout |
+| My Orders | `/orders` | Order tracking by device history and phone |
+| Profile | `/profile` | Local farmer details, language toggle, and support links |
 
 ---
 
 ### 2. 🌐 Multilingual — Kannada & English
-- **Kannada by default** for all new accounts — maximum accessibility for Karnataka farmers.
+- **Kannada by default** — maximum accessibility for Karnataka dairy farmers.
 - **Instant toggle** on the Profile page. No page refresh needed.
-- **Fully translated UI:** every label, message, button, and section heading switches language — including the Farmers News widget, Quick Services, Recommended Feeds, and all error states.
+- **Fully translated UI:** every label, message, button, and section heading switches language — including the Farmers News widget, Quick Services, Recommended Feeds, and error states.
 - Translations live in [`src/i18n/kn.json`](frontend/src/i18n/kn.json) and [`src/i18n/en.json`](frontend/src/i18n/en.json).
-- Selected locale is persisted in `localStorage` and synced to the backend profile.
+- Selected locale is persisted in `localStorage` (`appLanguage`).
 
 ---
 
 ### 3. 🏠 Home Dashboard
 The home screen is organized into clean, stacked sections:
 
-#### 🌾 Recommended Feeds
-Horizontally scrollable card carousel showing top-rated feeds based on the farmer's profile.
+#### 🌾 Recommended Feeds Ticker
+Horizontally scrolling card carousel showing catalog feeds with instant navigation to details.
 
 #### ⚡ Quick Services — 4 Circular Buttons
 Four large circular icon buttons in a single row for instant access:
@@ -70,7 +72,7 @@ Farmer taps article ─→ Original publisher website (direct link)
 - **Metadata only** — title, source name, source URL, category, published date. No article content is stored or reproduced.
 - **Auto-cleanup** — articles older than **7 days** are automatically deleted to keep the feed fresh.
 - **Direct links** — tapping any article opens the original publisher website.
-- **Language-aware UI** — section title/subtitle/buttons switch between Kannada and English.
+- **Public & Unauthenticated** — accessible to all farmers instantly.
 
 #### Relevance Categories
 | Category | ಕನ್ನಡ |
@@ -85,22 +87,20 @@ Farmer taps article ─→ Original publisher website (direct link)
 
 ---
 
-### 5. 🔐 Secure OTP Onboarding (Twilio Verify)
-Step-by-step registration:
-1. Enter name + 10-digit mobile number
-2. Receive a 6-digit SMS OTP (Twilio Verify)
-3. Verify with 30-second countdown + resend option
-4. Set secure password and delivery address
-
-> [!WARNING]
-> **Twilio Trial Accounts:** You must register the target phone number in **Verified Caller IDs** in the Twilio Console before SMS can be sent.
+### 5. 🔓 Frictionless Farmer Experience (Zero Login / Zero Registration)
+MilkMaatu is designed for maximum speed and simplicity for rural dairy farmers:
+- **No Sign-Up or Login**: No passwords to create or forget, and no SMS OTP delays.
+- **Immediate Browsing**: Directly launches into `/home`.
+- **Local Contact Preferences**: Farmers can optionally save their Name, Phone number, Village, and Delivery Address in the Profile tab (`localStorage`), which automatically pre-fills feed order checkouts and Sante cattle listings.
+- **Order Tracking**: Orders placed on the device are saved locally and synchronized live with backend status (`/orders`).
 
 ---
 
 ### 6. 🐄 Sante Cattle Marketplace
 - Listings scoped to local market hubs (e.g. *KRS Sante*, *Thendekere Sante*) within a 20 km radius.
 - **24-hour auto-expiry** — a background daemon sweeps the DB hourly to delete expired posts.
-- **Camera-only image capture** — prevents arbitrary gallery uploads, promotes trust.
+- **Direct seller phone contact** — one-tap phone calls to farmers.
+- **Owner post management** — easily delete your own listings without needing an account.
 
 ---
 
@@ -109,7 +109,7 @@ Step-by-step registration:
 - **Compact product cards** — image, name, price, and Add button only.
 - **Tap a card → bottom sheet detail view** slides up with full description and a large Add to Cart button.
 - **Glassmorphic floating cart bar** — real-time quantity + price totals.
-- Pre-filled checkout using saved profile delivery address.
+- Pre-filled checkout using saved profile delivery address with instant cash-on-delivery order placement.
 
 ---
 
@@ -118,16 +118,17 @@ Powered by **Google Gemini 2.5 Flash**:
 - Responds in the farmer's active language (Kannada or English).
 - Scoped to dairy husbandry, feed management, vaccination, milk fat, and Karnataka government schemes.
 - Politely declines non-farming topics.
+- Completely open and accessible without login.
 
 ---
 
 ### 9. 🛡️ Admin Dashboard (`/admin`)
+Administrative functions are protected by an **Admin Access PIN** screen (`4512` by default):
 | Section | Capabilities |
 |---------|-------------|
-| Overview | Revenue, active listings, users, pending orders |
-| Feeds | Add / edit / remove feed products |
-| Orders | Audit orders, update status (Pending → Delivered) |
-| Users | Monitor accounts, roles (`user`, `admin`, `super_admin`) |
+| Overview | Revenue, active listings, total orders, active cattle |
+| Feeds | Add / edit / hide / remove feed products |
+| Orders | Audit all customer orders, update dispatch status |
 | Cattle | Moderate / delete inappropriate Sante listings |
 | News | View aggregated articles and source stats |
 
@@ -140,7 +141,7 @@ Powered by **Google Gemini 2.5 Flash**:
 |-----------|---------|
 | **React 18 + Vite** | Fast SPA with hot module replacement |
 | **Tailwind CSS** | Utility-first responsive styling (emerald + gold palette) |
-| **React Router DOM v6** | Auth-guarded client-side routing |
+| **React Router DOM v6** | Client-side routing with direct access |
 | **Capacitor JS** | Native Android bridge |
 | **Lucide React** | Icon library |
 | **i18n (custom)** | Kannada/English translation context |
@@ -152,9 +153,7 @@ Powered by **Google Gemini 2.5 Flash**:
 | **SQLAlchemy 2.0 (Async)** | ORM with async session management |
 | **PostgreSQL / Supabase** | Production database |
 | **SQLite + aiosqlite** | Zero-config local development database |
-| **PyJWT + Passlib (Bcrypt)** | Auth token generation + password hashing |
 | **Cloudinary SDK** | Image CDN for cattle photos |
-| **Twilio Verify** | SMS OTP verification |
 | **Google GenAI SDK** | Gemini 2.5 Flash for Nandini AI |
 | **feedparser / xml.etree** | RSS parsing for Farmers News |
 | **anyio** | Async thread pool for blocking I/O |
@@ -167,63 +166,62 @@ Powered by **Google Gemini 2.5 Flash**:
 milkfront1/
 ├── frontend/                         # React 18 + Vite frontend
 │   ├── src/
-│   │   ├── components/               # Shared UI components (Header, Card, Button, BottomNav)
+│   │   ├── components/               # Header, BottomNav, Card, Button, etc.
 │   │   ├── pages/
 │   │   │   ├── HomePage.jsx          # Dashboard with Quick Services + News + Feeds
 │   │   │   ├── BuyFeedsPage.jsx      # Feed shop (2-col grid + bottom sheet detail)
+│   │   │   ├── OrderSummaryPage.jsx  # Checkout & order placement
+│   │   │   ├── OrdersPage.jsx        # My Orders live tracking
 │   │   │   ├── DairyNewsPage.jsx     # Full news listing page
-│   │   │   ├── SantePage.jsx         # Cattle marketplace
+│   │   │   ├── SanteActionPage.jsx   # Sante hub selector (Buy / Sell)
+│   │   │   ├── SanteBuyPage.jsx      # Browse & filter cattle listings
+│   │   │   ├── SanteSellPage.jsx     # Post cattle ad with direct photo upload
 │   │   │   ├── NandiniAIPage.jsx     # AI chat assistant
-│   │   │   ├── ProfilePage.jsx       # Profile + language toggle
-│   │   │   ├── AdminDashboard.jsx    # Admin control panel
-│   │   │   └── ...
+│   │   │   ├── ProfilePage.jsx       # Local farmer details & language toggle
+│   │   │   └── AdminDashboard.jsx    # Admin control panel (PIN guarded)
 │   │   ├── i18n/
 │   │   │   ├── kn.json               # Kannada translations
 │   │   │   ├── en.json               # English translations
 │   │   │   ├── LanguageContext.jsx   # React context provider
 │   │   │   └── useTranslation.js     # Hook to access t()
 │   │   ├── services/api/
-│   │   │   ├── apiClient.js          # JWT-authenticated fetch wrapper
-│   │   │   ├── feedsApi.js           # Feed catalog API calls
-│   │   │   ├── newsApi.js            # Farmers News API calls
-│   │   │   └── ...
+│   │   │   ├── apiClient.js          # Fetch wrapper supporting optional Admin PIN
+│   │   │   ├── authApi.js            # Local farmer profile & admin PIN manager
+│   │   │   ├── feedsApi.js           # Feed catalog actions
+│   │   │   ├── cattleApi.js          # Sante marketplace actions
+│   │   │   ├── orderApi.js           # Feed order placements & status
+│   │   │   └── newsApi.js            # Farmers News API calls
 │   │   └── styles/index.css          # Global styles + animations
 │   ├── android/                      # Capacitor Android native project
-│   └── .env                          # VITE_API_URL (not committed)
+│   └── .env                          # VITE_API_URL
 │
 ├── backend/                          # FastAPI backend
 │   ├── app/
-│   │   ├── main.py                   # App bootstrap + background workers (news, Sante cleanup)
+│   │   ├── main.py                   # App bootstrap + background daemons
 │   │   ├── core/
-│   │   │   ├── config.py             # Pydantic settings from environment
-│   │   │   ├── security.py           # JWT + Bcrypt helpers
+│   │   │   ├── config.py             # Settings from environment (ACCESS_PIN, etc.)
 │   │   │   ├── database.py           # Async SQLAlchemy engine
-│   │   │   └── dependencies.py       # Auth guard dependencies
+│   │   │   └── dependencies.py       # Admin PIN & guest user dependencies
 │   │   ├── models/
-│   │   │   ├── user.py               # User ORM model
+│   │   │   ├── user.py               # User / farmer ORM model
 │   │   │   ├── feed.py               # Feed product ORM model
-│   │   │   ├── order.py              # Order ORM model
+│   │   │   ├── order.py              # Order & items ORM model
 │   │   │   ├── cattle.py             # Sante cattle listing ORM model
-│   │   │   ├── report.py             # Milk report ORM model
 │   │   │   └── news.py               # NewsArticle ORM model
 │   │   ├── routes/
-│   │   │   ├── auth_routes.py        # Register, login, OTP, password reset
-│   │   │   ├── profile_routes.py     # Profile read/update
-│   │   │   ├── feed_routes.py        # Feed catalog
-│   │   │   ├── order_routes.py       # Orders + checkout
-│   │   │   ├── cattle_routes.py      # Sante marketplace
-│   │   │   ├── report_routes.py      # Milk records
-│   │   │   ├── ai_routes.py          # Nandini AI chat
-│   │   │   ├── news_routes.py        # Farmers News API
-│   │   │   └── admin_routes.py       # Admin dashboard
+│   │   │   ├── feed_routes.py        # Feed catalog (public + admin)
+│   │   │   ├── order_routes.py       # Order placement & tracking (public + admin)
+│   │   │   ├── cattle_routes.py      # Sante marketplace (public)
+│   │   │   ├── profile_routes.py     # Profile details
+│   │   │   ├── ai_routes.py          # Nandini AI chat (public)
+│   │   │   ├── news_routes.py        # Farmers News API (public)
+│   │   │   └── admin_routes.py       # Admin stats & moderation
 │   │   └── services/
 │   │       ├── ai/nandini_ai.py      # Gemini integration
-│   │       ├── news/
-│   │       │   ├── news_sources.py   # RSS URLs, keywords, exclusions, categories
-│   │       │   └── news_service.py   # RSS fetch, filter, cleanup, DB storage
-│   │       └── ...                   # Cloudinary, Twilio helpers
+│   │       ├── news/                 # RSS news fetch & filter workers
+│   │       └── cloudinary_service.py # Cloudinary image upload helper
 │   ├── requirements.txt
-│   └── .env                          # Backend secrets (not committed)
+│   └── .env                          # Backend secrets
 │
 ├── ANDROID_BUILD.md                  # Android keystore + APK/AAB guide
 └── README.md                         # This file
@@ -246,12 +244,6 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Configure environment (SQLite used locally by default — no Postgres needed)
-cp .env.example .env
-
-# Seed super-admin account
-python seed.py
-
 # Run with hot-reload
 uvicorn app.main:app --reload --port 8000
 ```
@@ -266,13 +258,13 @@ cd frontend
 
 npm install
 
-# Point to local backend
+# Configure environment
 echo "VITE_API_URL=http://localhost:8000/api" > .env
 
-# Start dev server (browser)
+# Start dev server
 npm run dev
 
-# OR expose on local network (for phone testing)
+# Expose on local Wi-Fi for phone testing
 npm run dev -- --host
 ```
 
@@ -306,19 +298,11 @@ See [ANDROID_BUILD.md](ANDROID_BUILD.md) for keystore setup, versioning, and sig
 | Variable | Default (Dev) | Purpose |
 |----------|--------------|---------|
 | `DATABASE_URL` | `sqlite+aiosqlite:///./milkmaatu.db` | DB connection string |
-| `JWT_SECRET` | *(random 32-char string)* | JWT signing secret |
-| `JWT_ALGORITHM` | `HS256` | JWT algorithm |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` (24h) | Session lifespan |
-| `GEMINI_API_KEY` | *(Google AI Studio)* | Nandini AI |
+| `ACCESS_PIN` | `4512` | Admin Access PIN for `/admin` |
+| `GEMINI_API_KEY` | *(Google AI Studio)* | Nandini AI assistant |
 | `CLOUDINARY_CLOUD_NAME` | *(optional)* | Image CDN |
 | `CLOUDINARY_API_KEY` | *(optional)* | Image CDN |
 | `CLOUDINARY_API_SECRET` | *(optional)* | Image CDN |
-| `TWILIO_ACCOUNT_SID` | *(optional)* | SMS OTP |
-| `TWILIO_AUTH_TOKEN` | *(optional)* | SMS OTP |
-| `TWILIO_VERIFY_SERVICE_SID` | *(optional)* | SMS OTP |
-
-> [!NOTE]
-> If `CLOUDINARY_CLOUD_NAME` or `TWILIO_ACCOUNT_SID` are blank, the backend uses built-in fallback mocks (default image URL + bypass OTP approval) so you can develop without third-party accounts.
 
 ---
 
@@ -329,27 +313,21 @@ All endpoints are prefixed with `/api`.
 | Method | Endpoint | Auth | Description |
 |--------|----------|:----:|-------------|
 | `GET` | `/` | — | Health check |
-| `POST` | `/api/auth/register` | — | Register new account |
-| `POST` | `/api/auth/login` | — | Login + get JWT |
-| `POST` | `/api/auth/send-otp` | — | Send Twilio OTP |
-| `POST` | `/api/auth/verify-otp` | — | Verify OTP |
-| `POST` | `/api/auth/forgot-password/request-otp` | — | Password reset OTP |
-| `POST` | `/api/auth/forgot-password/verify-otp` | — | Verify reset OTP |
-| `POST` | `/api/auth/forgot-password/reset` | — | Confirm new password |
-| `GET` | `/api/profile` | ✅ User | Get profile |
-| `PUT` | `/api/profile` | ✅ User | Update profile |
-| `GET` | `/api/feeds` | ✅ User | Feed product catalog |
-| `POST` | `/api/orders` | ✅ User | Place order |
-| `GET` | `/api/orders/my` | ✅ User | My order history |
-| `GET` | `/api/cattle` | ✅ User | Browse cattle listings |
-| `POST` | `/api/cattle` | ✅ User | Post cattle listing |
-| `GET` | `/api/reports` | ✅ User | Milk logs |
-| `POST` | `/api/reports` | ✅ User | Add milk log |
-| `POST` | `/api/ai/nandini` | ✅ User | Nandini AI chat |
-| `GET` | `/api/news/latest` | ✅ User | Latest 6 farmer news articles |
-| `GET` | `/api/news/all` | ✅ User | Paginated full news list |
-| `GET` | `/api/admin/stats` | 🛡️ Admin | Platform metrics |
-| `DELETE` | `/api/cattle/{id}` | 🛡️ Admin | Remove Sante listing |
+| `GET` | `/api/feeds` | — | Feed product catalog (public) |
+| `POST` | `/api/orders` | — | Place order (customer name + phone) |
+| `GET` | `/api/orders/my-orders` | — | Order history by phone / order IDs |
+| `PUT` | `/api/orders/{id}/cancel` | — | Cancel pending order |
+| `GET` | `/api/cattle` | — | Browse active Sante cattle |
+| `POST` | `/api/cattle` | — | Post cattle listing |
+| `DELETE` | `/api/cattle/{id}` | — | Delete cattle listing |
+| `POST` | `/api/cattle/report` | — | Report cattle listing for review |
+| `POST` | `/api/ai/nandini` | — | Nandini AI chat (Kannada / English) |
+| `GET` | `/api/news/latest` | — | Latest 6 farmer news articles |
+| `GET` | `/api/news` | — | Paginated full news list |
+| `GET` | `/api/admin/stats` | 🛡️ Admin PIN | Platform metrics and counters |
+| `GET` | `/api/admin/orders` | 🛡️ Admin PIN | Audit all system orders |
+| `PUT` | `/api/admin/orders/{id}/status` | 🛡️ Admin PIN | Update dispatch status |
+| `GET` | `/api/feeds/admin` | 🛡️ Admin PIN | View all feeds including hidden |
 
 ---
 
