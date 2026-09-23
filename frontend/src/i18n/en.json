@@ -53,6 +53,12 @@
     "expertAdvice": "Expert Advice",
     "expertAdviceDesc": "One-on-one expert consultations",
     "recommendedFeeds": "🌾 Recommended Feeds",
+    "farmersNews": "📰 Farmers News",
+    "farmersNewsSubtitle": "Latest useful news for farmers",
+    "allNews": "All News →",
+    "readFull": "Read Full Article →",
+    "noNews": "No recent news available.",
+    "loadingNews": "Loading news...",
     "viewAll": "View All →"
   },
   "login": {

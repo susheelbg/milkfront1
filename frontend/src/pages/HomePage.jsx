@@ -176,19 +176,19 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 📰 ರೈತರ ಸುದ್ದಿ — below Quick Services ─────────── */}
+      {/* ── 📰 ರೈತರ ಸುದ್ದಿ / Farmers News — below Quick Services ── */}
       <section className="max-w-4xl mx-auto px-4 pb-6">
         {/* Section header */}
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <Newspaper size={18} className="text-amber-600" />
-            <h3 className="text-lg font-bold text-text-dark">📰 ರೈತರ ಸುದ್ದಿ</h3>
+            <h3 className="text-lg font-bold text-text-dark">{t('home.farmersNews')}</h3>
           </div>
           <button
             onClick={() => navigate('/news')}
             className="text-xs font-bold text-primary-dark hover:underline transition-colors"
           >
-            ಎಲ್ಲಾ ಸುದ್ದಿ →
+            {t('home.allNews')}
           </button>
         </div>
 
@@ -204,13 +204,13 @@ export const HomePage = () => {
           ) : newsError ? (
             <div className="px-4 py-8 text-center">
               <p className="text-xs text-text-light font-semibold">
-                ಸುದ್ದಿಗಳನ್ನು ಈಗ ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.
+                {t('home.loadingNews')}
               </p>
             </div>
           ) : news.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <p className="text-xs text-text-light font-semibold">
-                ಈಗ ಯಾವುದೇ ಹೊಸ ಹೈನುಗಾರಿಕೆ ಸುದ್ದಿಗಳು ಲಭ್ಯವಿಲ್ಲ.
+                {t('home.noNews')}
               </p>
             </div>
           ) : (
@@ -228,7 +228,7 @@ export const HomePage = () => {
                   {/* Alert indicator */}
                   {article.is_alert && (
                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full w-fit">
-                      <Bell size={8} /> ಮಹತ್ವದ
+                      <Bell size={8} /> Alert
                     </span>
                   )}
 
@@ -237,7 +237,7 @@ export const HomePage = () => {
                     {article.category_kn}
                   </span>
 
-                  {/* Kannada headline */}
+                  {/* Headline */}
                   <p className="text-xs font-black text-text-dark leading-snug line-clamp-3 flex-1">
                     {article.kannada_title}
                   </p>
@@ -253,7 +253,7 @@ export const HomePage = () => {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary-dark hover:underline flex-shrink-0"
                     >
-                      ಓದಿ <ExternalLink size={9} />
+                      {t('home.readFull')} <ExternalLink size={9} />
                     </a>
                   </div>
                 </div>
@@ -264,13 +264,13 @@ export const HomePage = () => {
           {/* Subtitle + CTA bar at bottom */}
           <div className="px-4 py-2 bg-amber-50/60 border-t border-amber-200/40 flex items-center justify-between">
             <p className="text-[10px] text-text-light font-semibold">
-              ರೈತರಿಗೆ ಉಪಯುಕ್ತ ಇತ್ತೀಚಿನ ಸುದ್ದಿ
+              {t('home.farmersNewsSubtitle')}
             </p>
             <button
               onClick={() => navigate('/news')}
               className="text-[10px] font-bold text-primary-dark hover:underline"
             >
-              ಎಲ್ಲಾ ಸುದ್ದಿ ನೋಡಿ →
+              {t('home.allNews')}
             </button>
           </div>
         </div>

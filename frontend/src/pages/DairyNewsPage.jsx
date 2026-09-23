@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components';
 import { newsApi } from '../services/api/newsApi';
+import { useTranslation } from '../i18n/useTranslation';
 import { Loader2, AlertTriangle, Newspaper, ExternalLink, Bell } from 'lucide-react';
 
 const CATEGORIES = [
@@ -77,6 +78,7 @@ function NewsCard({ article }) {
 
 export const DairyNewsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [articles, setArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -112,10 +114,10 @@ export const DairyNewsPage = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-1">
             <Newspaper className="text-amber-600" size={24} />
-            <h1 className="text-2xl font-extrabold text-text-dark">📰 ರೈತರ ಸುದ್ದಿ</h1>
+            <h1 className="text-2xl font-extrabold text-text-dark">{t('home.farmersNews')}</h1>
           </div>
           <p className="text-xs text-text-light font-semibold">
-            ರೈತರಿಗೆ ಉಪಯುಕ್ತವಾದ ಇತ್ತೀಚಿನ ಸುದ್ದಿ • ಮೂಲ ತಾಣಕ್ಕೆ ನೇರ ಲಿಂಕ್
+            {t('home.farmersNewsSubtitle')}
           </p>
         </div>
       </section>

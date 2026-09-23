@@ -53,6 +53,12 @@
     "expertAdvice": "ತಜ್ಞರ ಸಲಹೆ",
     "expertAdviceDesc": "ತಜ್ಞರೊಂದಿಗೆ ನೇರ ಸಮಾಲೋಚನೆ",
     "recommendedFeeds": "🌾 ಶಿಫಾರಸು ಮೇವು",
+    "farmersNews": "📰 ರೈತರ ಸುದ್ದಿ",
+    "farmersNewsSubtitle": "ರೈತರಿಗೆ ಉಪಯುಕ್ತ ಇತ್ತೀಚಿನ ಸುದ್ದಿ",
+    "allNews": "ಎಲ್ಲಾ ಸುದ್ದಿ →",
+    "readFull": "ಸಂಪೂರ್ಣ ಸುದ್ದಿ ಓದಿ →",
+    "noNews": "ಈಗ ಯಾವುದೇ ಹೊಸ ಸುದ್ದಿಗಳು ಲಭ್ಯವಿಲ್ಲ.",
+    "loadingNews": "ಸುದ್ದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
     "viewAll": "ಎಲ್ಲವನ್ನೂ ನೋಡಿ →"
   },
   "login": {
