@@ -12,6 +12,7 @@ export const BuyFeedsPage = () => {
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState({});
+  const [selectedFeed, setSelectedFeed] = useState(null);
 
   useEffect(() => {
     const loadFeeds = async () => {
@@ -116,62 +117,44 @@ export const BuyFeedsPage = () => {
               const qty = cart[feed.id] || 0;
               return (
                 <Card key={feed.id} className="flex flex-col overflow-hidden border border-border-light" padding="0">
-                  {/* Product Image */}
-                  <div className="aspect-[4/5] w-full bg-gray-100 overflow-hidden relative">
-                    <img
-                      src={feed.image}
-                      alt={feed.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs text-text-dark text-[10px] font-black uppercase tracking-wider py-1 px-2.5 rounded-full border border-border-light shadow-xs">
-                      {feed.category}
-                    </span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4 flex flex-col flex-1">
-                    <h3 className="text-lg font-extrabold text-text-dark mb-1">{feed.name}</h3>
-                    <p className="text-xs text-text-light mb-4 leading-relaxed flex-1">{feed.description}</p>
-
-                    {/* Price and Add Control */}
-                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-border-light">
-                      <div>
-                        <span className="text-xs text-text-light font-bold uppercase tracking-wider block">{t('feeds.price')}</span>
-                        <span className="text-2xl font-black text-primary-dark">₹{feed.price}</span>
-                        <span className="text-[10px] text-text-light ml-1 font-bold">/ {t('feeds.kg')}</span>
-                      </div>
-
-                      {qty > 0 ? (
-                        <div className="flex items-center bg-primary-light rounded-xl border border-primary-dark/30 overflow-hidden">
-                          <button
-                            onClick={() => removeFromCart(feed.id)}
-                            className="p-2.5 hover:bg-primary-dark/20 text-text-dark active:scale-95 transition-all"
-                            title="Remove"
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <span className="px-3 font-extrabold text-text-dark text-sm min-w-[28px] text-center">
-                            {qty}
-                          </span>
-                          <button
-                            onClick={() => addToCart(feed.id)}
-                            className="p-2.5 hover:bg-primary-dark/20 text-text-dark active:scale-95 transition-all"
-                            title="Add"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => addToCart(feed.id)}
-                          className="font-bold shadow-xs active:scale-95"
-                        >
-                          {t('feeds.addToCart')}
-                        </Button>
+                  {/* Tappable image area → opens detail sheet */}
+                  <button
+                    onClick={() => setSelectedFeed(feed)}
+                    className="w-full text-left"
+                    aria-label={`View ${feed.name} details`}
+                  >
+                    <div className="aspect-[4/5] w-full bg-gray-100 overflow-hidden relative">
+                      <img src={feed.image} alt={feed.name} className="w-full h-full object-cover" />
+                      {feed.category && (
+                        <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-text-dark text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-border-light shadow-xs">
+                          {feed.category}
+                        </span>
                       )}
                     </div>
+                    {/* Name */}
+                    <div className="px-2.5 pt-2.5 pb-1">
+                      <h3 className="text-xs font-extrabold text-text-dark leading-snug line-clamp-2">{feed.name}</h3>
+                      <p className="text-primary-dark font-black text-sm mt-0.5">₹{feed.price}<span className="text-[10px] text-text-light font-bold"> /kg</span></p>
+                    </div>
+                  </button>
+
+                  {/* Add button row */}
+                  <div className="px-2.5 pb-2.5">
+                    {qty > 0 ? (
+                      <div className="flex items-center justify-between bg-primary-light rounded-xl border border-primary-dark/30 overflow-hidden">
+                        <button onClick={() => removeFromCart(feed.id)} className="p-2 hover:bg-primary-dark/20 active:scale-95 transition-all" title="Remove">
+                          <Minus size={14} />
+                        </button>
+                        <span className="font-extrabold text-text-dark text-sm min-w-[24px] text-center">{qty}</span>
+                        <button onClick={() => addToCart(feed.id)} className="p-2 hover:bg-primary-dark/20 active:scale-95 transition-all" title="Add">
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <Button variant="primary" size="sm" onClick={() => addToCart(feed.id)} className="w-full font-bold shadow-xs active:scale-95 text-xs">
+                        + {t('feeds.addToCart')}
+                      </Button>
+                    )}
                   </div>
                 </Card>
               );
@@ -179,6 +162,75 @@ export const BuyFeedsPage = () => {
           </div>
         )}
       </section>
+
+      {/* ── Feed Detail Bottom Sheet ───────────────────────────── */}
+      {selectedFeed && (
+        <div
+          className="fixed inset-0 z-50 flex items-end"
+          onClick={() => setSelectedFeed(null)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+          {/* Sheet */}
+          <div
+            className="relative w-full bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto animate-slide-up"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+
+            <div className="flex gap-4 p-5">
+              {/* Image */}
+              <img
+                src={selectedFeed.image}
+                alt={selectedFeed.name}
+                className="w-28 h-36 object-cover rounded-2xl flex-shrink-0 shadow-md"
+              />
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                {selectedFeed.category && (
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                    {selectedFeed.category}
+                  </span>
+                )}
+                <h2 className="text-lg font-extrabold text-text-dark mt-2 leading-snug">{selectedFeed.name}</h2>
+                <p className="text-2xl font-black text-primary-dark mt-1">
+                  ₹{selectedFeed.price}
+                  <span className="text-xs text-text-light font-bold"> /kg</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="px-5 pb-2">
+              <h4 className="text-xs font-black text-text-dark uppercase tracking-wider mb-1.5">About this product</h4>
+              <p className="text-sm text-text-light leading-relaxed">{selectedFeed.description}</p>
+            </div>
+
+            {/* Add to cart */}
+            <div className="px-5 pt-3 pb-8 border-t border-border-light mt-3">
+              {(cart[selectedFeed.id] || 0) > 0 ? (
+                <div className="flex items-center justify-center gap-6 bg-primary-light rounded-2xl border border-primary-dark/30 py-3">
+                  <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all">
+                    <Minus size={20} />
+                  </button>
+                  <span className="text-xl font-extrabold text-text-dark min-w-[32px] text-center">{cart[selectedFeed.id]}</span>
+                  <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all">
+                    <Plus size={20} />
+                  </button>
+                </div>
+              ) : (
+                <Button variant="primary" size="lg" onClick={() => addToCart(selectedFeed.id)} className="w-full font-bold shadow-md active:scale-95">
+                  + {t('feeds.addToCart')}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Bottom Cart Footer */}
       {getTotalItems() > 0 && (
