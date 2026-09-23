@@ -51,34 +51,13 @@ export const AdminDashboard = () => {
   const [submittingAdmin, setSubmittingAdmin] = useState(false);
 
   useEffect(() => {
-    const syncUserAndLoad = async () => {
-      try {
-        const freshUser = await authApi.getProfile();
-        if (freshUser) {
-          if (!['admin', 'super_admin'].includes(freshUser.role)) {
-            toastService.error('Unauthorized. Admin access only.');
-            navigate('/home');
-            return;
-          }
-          setCurrentUser(freshUser);
-          loadData();
-          return;
-        }
-      } catch (err) {
-        // Fallback to local storage if API fails
-      }
-
-      const user = authApi.getCurrentUser();
-      if (!user || !['admin', 'super_admin'].includes(user.role)) {
-        toastService.error('Unauthorized. Admin access only.');
-        navigate('/home');
-        return;
-      }
-      setCurrentUser(user);
-      loadData();
-    };
-
-    syncUserAndLoad();
+    if (!authApi.isAdminAuthenticated()) {
+      toastService.error('Unauthorized. Admin access only.');
+      navigate('/home');
+      return;
+    }
+    setCurrentUser({ name: 'Administrator', role: 'super_admin' });
+    loadData();
   }, [navigate]);
 
   const handleAdminSubmit = async (e) => {

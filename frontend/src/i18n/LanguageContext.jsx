@@ -1,8 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import knTranslations from './kn.json';
 import enTranslations from './en.json';
-import { authApi } from '../services/api/authApi';
-
 export const LanguageContext = createContext();
 
 const translations = {
@@ -20,34 +18,11 @@ export const LanguageProvider = ({ children }) => {
     return 'kn'; // Default to Kannada
   });
 
-  // When user logins or updates, we want to align the language preference
-  useEffect(() => {
-    const user = authApi.getCurrentUser();
-    if (user && user.language && user.language !== language) {
-      setLanguageState(user.language);
-      localStorage.setItem('appLanguage', user.language);
-    }
-  }, []);
-
-  const changeLanguage = async (newLang) => {
+  const changeLanguage = (newLang) => {
     if (newLang !== 'kn' && newLang !== 'en') return;
     
     setLanguageState(newLang);
     localStorage.setItem('appLanguage', newLang);
-
-    // If logged in, also update user profile on the backend
-    if (authApi.isAuthenticated()) {
-      try {
-        const currentUser = authApi.getCurrentUser();
-        await authApi.updateProfile({
-          ...currentUser,
-          name: currentUser.name,
-          language: newLang,
-        });
-      } catch (err) {
-        console.error('Failed to save language preference to user profile:', err);
-      }
-    }
   };
 
   // Helper function to resolve dot-notation translation keys

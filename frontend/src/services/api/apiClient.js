@@ -13,9 +13,6 @@ if (!API_BASE_URL) {
 // By default we check if we should run in mock mode
 const USE_MOCK_API = false; // Set to false to force real API calls to FastAPI
 
-// Helper to get JWT token
-const getToken = () => localStorage.getItem('authToken');
-
 // Helper to construct request headers
 const getHeaders = (options = {}) => {
   const headers = new Headers({
@@ -23,9 +20,9 @@ const getHeaders = (options = {}) => {
     ...options.headers,
   });
 
-  const token = getToken();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+  // If an administrative session is active, pass Admin PIN for admin endpoint verification
+  if (localStorage.getItem('admin_session') === 'active') {
+    headers.set('X-Admin-PIN', '4512');
   }
 
   return headers;
@@ -201,13 +198,8 @@ export const purgeMockDb = () => {
   localStorage.removeItem('mock_cattle');
   localStorage.removeItem('mock_users');
   localStorage.removeItem('mock_orders');
-  
-  // Wipe old mock JWT tokens to force a fresh, real backend authentication session
-  const token = localStorage.getItem('authToken');
-  if (token && token.startsWith('jwt_token_mock_')) {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-  }
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
 };
 
 // Auto purge mock database to ensure clean live state

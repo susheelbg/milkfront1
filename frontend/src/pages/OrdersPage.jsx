@@ -14,16 +14,16 @@ export const OrdersPage = () => {
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
-    const currentUser = authApi.getCurrentUser();
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-
     const fetchOrders = async () => {
       setLoadingOrders(true);
       try {
-        const data = await orderApi.getMyOrders();
+        const savedProfile = authApi.getCurrentUser() || {};
+        const savedOrderIds = JSON.parse(localStorage.getItem('my_orders') || '[]');
+        
+        const data = await orderApi.getMyOrders({
+          phone: savedProfile.phone || '',
+          ids: savedOrderIds,
+        });
         setOrders(data || []);
       } catch (err) {
         console.error('Failed to fetch user orders:', err);
@@ -33,7 +33,7 @@ export const OrdersPage = () => {
     };
 
     fetchOrders();
-  }, [navigate]);
+  }, []);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm(t('common.confirmCancelOrder') || 'Are you sure you want to cancel this order?')) {

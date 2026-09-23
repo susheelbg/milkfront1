@@ -1,89 +1,74 @@
-import { apiClient } from './apiClient';
+// Farmer profile & Local Preferences helper
+// MilkMaatu operates without mandatory user login or registration.
+// Farmer contact details (name, phone, village, address) are stored in localStorage for convenient pre-filling.
 
 export const authApi = {
-  // Login standard endpoint
-  login: async (phone, password) => {
-    const res = await apiClient.post('/auth/login', { phone_number: phone, password: password });
-    if (res.success && res.data) {
-      const sessionUser = res.data.user;
-      localStorage.setItem('user', JSON.stringify(sessionUser));
-      localStorage.setItem('authToken', res.data.token.access_token);
-      return sessionUser;
-    }
-    throw new Error(res.message || 'Login failed');
-  },
-
-  // WhatsApp OTP Send simulation
-  sendOtp: async (phone) => {
-    return await apiClient.post('/auth/send-otp', { phone });
-  },
-
-  // WhatsApp OTP Verification simulation
-  verifyOtp: async (phone, otp) => {
-    return await apiClient.post('/auth/verify-otp', { phone, otp });
-  },
-
-  // Register endpoint
-  register: async (registerData) => {
-    return await apiClient.post('/auth/register', registerData);
-  },
-
-  // Get currently logged-in user profile
+  // Get farmer profile from local storage
   getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  },
-
-  // Fetch latest profile from DB and sync with localStorage
-  getProfile: async () => {
-    const res = await apiClient.get('/profile');
-    if (res && res.success && res.data) {
-      const sessionUser = res.data;
-      localStorage.setItem('user', JSON.stringify(sessionUser));
-      return sessionUser;
+    try {
+      const user = localStorage.getItem('farmer_profile');
+      return user ? JSON.parse(user) : null;
+    } catch {
+      return null;
     }
-    return null;
   },
 
-  // Update profile details
+  // Save/update farmer profile details locally
   updateProfile: async (profileData) => {
-    const res = await apiClient.put('/profile', profileData);
-    if (res.success && res.data) {
-      const sessionUser = res.data;
-      localStorage.setItem('user', JSON.stringify(sessionUser));
-      return sessionUser;
+    try {
+      const current = authApi.getCurrentUser() || {};
+      const updated = {
+        ...current,
+        ...profileData,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('farmer_profile', JSON.stringify(updated));
+      return updated;
+    } catch (e) {
+      console.error('Failed to update farmer profile:', e);
+      throw new Error('Failed to save profile details');
     }
-    throw new Error(res.message || 'Profile update failed');
   },
 
+  getProfile: async () => {
+    return authApi.getCurrentUser();
+  },
+
+  saveProfile: (profileData) => {
+    return authApi.updateProfile(profileData);
+  },
+
+  // Reset local farmer details if requested
+  clearProfile: () => {
+    localStorage.removeItem('farmer_profile');
+  },
+
+  // Legacy compatibility helpers
   logout: () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-  },
-
-  // Forgot Password: Request OTP
-  requestForgotPasswordOtp: async (phone) => {
-    return await apiClient.post('/auth/forgot-password/request-otp', { phone });
-  },
-
-  // Forgot Password: Verify OTP
-  verifyForgotPasswordOtp: async (phone, otp) => {
-    return await apiClient.post('/auth/forgot-password/verify-otp', { phone, otp });
-  },
-
-  // Forgot Password: Reset Password
-  resetPassword: async (phone, password, access_pin) => {
-    return await apiClient.post('/auth/forgot-password/reset', { phone, password, access_pin });
-  },
-
-  // Account Deletion: play store compliance
-  deleteAccount: async (password) => {
-    return await apiClient.delete('/profile/delete-account', {
-      body: JSON.stringify({ password })
-    });
+    localStorage.removeItem('farmer_profile');
+    localStorage.removeItem('admin_session');
   },
 
   isAuthenticated: () => {
-    return !!localStorage.getItem('authToken');
+    // Application is public for all farmers
+    return true;
+  },
+
+  // Admin access helpers
+  isAdminAuthenticated: () => {
+    return localStorage.getItem('admin_session') === 'active';
+  },
+
+  adminLogin: (pin) => {
+    // Validated against ACCESS_PIN (4512)
+    if (pin === '4512') {
+      localStorage.setItem('admin_session', 'active');
+      return true;
+    }
+    return false;
+  },
+
+  adminLogout: () => {
+    localStorage.removeItem('admin_session');
   },
 };

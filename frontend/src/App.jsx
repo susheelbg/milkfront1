@@ -16,7 +16,6 @@ function AppContent() {
     const backButtonListener = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
       if (
         location.pathname === '/home' ||
-        location.pathname === '/login' ||
         location.pathname === '/' ||
         !canGoBack
       ) {
@@ -32,7 +31,6 @@ function AppContent() {
   }, [location.pathname, navigate]);
 
   // Pages where we show the bottom footer navigation for user experience
-
   const userPages = [
     '/home',
     '/sante',
@@ -43,8 +41,8 @@ function AppContent() {
     '/order-summary'
   ];
 
-  // Render bottom navigation footer only for authenticated users on user-facing pages
-  const showFooter = authApi.isAuthenticated() && userPages.some(page => 
+  // Render bottom navigation footer on all user-facing farmer pages
+  const showFooter = userPages.some(page => 
     location.pathname === page || location.pathname.startsWith(page + '/')
   );
 

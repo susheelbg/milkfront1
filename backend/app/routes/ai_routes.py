@@ -1,10 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional
 from app.services.ai.nandini_ai import nandini_ai_service
-from app.utils.response import json_response
-from app.core.dependencies import get_current_user
-from app.models.user import User
 
 router = APIRouter(prefix="/ai", tags=["Nandini AI"])
 
@@ -13,9 +10,10 @@ class AIRequest(BaseModel):
     language: Optional[str] = Field(None, description="Preferred language ('kn' or 'en')")
 
 @router.post("/nandini")
-async def ask_nandini(req: AIRequest, current_user: User = Depends(get_current_user)):
+async def ask_nandini(req: AIRequest):
     """
-    Endpoint for Nandini AI dairy farming assistant.
+    Public endpoint for Nandini AI dairy farming assistant.
+    No farmer registration or login required.
     """
     if not req.prompt or not req.prompt.strip():
         raise HTTPException(
@@ -23,7 +21,7 @@ async def ask_nandini(req: AIRequest, current_user: User = Depends(get_current_u
             detail="Prompt cannot be empty"
         )
     
-    lang = req.language or current_user.language or "kn"
+    lang = req.language or "kn"
     
     try:
         response_text = await nandini_ai_service.get_response(req.prompt.strip(), lang=lang)

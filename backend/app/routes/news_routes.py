@@ -3,9 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from app.core.dependencies import get_current_user
 from app.core.database import get_db
-from app.models.user import User
 from app.services.news.news_service import get_latest_news, get_all_news
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,14 +16,15 @@ class NewsItemOut(BaseModel):
     The farmer is directed to source_url (original publisher) to read the full article.
     """
     id: int
-    kannada_title: str           # Original Kannada headline from the publisher
-    source_name: str             # Publisher name
-    source_url: str              # Direct link to original article
-    category: str                # English key for filtering
-    category_kn: str             # Kannada category label shown in UI
-    is_alert: bool
-    published_at: Optional[datetime]
-    created_at: datetime
+    title_kn: str
+    title_en: str
+    summary_kn: str
+    summary_en: str
+    source_name: str
+    source_url: str
+    image_url: Optional[str] = None
+    category: str
+    published_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -47,9 +46,8 @@ class AllNewsResponse(BaseModel):
 async def latest_news(
     limit: int = Query(default=6, ge=1, le=12),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Latest dairy news for the Home page widget. Default 6 items."""
+    """Latest dairy news for the Home page widget. Publicly accessible without authentication."""
     items = await get_latest_news(db, limit=limit)
     return {"items": items, "total": len(items)}
 
@@ -60,8 +58,7 @@ async def all_news(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=12, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Paginated dairy news, optionally filtered by category key."""
+    """Paginated dairy news. Publicly accessible without authentication."""
     items, total = await get_all_news(db, category=category, page=page, limit=limit)
     return {"items": items, "total": total, "page": page, "limit": limit}

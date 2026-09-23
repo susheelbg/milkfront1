@@ -1,9 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
-  LoginPage,
-  RegisterPage,
-  ForgotPassword,
   HomePage,
   BuyFeedsPage,
   OrderSummaryPage,
@@ -20,37 +17,68 @@ import {
   Support,
 } from '../pages';
 import { authApi } from '../services/api/authApi';
+import { Lock, ArrowRight } from 'lucide-react';
 
-// Protected route component
-export const ProtectedRoute = ({ children }) => {
-  if (!authApi.isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
-
+// AdminRoute: Guarded by Admin Access PIN without requiring farmer user accounts
 export const AdminRoute = ({ children }) => {
-  const user = authApi.getCurrentUser();
-  if (!authApi.isAuthenticated() || !['admin', 'super_admin'].includes(user?.role)) {
-    return <Navigate to="/home" replace />;
+  const [isAdmin, setIsAdmin] = useState(() => authApi.isAdminAuthenticated());
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState('');
+
+  if (isAdmin) {
+    return children;
   }
-  return children;
+
+  const handleUnlock = (e) => {
+    e.preventDefault();
+    if (authApi.adminLogin(pin.trim())) {
+      setIsAdmin(true);
+      setError('');
+    } else {
+      setError('Invalid Admin PIN. Please try again.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-bg-light flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-border-light shadow-xl p-8 max-w-sm w-full text-center animate-fade-in">
+        <div className="w-14 h-14 bg-primary-light text-primary-dark rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Lock size={28} />
+        </div>
+        <h2 className="text-xl font-black text-text-dark mb-1">Admin Access</h2>
+        <p className="text-xs text-text-light mb-6">Enter Admin PIN to manage feeds and orders</p>
+        
+        <form onSubmit={handleUnlock} className="space-y-4">
+          <input
+            type="password"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={6}
+            value={pin}
+            onChange={(e) => {
+              setPin(e.target.value);
+              setError('');
+            }}
+            placeholder="Enter PIN (4512)"
+            autoFocus
+            className="w-full text-center text-2xl tracking-widest font-black py-3 px-4 rounded-xl border border-border-light focus:border-primary focus:outline-none bg-bg-light"
+          />
+          {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
+          <button
+            type="submit"
+            className="w-full py-3 px-4 bg-primary text-text-dark font-black rounded-xl hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <span>Unlock Dashboard</span>
+            <ArrowRight size={16} />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
-// Routes configuration
+// Routes configuration - completely open farmer experience
 export const routes = [
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
-  },
-  {
-    path: '/forgot-password',
-    element: <ForgotPassword />,
-  },
   {
     path: '/privacy-policy',
     element: <PrivacyPolicy />,
@@ -65,35 +93,19 @@ export const routes = [
   },
   {
     path: '/home',
-    element: (
-      <ProtectedRoute>
-        <HomePage />
-      </ProtectedRoute>
-    ),
+    element: <HomePage />,
   },
   {
     path: '/nandini-ai',
-    element: (
-      <ProtectedRoute>
-        <NandiniAIPage />
-      </ProtectedRoute>
-    ),
+    element: <NandiniAIPage />,
   },
   {
     path: '/news',
-    element: (
-      <ProtectedRoute>
-        <DairyNewsPage />
-      </ProtectedRoute>
-    ),
+    element: <DairyNewsPage />,
   },
   {
     path: '/profile',
-    element: (
-      <ProtectedRoute>
-        <ProfilePage />
-      </ProtectedRoute>
-    ),
+    element: <ProfilePage />,
   },
   {
     path: '/admin',
@@ -105,59 +117,34 @@ export const routes = [
   },
   {
     path: '/feeds',
-    element: (
-      <ProtectedRoute>
-        <BuyFeedsPage />
-      </ProtectedRoute>
-    ),
+    element: <BuyFeedsPage />,
   },
   {
     path: '/order-summary',
-    element: (
-      <ProtectedRoute>
-        <OrderSummaryPage />
-      </ProtectedRoute>
-    ),
+    element: <OrderSummaryPage />,
   },
   {
     path: '/orders',
-    element: (
-      <ProtectedRoute>
-        <OrdersPage />
-      </ProtectedRoute>
-    ),
+    element: <OrdersPage />,
   },
   {
     path: '/sante',
-    element: (
-      <ProtectedRoute>
-        <SanteActionPage />
-      </ProtectedRoute>
-    ),
+    element: <SanteActionPage />,
   },
   {
     path: '/sante-buy',
-    element: (
-      <ProtectedRoute>
-        <SanteBuyPage />
-      </ProtectedRoute>
-    ),
+    element: <SanteBuyPage />,
   },
   {
     path: '/sante-sell',
-    element: (
-      <ProtectedRoute>
-        <SanteSellPage />
-      </ProtectedRoute>
-    ),
+    element: <SanteSellPage />,
   },
   {
     path: '/',
-    element: authApi.isAuthenticated() ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />,
+    element: <Navigate to="/home" replace />,
   },
   {
     path: '*',
     element: <Navigate to="/home" replace />,
   },
 ];
-

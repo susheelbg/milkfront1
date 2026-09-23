@@ -115,7 +115,7 @@ export const SanteSellPage = () => {
     setLoading(true);
 
     try {
-      await cattleApi.createCattleListing({
+      const res = await cattleApi.createCattleListing({
         animalName: formData.animalName,
         price: parseInt(formData.price),
         age: parseInt(formData.age),
@@ -125,6 +125,18 @@ export const SanteSellPage = () => {
         santeName: santeName,
         description: formData.description,
         image: formData.imagePreview || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop',
+      });
+
+      if (res?.id) {
+        try {
+          const myCattle = JSON.parse(localStorage.getItem('my_cattle_listings') || '[]');
+          localStorage.setItem('my_cattle_listings', JSON.stringify([res.id, ...myCattle]));
+        } catch {}
+      }
+
+      authApi.updateProfile({
+        phone: formData.contactNumber,
+        villageName: formData.villageName,
       });
 
       toastService.success(t('sante.deleteSuccess') ? t('common.success') : 'Cattle posted successfully!');

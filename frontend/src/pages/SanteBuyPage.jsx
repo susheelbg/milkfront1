@@ -321,28 +321,35 @@ export const SanteBuyPage = () => {
                   </Button>
 
                   {/* Owner Delete vs. Compliance Report */}
-                  {currentUser && (post.userId === currentUser.id || currentUser.role === 'admin' || currentUser.role === 'super_admin') ? (
-                    <Button
-                      variant="secondary"
-                      size="md"
-                      className="w-full mt-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-700 font-bold flex items-center justify-center gap-2 transition-all"
-                      onClick={() => handleDeletePost(post.id)}
-                    >
-                      <Trash2 size={16} />
-                      {t('common.deleteListing') || 'Delete Listing'}
-                    </Button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setReportingCattleId(post.id);
-                        setShowReportModal(true);
-                      }}
-                      className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline"
-                    >
-                      <ShieldAlert size={14} />
-                      {t('compliance.reportListing')}
-                    </button>
-                  )}
+                  {(() => {
+                    const myListings = JSON.parse(localStorage.getItem('my_cattle_listings') || '[]');
+                    const isOwner = myListings.includes(post.id) || 
+                      (currentUser?.phone && post.contactNumber && currentUser.phone.replace(/\D/g, '').endsWith(post.contactNumber.replace(/\D/g, ''))) ||
+                      authApi.isAdminAuthenticated();
+
+                    return isOwner ? (
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        className="w-full mt-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 hover:text-red-700 font-bold flex items-center justify-center gap-2 transition-all"
+                        onClick={() => handleDeletePost(post.id)}
+                      >
+                        <Trash2 size={16} />
+                        {t('common.deleteListing') || 'Delete Listing'}
+                      </Button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setReportingCattleId(post.id);
+                          setShowReportModal(true);
+                        }}
+                        className="mt-3 text-xs font-bold text-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-1 mx-auto underline"
+                      >
+                        <ShieldAlert size={14} />
+                        {t('compliance.reportListing')}
+                      </button>
+                    );
+                  })()}
 
                   {/* Posted Date */}
                   <div className="mt-3 flex items-center justify-center gap-1.5 text-text-light text-[10px] font-bold uppercase">

@@ -53,16 +53,15 @@ export const Header = ({ showBack = false, onBack = null }) => {
             </nav>
           )}
 
-          {/* Profile Circle Avatar (both desktop & mobile) */}
-          {currentUser && (
-            <button
-              onClick={() => navigate('/profile')}
-              className="w-9 h-9 rounded-full bg-white text-text-dark font-bold border-2 border-text-dark flex items-center justify-center shadow-sm hover:scale-105 transition-transform"
-              title="View Profile"
-            >
-              {initial ? initial : <User size={16} />}
-            </button>
-          )}
+          {/* Profile Circle Avatar (both desktop & mobile) - always accessible */}
+          <button
+            onClick={() => navigate('/profile')}
+            className="w-9 h-9 rounded-full bg-white text-text-dark font-bold border-2 border-text-dark flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-all"
+            title="Farmer Profile & Settings"
+            aria-label="Farmer Profile & Settings"
+          >
+            {initial ? initial : <User size={16} />}
+          </button>
         </div>
       </div>
     </header>

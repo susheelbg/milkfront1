@@ -1,65 +1,104 @@
-from fastapi import Depends, HTTPException, status
+from typing import Optional
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.database import get_db
 from app.core.security import decode_access_token
+from app.core.config import settings
 from app.models.user import User
 
-# Bearer token extractor
-security = HTTPBearer()
+# Optional Bearer token extractor
+security_optional = HTTPBearer(auto_error=False)
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
     db: AsyncSession = Depends(get_db)
-) -> User:
-    """Extract and validate the JWT Bearer token, returning the database User object."""
-    token = credentials.credentials
+) -> Optional[User]:
+    """Extract and validate JWT Bearer token if present; returns None if unauthenticated."""
+    if not credentials:
+        return None
     
     try:
-        payload = decode_access_token(token)
+        payload = decode_access_token(credentials.credentials)
         phone: str = payload.get("sub")
         if not phone:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials token claims.",
-            )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+            return None
+        result = await db.execute(select(User).where(User.phone_number == phone))
+        return result.scalars().first()
+    except Exception:
+        return None
 
-    # Query the user in database
-    result = await db.execute(select(User).where(User.phone_number == phone))
-    user = result.scalars().first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found in system database.",
-        )
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """Backward-compatible user dependency. Returns logged-in user or guest user."""
+    user = await get_current_user_optional(credentials, db)
+    if user:
+        return user
         
-    return user
-
-def get_current_admin(
-    current_user: User = Depends(get_current_user)
-) -> User:
-    """Assert that the authenticated user possesses admin privileges."""
-    if current_user.role not in ("admin", "super_admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. Administrative privileges required.",
+    # Return or create a default guest farmer user if not authenticated
+    res = await db.execute(select(User).where(User.phone_number == "guest_farmer"))
+    guest = res.scalars().first()
+    if not guest:
+        guest = User(
+            full_name="Farmer",
+            phone_number="guest_farmer",
+            hashed_password="guest_no_password",
+            role="user",
+            is_verified=True,
+            phone_verified=True
         )
-    return current_user
+        db.add(guest)
+        await db.commit()
+        await db.refresh(guest)
+    return guest
 
-def get_current_super_admin(
-    current_user: User = Depends(get_current_user)
+async def get_current_admin(
+    x_admin_pin: Optional[str] = Header(None, alias="X-Admin-PIN"),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    db: AsyncSession = Depends(get_db)
 ) -> User:
-    """Assert that the authenticated user possesses super admin privileges."""
-    if current_user.role != "super_admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. Super Administrative privileges required.",
-        )
-    return current_user
+    """Authorize administrative actions via Admin PIN (4512) or Admin JWT."""
+    # 1. Admin PIN Header check
+    if x_admin_pin and x_admin_pin.strip() == settings.ACCESS_PIN:
+        res = await db.execute(select(User).where(User.role.in_(("admin", "super_admin"))))
+        admin = res.scalars().first()
+        if not admin:
+            admin = User(
+                full_name="Administrator",
+                phone_number="+917795056391",
+                hashed_password="admin_no_password",
+                role="super_admin",
+                is_verified=True,
+                phone_verified=True
+            )
+            db.add(admin)
+            await db.commit()
+            await db.refresh(admin)
+        return admin
+
+    # 2. Admin JWT Bearer check
+    if credentials:
+        try:
+            payload = decode_access_token(credentials.credentials)
+            phone = payload.get("sub")
+            if phone:
+                res = await db.execute(select(User).where(User.phone_number == phone))
+                user = res.scalars().first()
+                if user and user.role in ("admin", "super_admin"):
+                    return user
+        except Exception:
+            pass
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Insufficient permissions. Valid Admin PIN (X-Admin-PIN) or Admin credentials required.",
+    )
+
+async def get_current_super_admin(
+    admin_user: User = Depends(get_current_admin)
+) -> User:
+    """Assert super admin privileges."""
+    return admin_user

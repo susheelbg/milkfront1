@@ -3,37 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
-import { User, Phone, MapPin, Edit3, Save, LogOut, Globe, ShieldAlert, Trash2 } from 'lucide-react';
+import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, RotateCcw } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useTranslation();
-  const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     address: '',
     villageName: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const currentUser = authApi.getCurrentUser();
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-    setUser(currentUser);
+    const profile = authApi.getCurrentUser() || {};
     setFormData({
-      name: currentUser.name || '',
-      address: currentUser.address || '',
-      villageName: currentUser.villageName || '',
+      name: profile.name || '',
+      phone: profile.phone || '',
+      address: profile.address || '',
+      villageName: profile.villageName || '',
     });
-  }, [navigate]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,292 +37,259 @@ export const ProfilePage = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      toastService.error(t('profile.fullName') + ' is required');
-      return;
-    }
-
-    setLoading(true);
     try {
-      const updatedUser = await authApi.updateProfile({
-        ...formData,
-        language: language, // preserve current language
-      });
-      setUser(updatedUser);
+      await authApi.updateProfile(formData);
       setIsEditing(false);
-      toastService.success(t('profile.updateSuccess') || 'Profile updated successfully!');
+      toastService.success(t('profile.updateSuccess') || 'Details saved successfully!');
     } catch (err) {
-      toastService.error(err.message || 'Failed to update profile.');
-    } finally {
-      setLoading(false);
+      toastService.error('Failed to save details.');
     }
   };
 
-  const handleLogout = () => {
-    authApi.logout();
-    toastService.success('Logged out successfully.');
-    navigate('/login');
-  };
-
-  const handleDeleteAccount = async (e) => {
-    e.preventDefault();
-    if (!deletePassword) {
-      toastService.error('Password is required to confirm deletion');
-      return;
-    }
-
-    setDeleting(true);
-    try {
-      await authApi.deleteAccount(deletePassword);
-      toastService.success(t('compliance.successTitle') || 'Your account has been deleted.');
-      authApi.logout();
-      navigate('/login');
-    } catch (err) {
-      toastService.error(err.message || 'Incorrect password verification.');
-    } finally {
-      setDeleting(false);
+  const handleClear = () => {
+    if (window.confirm('Clear saved farmer details from this device?')) {
+      authApi.clearProfile();
+      setFormData({
+        name: '',
+        phone: '',
+        address: '',
+        villageName: '',
+      });
+      toastService.info('Saved details cleared.');
     }
   };
-
-  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-bg-light pb-12">
+    <div className="min-h-screen bg-bg-light pb-20">
       <Header showBack onBack={() => navigate('/home')} />
 
       {/* Profile Header */}
-      <section className="bg-primary py-12 px-4 shadow-inner">
-        <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
-          {/* Avatar Placeholder */}
-          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md border-4 border-primary-dark mb-4 text-4xl text-text-dark font-bold relative group">
-            {user.name ? user.name.charAt(0).toUpperCase() : 'F'}
-            <div className="absolute inset-0 bg-black bg-opacity-20 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-              <span className="text-xs text-white font-semibold">Live Camera</span>
-            </div>
+      <section className="bg-primary py-8 px-4 shadow-sm border-b border-primary-dark">
+        <div className="max-w-xl mx-auto flex items-center gap-4">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-primary-dark text-2xl text-text-dark font-black">
+            {formData.name ? formData.name.charAt(0).toUpperCase() : <User size={28} />}
           </div>
-          <h1 className="text-3xl font-bold text-text-dark">{user.name}</h1>
-          <p className="text-sm bg-text-dark text-white px-3 py-1 rounded-full mt-2 inline-block font-semibold capitalize">
-            {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? t('common.admin') : t('common.farmer')}
-          </p>
-
+          <div>
+            <h1 className="text-xl font-black text-text-dark">
+              {formData.name || t('common.farmer') || 'Dairy Farmer'}
+            </h1>
+            <p className="text-xs text-text-dark/70 font-semibold mt-0.5">
+              {formData.phone ? formData.phone : 'Details saved on this device'}
+            </p>
+          </div>
         </div>
       </section>
 
       {/* Profile Body */}
-      <section className="max-w-xl mx-auto px-4 py-8">
-        <div>
-          {/* Profile Card */}
-          <div>
-            <Card padding="lg">
-              <div className="flex justify-between items-center mb-6 border-b border-border-light pb-4">
-                <h2 className="text-xl font-bold text-text-dark">{t('profile.personalDetails')}</h2>
-                {['admin', 'super_admin'].includes(user.role) && (
-                  <button
-                    onClick={() => navigate('/admin')}
-                    className="text-xs font-bold text-text-dark bg-primary-light hover:bg-primary px-3 py-1.5 rounded-lg border border-primary-dark transition-all"
-                  >
-                    {t('admin.dashboard')}
-                  </button>
-                )}
-              </div>
-
-              <form onSubmit={handleSave} className="space-y-5">
-                {/* Phone (Read Only) */}
-                <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
-                  <Phone className="text-text-light" size={20} />
-                  <div className="flex-1">
-                    <p className="text-xs text-text-light font-bold uppercase">{t('common.phone')}</p>
-                    <p className="font-semibold text-text-dark">{user.phone}</p>
-                  </div>
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('profile.fullName')}</label>
-                  {isEditing ? (
-                    <Input
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder={t('register.fullNamePlaceholder')}
-                      required
-                    />
-                  ) : (
-                    <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
-                      <User className="text-text-light" size={20} />
-                      <p className="font-semibold text-text-dark">{user.name || 'Not provided'}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Village */}
-                <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('profile.villageName')}</label>
-                  {isEditing ? (
-                    <Input
-                      name="villageName"
-                      value={formData.villageName}
-                      onChange={handleChange}
-                      placeholder={t('register.villagePlaceholder')}
-                    />
-                  ) : (
-                    <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
-                      <MapPin className="text-text-light" size={20} />
-                      <p className="font-semibold text-text-dark">{user.villageName || 'Not provided'}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('orderSummary.deliveryAddress')}</label>
-                  {isEditing ? (
-                    <Input
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      placeholder={t('profile.addressPlaceholder')}
-                    />
-                  ) : (
-                    <div className="flex items-center gap-3 bg-bg-light p-3.5 rounded-lg border border-border-light">
-                      <MapPin className="text-text-light" size={20} />
-                      <p className="font-semibold text-text-dark">{user.address || 'Not provided'}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Language Settings Dropdown */}
-                <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('profile.language')}</label>
-                  <div className="flex items-center gap-3 bg-bg-light p-3 border border-border-light rounded-lg">
-                    <Globe className="text-text-light" size={20} />
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      className="flex-1 bg-transparent text-sm text-text-dark font-bold outline-none cursor-pointer"
-                    >
-                      <option value="kn">ಕನ್ನಡ</option>
-                      <option value="en">English</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="pt-4 space-y-3">
-                  {isEditing ? (
-                    <div className="flex gap-3">
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        size="md"
-                        className="flex-1 flex items-center justify-center gap-2"
-                        disabled={loading}
-                      >
-                        <Save size={18} />
-                        {loading ? t('profile.updating') : t('common.save')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="md"
-                        className="flex-1"
-                        onClick={() => setIsEditing(false)}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="md"
-                      className="w-full flex items-center justify-center gap-2"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      <Edit3 size={18} />
-                      {t('common.edit')}
-                    </Button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-sm"
-                  >
-                    <LogOut size={18} />
-                    {t('common.logout')}
-                  </button>
-
-                  <div className="border-t border-border-light pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteModal(true)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all font-bold text-xs"
-                    >
-                      <Trash2 size={15} />
-                      {t('compliance.deleteAccount')}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </Card>
+      <section className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        {/* Personal Details Card */}
+        <Card padding="lg" className="border border-border-light shadow-sm">
+          <div className="flex justify-between items-center mb-5 border-b border-border-light pb-3">
+            <div>
+              <h2 className="text-lg font-black text-text-dark">{t('profile.personalDetails') || 'My Farmer Details'}</h2>
+              <p className="text-xs text-text-light">Auto-fills your feed orders and Sante cattle listings</p>
+            </div>
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-primary-dark bg-primary-light hover:bg-primary px-3 py-1.5 rounded-lg border border-primary-dark/30 transition-all"
+              >
+                <Edit3 size={14} />
+                <span>{t('common.edit') || 'Edit'}</span>
+              </button>
+            )}
           </div>
-        </div>
-      </section>
-      {/* Delete Account Modal Dialog */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <Card className="w-full max-w-sm border border-red-100 shadow-2xl animate-scale-up" padding="lg">
-            <form onSubmit={handleDeleteAccount} className="space-y-4">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <ShieldAlert size={24} />
+
+          <form onSubmit={handleSave} className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-xs text-text-light font-bold uppercase mb-1">
+                {t('profile.fullName') || 'Full Name'}
+              </label>
+              {isEditing ? (
+                <Input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder={t('register.fullNamePlaceholder') || 'Enter your name'}
+                />
+              ) : (
+                <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
+                  <User className="text-text-light" size={18} />
+                  <p className="font-semibold text-sm text-text-dark">{formData.name || 'Not provided'}</p>
                 </div>
-                <h3 className="text-lg font-bold text-text-dark">
-                  {t('compliance.deleteAccount')}
-                </h3>
-                <p className="text-xs text-text-light mt-1.5 leading-relaxed">
-                  {t('compliance.deleteConfirmation')}
-                </p>
-              </div>
+              )}
+            </div>
 
-              <Input
-                label={t('compliance.enterPassword')}
-                type="password"
-                placeholder={t('login.passwordPlaceholder')}
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                required
-              />
+            {/* Phone */}
+            <div>
+              <label className="block text-xs text-text-light font-bold uppercase mb-1">
+                {t('common.phone') || 'Phone Number'}
+              </label>
+              {isEditing ? (
+                <Input
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+91 9876543210"
+                />
+              ) : (
+                <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
+                  <Phone className="text-text-light" size={18} />
+                  <p className="font-semibold text-sm text-text-dark">{formData.phone || 'Not provided'}</p>
+                </div>
+              )}
+            </div>
 
-              <div className="flex gap-3 pt-2">
+            {/* Village */}
+            <div>
+              <label className="block text-xs text-text-light font-bold uppercase mb-1">
+                {t('profile.villageName') || 'Village / Town'}
+              </label>
+              {isEditing ? (
+                <Input
+                  name="villageName"
+                  value={formData.villageName}
+                  onChange={handleChange}
+                  placeholder={t('register.villagePlaceholder') || 'Enter village name'}
+                />
+              ) : (
+                <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
+                  <MapPin className="text-text-light" size={18} />
+                  <p className="font-semibold text-sm text-text-dark">{formData.villageName || 'Not provided'}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Delivery Address */}
+            <div>
+              <label className="block text-xs text-text-light font-bold uppercase mb-1">
+                {t('orderSummary.deliveryAddress') || 'Delivery Address'}
+              </label>
+              {isEditing ? (
+                <Input
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder={t('profile.addressPlaceholder') || 'House number, landmark, taluk'}
+                />
+              ) : (
+                <div className="flex items-center gap-3 bg-bg-light p-3 rounded-xl border border-border-light">
+                  <MapPin className="text-text-light" size={18} />
+                  <p className="font-semibold text-sm text-text-dark">{formData.address || 'Not provided'}</p>
+                </div>
+              )}
+            </div>
+
+            {isEditing && (
+              <div className="flex gap-3 pt-3">
                 <Button
                   type="submit"
                   variant="primary"
                   size="md"
-                  className="flex-1 bg-red-500 hover:bg-red-600 border-red-500 text-white font-bold text-xs"
-                  disabled={deleting}
+                  className="flex-1 flex items-center justify-center gap-2"
                 >
-                  {deleting ? t('profile.updating') : t('compliance.confirmDelete')}
+                  <Save size={16} />
+                  <span>{t('common.save') || 'Save Details'}</span>
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   size="md"
-                  className="flex-1 font-bold text-xs"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setDeletePassword('');
-                  }}
-                  disabled={deleting}
+                  className="flex-1"
+                  onClick={() => setIsEditing(false)}
                 >
-                  {t('common.cancel')}
+                  {t('common.cancel') || 'Cancel'}
                 </Button>
               </div>
-            </form>
-          </Card>
-        </div>
-      )}
+            )}
+          </form>
+        </Card>
+
+        {/* Preferences & Language Card */}
+        <Card padding="lg" className="border border-border-light shadow-sm space-y-4">
+          <h2 className="text-lg font-black text-text-dark border-b border-border-light pb-3">
+            {t('profile.language') || 'Language / ಭಾಷೆ'}
+          </h2>
+
+          <div className="flex items-center gap-3 bg-bg-light p-3.5 border border-border-light rounded-xl">
+            <Globe className="text-primary-dark" size={20} />
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-text-dark font-extrabold outline-none cursor-pointer"
+            >
+              <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </Card>
+
+        {/* Management & Legal Links */}
+        <Card padding="lg" className="border border-border-light shadow-sm space-y-3">
+          <h2 className="text-sm font-black uppercase text-text-light tracking-wider mb-2">
+            Quick Links
+          </h2>
+
+          <button
+            onClick={() => navigate('/admin')}
+            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-bg-light transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <Lock size={18} className="text-text-light" />
+              <span className="text-sm font-bold text-text-dark">Admin Portal</span>
+            </div>
+            <span className="text-xs text-text-light font-semibold">PIN required →</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/support')}
+            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-bg-light transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <HelpCircle size={18} className="text-text-light" />
+              <span className="text-sm font-bold text-text-dark">Support & Help</span>
+            </div>
+            <span className="text-xs text-text-light">→</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/privacy-policy')}
+            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-bg-light transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <Shield size={18} className="text-text-light" />
+              <span className="text-sm font-bold text-text-dark">Privacy Policy</span>
+            </div>
+            <span className="text-xs text-text-light">→</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/terms')}
+            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-bg-light transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <FileText size={18} className="text-text-light" />
+              <span className="text-sm font-bold text-text-dark">Terms of Service</span>
+            </div>
+            <span className="text-xs text-text-light">→</span>
+          </button>
+
+          {formData.name && (
+            <div className="border-t border-border-light pt-3 mt-3">
+              <button
+                type="button"
+                onClick={handleClear}
+                className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
+              >
+                <RotateCcw size={14} />
+                <span>Reset Saved Details from Device</span>
+              </button>
+            </div>
+          )}
+        </Card>
+      </section>
     </div>
   );
 };

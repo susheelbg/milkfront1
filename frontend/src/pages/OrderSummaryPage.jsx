@@ -121,10 +121,27 @@ export const OrderSummaryPage = () => {
     setLoadingSubmit(true);
 
     try {
-      await orderApi.createOrder({
+      const result = await orderApi.createOrder({
         items: getCartItems(),
         totalPrice: getTotalPrice(),
         ...formData,
+      });
+
+      // Save order ID to local storage for My Orders tracking
+      if (result?.id) {
+        try {
+          const existing = JSON.parse(localStorage.getItem('my_orders') || '[]');
+          const updated = [result.id, ...existing.filter(id => id !== result.id)];
+          localStorage.setItem('my_orders', JSON.stringify(updated));
+        } catch {}
+      }
+
+      // Save entered details to local profile for future prefilling
+      authApi.updateProfile({
+        name: formData.customerName,
+        phone: formData.phoneNumber,
+        villageName: formData.villageName,
+        address: formData.address,
       });
 
       toastService.success(t('orderSummary.successMessage') || 'Order placed successfully!');
@@ -134,7 +151,7 @@ export const OrderSummaryPage = () => {
       setSubmitted(true);
 
       setTimeout(() => {
-        navigate('/home');
+        navigate('/orders');
       }, 2500);
     } catch (error) {
       toastService.error('Failed to place order. Please try again.');
