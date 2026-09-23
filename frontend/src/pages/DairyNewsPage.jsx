@@ -112,10 +112,10 @@ export const DairyNewsPage = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-1">
             <Newspaper className="text-amber-600" size={24} />
-            <h1 className="text-2xl font-extrabold text-text-dark">ಡೈರಿ ರೈತರ ಸುದ್ದಿ</h1>
+            <h1 className="text-2xl font-extrabold text-text-dark">📰 ರೈತರ ಸುದ್ದಿ</h1>
           </div>
           <p className="text-xs text-text-light font-semibold">
-            ಹೈನುಗಾರರಿಗೆ ಉಪಯುಕ್ತವಾದ ಇತ್ತೀಚಿನ ಸುದ್ದಿ • ಮೂಲ ತಾಣಕ್ಕೆ ನೇರ ಲಿಂಕ್
+            ರೈತರಿಗೆ ಉಪಯುಕ್ತವಾದ ಇತ್ತೀಚಿನ ಸುದ್ದಿ • ಮೂಲ ತಾಣಕ್ಕೆ ನೇರ ಲಿಂಕ್
           </p>
         </div>
       </section>

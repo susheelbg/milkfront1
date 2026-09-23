@@ -176,13 +176,13 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* ── 📰 ಡೈರಿ ರೈತರ ಸುದ್ದಿ — below Quick Services ─────────── */}
+      {/* ── 📰 ರೈತರ ಸುದ್ದಿ — below Quick Services ─────────── */}
       <section className="max-w-4xl mx-auto px-4 pb-6">
         {/* Section header */}
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <Newspaper size={18} className="text-amber-600" />
-            <h3 className="text-lg font-bold text-text-dark">ಡೈರಿ ರೈತರ ಸುದ್ದಿ</h3>
+            <h3 className="text-lg font-bold text-text-dark">📰 ರೈತರ ಸುದ್ದಿ</h3>
           </div>
           <button
             onClick={() => navigate('/news')}
@@ -264,7 +264,7 @@ export const HomePage = () => {
           {/* Subtitle + CTA bar at bottom */}
           <div className="px-4 py-2 bg-amber-50/60 border-t border-amber-200/40 flex items-center justify-between">
             <p className="text-[10px] text-text-light font-semibold">
-              ಹೈನುಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಸುದ್ದಿ
+              ರೈತರಿಗೆ ಉಪಯುಕ್ತ ಇತ್ತೀಚಿನ ಸುದ್ದಿ
             </p>
             <button
               onClick={() => navigate('/news')}

@@ -65,8 +65,8 @@ async def news_refresh_worker():
             break
         except Exception as e:
             print(f"[NEWS WORKER ERROR] {e}")
-        # Wait 6 hours before next refresh
-        await asyncio.sleep(6 * 3600)
+        # Wait 3 hours before next refresh (8 times a day = always fresh)
+        await asyncio.sleep(3 * 3600)
 
 # Lifespan Context Manager (replaces startup/shutdown events)
 @asynccontextmanager

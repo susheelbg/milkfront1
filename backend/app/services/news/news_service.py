@@ -1,68 +1,52 @@
 """
-News service — lightweight, free, no-AI approach.
+News service — keyword-based RSS filtering, metadata-only storage.
+No AI. No article content. Direct links to original publishers.
 
-Flow:
-  Verified Kannada/Agriculture RSS feeds
-       ↓
-  Parse: title, url, published_at, source  (no article content stored)
-       ↓
-  Language check + dairy keyword filter (local, zero cost)
-       ↓
-  Category detection from keywords
-       ↓
-  Store ONLY metadata — title, url, source, date, category
-       ↓
-  /api/news/latest  →  Home page widget  →  click  →  original publisher
-
-No AI calls. No article content. No translations. Direct links only.
+Runs every 3 hours. Auto-deletes articles older than NEWS_RETENTION_DAYS.
 """
 
 import logging
 import re
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Optional
 
 import anyio
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.news import NewsArticle
 from app.services.news.news_sources import (
     CATEGORY_RULES,
-    DAIRY_KEYWORDS,
     DAIRY_KEYWORDS_EN,
     DAIRY_KEYWORDS_KN,
     DEFAULT_CATEGORY,
     EXCLUDE_PATTERNS,
+    NEWS_RETENTION_DAYS,
     NEWS_SOURCES,
 )
 
 logger = logging.getLogger(__name__)
 
 
-# ─── Local helpers (no external calls) ──────────────────────────────────────
+# ─── Local helpers ────────────────────────────────────────────────────────────
 
 def _is_kannada(text: str) -> bool:
-    """True when text contains at least 3 Kannada Unicode characters."""
     return sum(1 for c in text if "\u0C80" <= c <= "\u0CFF") >= 3
 
 
-def _is_dairy_relevant(title: str, description: str, keywords: list[str]) -> bool:
-    """Return True if title/description contain any of the given keywords."""
+def _is_excluded(title: str) -> bool:
+    return any(pat in title for pat in EXCLUDE_PATTERNS)
+
+
+def _is_relevant(title: str, description: str, keywords: list[str]) -> bool:
     haystack = (title + " " + description).lower()
     return any(kw.lower() in haystack for kw in keywords)
 
 
-def _is_excluded(title: str) -> bool:
-    """Return True if title matches an exclusion pattern (cartoon, horoscope, etc.)."""
-    return any(pat in title for pat in EXCLUDE_PATTERNS)
-
-
 def _detect_category(title: str, description: str = "") -> tuple[str, str]:
-    """Return (category_key, category_kn_label) from keyword rules."""
     haystack = (title + " " + description).lower()
     for kws, cat_key, cat_kn in CATEGORY_RULES:
         if any(kw.lower() in haystack for kw in kws):
@@ -75,7 +59,7 @@ def _clean_html(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-# ─── RSS fetch (synchronous — run in thread pool) ────────────────────────────
+# ─── RSS fetch (sync — runs in thread pool) ───────────────────────────────────
 
 def _parse_rss(url: str, source_name: str) -> list[dict]:
     articles = []
@@ -103,7 +87,6 @@ def _parse_rss(url: str, source_name: str) -> list[dict]:
         )
 
         for item in items[:30]:
-
             def _t(tag: str) -> str:
                 el = item.find(f"{ns}{tag}") or item.find(tag)
                 return (el.text or "").strip() if el is not None else ""
@@ -125,10 +108,10 @@ def _parse_rss(url: str, source_name: str) -> list[dict]:
                     pass
 
             if title and link:
-                articles.append(
-                    {"title": title, "link": link, "desc": desc,
-                     "pub_date": pub_date, "source_name": source_name}
-                )
+                articles.append({
+                    "title": title, "link": link, "desc": desc,
+                    "pub_date": pub_date, "source_name": source_name,
+                })
 
     except Exception as exc:
         logger.warning(f"[News] RSS failed for {url}: {exc}")
@@ -136,20 +119,39 @@ def _parse_rss(url: str, source_name: str) -> list[dict]:
     return articles
 
 
+# ─── Cleanup old articles ─────────────────────────────────────────────────────
+
+async def cleanup_old_news(db: AsyncSession) -> int:
+    """Delete articles older than NEWS_RETENTION_DAYS to keep the feed fresh."""
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=NEWS_RETENTION_DAYS)
+    result = await db.execute(
+        delete(NewsArticle).where(NewsArticle.created_at < cutoff)
+    )
+    deleted = result.rowcount or 0
+    if deleted:
+        await db.commit()
+        logger.info(f"[News] Cleaned up {deleted} articles older than {NEWS_RETENTION_DAYS} days.")
+    return deleted
+
+
 # ─── Main refresh ─────────────────────────────────────────────────────────────
 
 async def refresh_news(db: AsyncSession) -> int:
     """
-    Fetch all sources, filter by language + dairy keywords, store metadata only.
+    Fetch all sources → keyword filter → store metadata only.
+    Also cleans up articles older than NEWS_RETENTION_DAYS.
     Returns number of new articles stored.
     """
+    # 1. Cleanup old articles first
+    await cleanup_old_news(db)
+
     stored = 0
 
     for source in NEWS_SOURCES:
         raw = await anyio.to_thread.run_sync(
             lambda s=source: _parse_rss(s["url"], s["name"])
         )
-        logger.info(f"[News] {source['name']}: {len(raw)} items from RSS")
+        logger.info(f"[News] {source['name']}: {len(raw)} items fetched")
 
         keywords = DAIRY_KEYWORDS_KN if source["language"] == "kn" else DAIRY_KEYWORDS_EN
 
@@ -158,19 +160,19 @@ async def refresh_news(db: AsyncSession) -> int:
             desc = art.get("desc", "")
             link = art["link"]
 
-            # Language gate for Kannada sources
+            # 1. Language gate
             if source.get("require_kannada") and not _is_kannada(title):
                 continue
 
-            # Exclusion filter — skip cartoons, horoscopes, almanacs, etc.
+            # 2. Exclusion filter (cartoons, horoscopes, etc.)
             if _is_excluded(title):
                 continue
 
-            # Dairy relevance check via keywords
-            if not _is_dairy_relevant(title, desc, keywords):
+            # 3. Keyword relevance
+            if not _is_relevant(title, desc, keywords):
                 continue
 
-            # Dedup by URL
+            # 4. Dedup by URL
             existing = await db.execute(
                 select(NewsArticle).where(NewsArticle.source_url == link)
             )
@@ -179,12 +181,12 @@ async def refresh_news(db: AsyncSession) -> int:
 
             cat_key, cat_kn = _detect_category(title, desc)
 
-            # Store METADATA ONLY — no content, no summaries, no translations
+            # 5. Store METADATA ONLY — no content, no translation
             news = NewsArticle(
                 original_title=title[:490],
-                original_summary=None,       # empty — we never store article content
-                kannada_title=title[:590],   # original headline, as published
-                kannada_summary="",          # empty — farmers read on original site
+                original_summary=None,
+                kannada_title=title[:590],
+                kannada_summary="",
                 source_name=art["source_name"],
                 source_url=link[:1990],
                 image_url=None,
