@@ -14,16 +14,20 @@ import { useTranslation } from '../i18n/useTranslation';
 export const AdminDashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user: currentUser, isAdmin, isSuperAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, users, orders, cattle
+  const { user: currentUser, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, users, orders, cattle, moderation
   const [stats, setStats] = useState({
     usersCount: 0,
     feedsCount: 0,
+    activeFeedsCount: 0,
+    productsCount: 0,
     ordersCount: 0,
+    pendingOrdersCount: 0,
     cattleCount: 0,
     totalRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   // Data states
   const [usersList, setUsersList] = useState([]);
@@ -45,13 +49,14 @@ export const AdminDashboard = () => {
   });
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAdmin) {
       toastService.error('Unauthorized. Admin access only.');
       navigate('/home');
       return;
     }
     loadData();
-  }, [isAdmin, navigate]);
+  }, [authLoading, isAdmin, navigate]);
 
   const handleToggleAdminRole = async (userId, currentRole) => {
     const targetRole = currentRole === 'admin' ? 'user' : 'admin';
@@ -72,6 +77,7 @@ export const AdminDashboard = () => {
 
   const loadData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [
         statsRes,
@@ -83,7 +89,7 @@ export const AdminDashboard = () => {
       ] = await Promise.allSettled([
         adminApi.getStats(),
         adminApi.getUsers(),
-        orderApi.getOrders(),
+        adminApi.getOrders(),
         feedsApi.getAdminFeeds(),
         cattleApi.getCattleListings(),
         reportApi.getReports(),
@@ -101,12 +107,17 @@ export const AdminDashboard = () => {
       const parsedFeeds = Array.isArray(feedsDataRes) ? feedsDataRes : (Array.isArray(feedsDataRes?.data) ? feedsDataRes.data : []);
       const parsedCattle = Array.isArray(cattleData) ? cattleData : (Array.isArray(cattleData?.data) ? cattleData.data : []);
 
-      setStats(statsData || {
-        usersCount: parsedUsers.length,
-        feedsCount: parsedFeeds.length,
-        ordersCount: parsedOrders.length,
-        cattleCount: parsedCattle.length,
-        totalRevenue: 0,
+      const activeFeedsCalculated = parsedFeeds.filter(f => !f.is_hidden).length;
+
+      setStats({
+        usersCount: statsData?.usersCount ?? parsedUsers.length,
+        feedsCount: statsData?.feedsCount ?? activeFeedsCalculated,
+        activeFeedsCount: statsData?.activeFeedsCount ?? activeFeedsCalculated,
+        productsCount: statsData?.productsCount ?? parsedFeeds.length,
+        ordersCount: statsData?.ordersCount ?? parsedOrders.length,
+        pendingOrdersCount: statsData?.pendingOrdersCount ?? parsedOrders.filter(o => o.status === 'pending').length,
+        cattleCount: statsData?.cattleCount ?? parsedCattle.length,
+        totalRevenue: statsData?.totalRevenue ?? parsedOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0),
       });
 
       setUsersList(parsedUsers);
@@ -121,6 +132,7 @@ export const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
+      setLoadError('Unable to load admin dashboard data. Please try again.');
       toastService.error('Failed to load dashboard data.');
     } finally {
       setLoading(false);
@@ -188,7 +200,7 @@ export const AdminDashboard = () => {
   // Status updates
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
-      await orderApi.updateOrderStatus(orderId, newStatus);
+      await adminApi.updateOrderStatus(orderId, newStatus);
       toastService.success(`Order ${orderId} status set to ${newStatus}`);
       loadData();
     } catch (e) {
@@ -222,9 +234,9 @@ export const AdminDashboard = () => {
     setFeedFormData({
       name: feed.name,
       price: feed.price.toString(),
-      description: feed.description,
-      category: feed.category,
-      image: feed.image,
+      description: feed.description || '',
+      category: feed.category || 'Dairy',
+      image: feed.image || '',
       is_hidden: feed.is_hidden || false,
     });
     setIsFeedModalOpen(true);
@@ -248,18 +260,22 @@ export const AdminDashboard = () => {
       setIsFeedModalOpen(false);
       loadData();
     } catch (e) {
-      toastService.error('Operation failed.');
+      toastService.error(e.message || 'Operation failed.');
     }
   };
 
   const handleDeleteFeed = async (feedId) => {
-    if (!window.confirm('Delete this feed product item?')) return;
+    if (!window.confirm('Delete this feed product item? If it is linked to past orders, it will be safely hidden instead.')) return;
     try {
-      await feedsApi.deleteFeed(feedId);
-      toastService.success('Product deleted.');
+      const res = await feedsApi.deleteFeed(feedId);
+      if (res && res.message) {
+        toastService.success(res.message);
+      } else {
+        toastService.success('Product removed.');
+      }
       loadData();
     } catch (e) {
-      toastService.error('Failed to delete feed.');
+      toastService.error(e.message || 'Failed to delete feed.');
     }
   };
 
@@ -301,6 +317,18 @@ export const AdminDashboard = () => {
     { id: 'moderation', label: t('compliance.adminModeration'), icon: ShieldAlert },
   ];
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-bg-light flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="font-semibold text-sm text-text-light">Loading Admin Panel...</p>
+      </div>
+    );
+  }
+
+  const activeFeedsCount = feedsList.filter(f => !f.is_hidden).length;
+  const hiddenFeedsCount = feedsList.filter(f => f.is_hidden).length;
+
   return (
     <div className="min-h-screen bg-bg-light pb-12">
       <Header showBack onBack={() => navigate('/home')} />
@@ -309,14 +337,20 @@ export const AdminDashboard = () => {
       <section className="bg-text-dark text-white py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">{t('admin.dashboard')}</h1>
-            <p className="text-gray-400 text-sm mt-0.5">Control panel & analytics</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold tracking-tight">{t('admin.dashboard')}</h1>
+              <span className="bg-primary/20 text-primary border border-primary/30 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase">
+                {isSuperAdmin ? 'Super Admin' : 'Admin'}
+              </span>
+            </div>
+            <p className="text-gray-400 text-sm mt-0.5">Control panel & live database analytics</p>
           </div>
           <button
             onClick={loadData}
-            className="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl border border-white/20 transition-all"
+            className="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl border border-white/20 transition-all flex items-center gap-2"
           >
-            Refresh Database
+            <span>↻</span>
+            <span>Refresh Live Data</span>
           </button>
         </div>
       </section>
@@ -350,42 +384,69 @@ export const AdminDashboard = () => {
             {loading ? (
               <Card padding="lg" className="flex flex-col items-center justify-center py-20 text-text-light border border-border-light">
                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="font-semibold text-sm">{t('common.loading')}</p>
+                <p className="font-semibold text-sm">Loading live database records...</p>
+              </Card>
+            ) : loadError ? (
+              <Card padding="lg" className="flex flex-col items-center justify-center py-16 text-center border border-red-200 bg-red-50/50">
+                <p className="text-red-700 font-bold mb-2">{loadError}</p>
+                <p className="text-xs text-text-light mb-4">Check server connection and try again.</p>
+                <Button variant="primary" size="sm" onClick={loadData}>
+                  Retry Loading
+                </Button>
               </Card>
             ) : (
               <div className="space-y-6">
                 {/* 1. OVERVIEW TAB */}
-                {activeTab === 'overview' && stats && (
+                {activeTab === 'overview' && (
                   <div className="space-y-6 animate-slide-up">
                     {/* Stats Blocks */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <Card className="border border-border-light" padding="md">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <Card className="border border-border-light" padding="sm">
                         <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.totalRevenue')}</p>
-                        <p className="text-2xl font-black text-emerald-600 mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
+                        <p className="text-xl font-black text-emerald-600 mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
                       </Card>
-                      <Card className="border border-border-light" padding="md">
+                      <Card className="border border-border-light" padding="sm">
                         <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.activeFeeds')}</p>
-                        <p className="text-2xl font-black text-text-dark mt-1">{stats.feedsCount}</p>
+                        <p className="text-xl font-black text-primary-dark mt-1">{stats.activeFeedsCount}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">{stats.productsCount} total in catalog</p>
                       </Card>
-                      <Card className="border border-border-light" padding="md">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.pendingOrders')}</p>
-                        <p className="text-2xl font-black text-text-dark mt-1">{stats.ordersCount}</p>
+                      <Card className="border border-border-light" padding="sm">
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.products')}</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.productsCount}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">{hiddenFeedsCount} hidden</p>
                       </Card>
-                      <Card className="border border-border-light" padding="md">
+                      <Card className="border border-border-light" padding="sm">
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.orders')}</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.ordersCount}</p>
+                        <p className="text-[10px] text-amber-600 font-semibold mt-0.5">{stats.pendingOrdersCount} pending</p>
+                      </Card>
+                      <Card className="border border-border-light" padding="sm">
+                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.users')}</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.usersCount}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">registered</p>
+                      </Card>
+                      <Card className="border border-border-light" padding="sm">
                         <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.activeCattle')}</p>
-                        <p className="text-2xl font-black text-text-dark mt-1">{stats.cattleCount}</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.cattleCount}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">listings</p>
                       </Card>
                     </div>
 
-                    {/* Stats Info */}
+                    {/* Stats Info & Quick Actions */}
                     <Card padding="lg" className="border border-border-light">
-                      <h3 className="text-lg font-bold text-text-dark mb-3">Quick Actions</h3>
+                      <h3 className="text-lg font-bold text-text-dark mb-3">Quick Navigation</h3>
                       <div className="flex flex-wrap gap-3">
                         <Button variant="primary" size="md" onClick={openAddFeed}>
                           + {t('admin.addProduct')}
                         </Button>
                         <Button variant="secondary" size="md" onClick={() => setActiveTab('orders')}>
-                          View Orders List
+                          View All Orders ({stats.ordersCount})
+                        </Button>
+                        <Button variant="secondary" size="md" onClick={() => setActiveTab('users')}>
+                          View Registered Users ({stats.usersCount})
+                        </Button>
+                        <Button variant="secondary" size="md" onClick={() => setActiveTab('feeds')}>
+                          Manage Products ({stats.productsCount})
                         </Button>
                       </div>
                     </Card>
@@ -395,77 +456,99 @@ export const AdminDashboard = () => {
                 {/* 2. FEEDS CATALOG TAB */}
                 {activeTab === 'feeds' && (
                   <div className="space-y-4 animate-slide-up">
-                    <div className="flex justify-between items-center px-1">
-                      <h3 className="text-lg font-bold text-text-dark">{t('admin.products')} ({feedsList.length})</h3>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 px-1">
+                      <div>
+                        <h3 className="text-lg font-bold text-text-dark">{t('admin.products')} ({feedsList.length})</h3>
+                        <p className="text-xs text-text-light">
+                          Active (visible to customers): <span className="font-bold text-emerald-600">{activeFeedsCount}</span> | Hidden: <span className="font-bold text-amber-600">{hiddenFeedsCount}</span>
+                        </p>
+                      </div>
                       <Button variant="primary" size="sm" onClick={openAddFeed}>
                         + {t('admin.addProduct')}
                       </Button>
                     </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-text-dark border-collapse">
-                          <thead>
-                            <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
-                              <th className="p-4">Product</th>
-                              <th className="p-4">Category</th>
-                              <th className="p-4">Price</th>
-                              <th className="p-4 text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border-light">
-                            {feedsList.map((feed) => (
-                              <tr key={feed.id} className="hover:bg-bg-light/40 transition-colors">
-                                <td className="p-4 font-bold flex items-center gap-3">
-                                  <img src={feed.image} alt="" className="w-9 h-9 rounded object-cover" />
-                                  <div>
-                                    <p className="text-sm font-black">{feed.name}</p>
-                                    <p className="text-xs text-text-light font-normal line-clamp-1">{feed.description}</p>
-                                  </div>
-                                </td>
-                                <td className="p-4">
-                                  <span className="bg-bg-light text-text-dark border border-border-light px-2.5 py-1 rounded text-xs font-semibold">
-                                    {feed.category}
-                                  </span>
-                                  {feed.is_hidden && (
-                                    <span className="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-black uppercase ml-1.5" title="Hidden from customers">
-                                      Hidden
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="p-4 font-bold text-primary-dark">₹{feed.price}</td>
-                                <td className="p-4 text-right space-x-2">
-                                  <button
-                                    onClick={() => handleToggleHideFeed(feed)}
-                                    className={`p-1.5 rounded transition-colors inline-block ${
-                                      feed.is_hidden 
-                                        ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' 
-                                        : 'text-text-light hover:text-text-dark hover:bg-bg-light'
-                                    }`}
-                                    title={feed.is_hidden ? 'Make visible to customers' : 'Hide from customers'}
-                                  >
-                                    {feed.is_hidden ? <EyeOff size={16} /> : <Eye size={16} />}
-                                  </button>
-                                  <button
-                                    onClick={() => openEditFeed(feed)}
-                                    className="p-1.5 text-text-light hover:text-text-dark hover:bg-bg-light rounded transition-colors inline-block"
-                                    title="Edit"
-                                  >
-                                    <Edit size={16} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteFeed(feed.id)}
-                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors inline-block"
-                                    title="Delete Permanently"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </td>
+                      {feedsList.length === 0 ? (
+                        <p className="text-center text-text-light text-sm py-12">No products found in database.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm text-text-dark border-collapse">
+                            <thead>
+                              <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
+                                <th className="p-4">Product</th>
+                                <th className="p-4">Category</th>
+                                <th className="p-4">Price</th>
+                                <th className="p-4">Status</th>
+                                <th className="p-4 text-right">Actions</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="divide-y divide-border-light">
+                              {feedsList.map((feed) => (
+                                <tr key={feed.id} className="hover:bg-bg-light/40 transition-colors">
+                                  <td className="p-4 font-bold flex items-center gap-3">
+                                    {feed.image ? (
+                                      <img src={feed.image} alt={feed.name} className="w-10 h-10 rounded-lg object-cover border border-border-light" />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-lg bg-bg-light flex items-center justify-center text-xs font-bold text-text-light">
+                                        No img
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-sm font-black">{feed.name}</p>
+                                      <p className="text-xs text-text-light font-normal line-clamp-1">{feed.description || 'No description'}</p>
+                                    </div>
+                                  </td>
+                                  <td className="p-4">
+                                    <span className="bg-bg-light text-text-dark border border-border-light px-2.5 py-1 rounded-md text-xs font-semibold">
+                                      {feed.category || 'Dairy'}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 font-extrabold text-primary-dark">₹{feed.price}</td>
+                                  <td className="p-4">
+                                    {feed.is_hidden ? (
+                                      <span className="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-black uppercase inline-flex items-center gap-1">
+                                        Hidden
+                                      </span>
+                                    ) : (
+                                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-black uppercase inline-flex items-center gap-1">
+                                        Active
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="p-4 text-right space-x-2">
+                                    <button
+                                      onClick={() => handleToggleHideFeed(feed)}
+                                      className={`p-1.5 rounded transition-colors inline-block ${
+                                        feed.is_hidden 
+                                          ? 'text-amber-600 hover:text-amber-800 hover:bg-amber-50' 
+                                          : 'text-text-light hover:text-text-dark hover:bg-bg-light'
+                                      }`}
+                                      title={feed.is_hidden ? 'Make visible to customers' : 'Hide from customers'}
+                                    >
+                                      {feed.is_hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                    <button
+                                      onClick={() => openEditFeed(feed)}
+                                      className="p-1.5 text-text-light hover:text-text-dark hover:bg-bg-light rounded transition-colors inline-block"
+                                      title="Edit Product"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteFeed(feed.id)}
+                                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors inline-block"
+                                      title="Delete Product"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -473,7 +556,12 @@ export const AdminDashboard = () => {
                 {/* 3. ORDERS LIST TAB */}
                 {activeTab === 'orders' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.orders')} ({ordersList.length})</h3>
+                    <div className="flex justify-between items-center px-1">
+                      <h3 className="text-lg font-bold text-text-dark">{t('admin.orders')} ({ordersList.length})</h3>
+                      <span className="text-xs text-text-light">
+                        Showing all live & historical orders
+                      </span>
+                    </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {ordersList.length === 0 ? (
@@ -483,9 +571,10 @@ export const AdminDashboard = () => {
                           <table className="w-full text-left text-sm border-collapse">
                             <thead>
                               <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
-                                <th className="p-4">Buyer Info</th>
-                                <th className="p-4">Address</th>
-                                <th className="p-4">Cart items</th>
+                                <th className="p-4">Order ID & Date</th>
+                                <th className="p-4">Customer Info</th>
+                                <th className="p-4">Delivery Address</th>
+                                <th className="p-4">Cart Items</th>
                                 <th className="p-4">Total</th>
                                 <th className="p-4">Status</th>
                               </tr>
@@ -494,26 +583,46 @@ export const AdminDashboard = () => {
                               {ordersList.map((order) => (
                                 <tr key={order.id} className="hover:bg-bg-light/40 transition-colors">
                                   <td className="p-4 align-top">
-                                    <p className="font-extrabold text-sm">{order.customerName}</p>
-                                    <p className="text-xs text-text-light">{order.phoneNumber}</p>
+                                    <p className="font-extrabold text-xs text-primary-dark font-mono">{order.id}</p>
+                                    <p className="text-[11px] text-text-light mt-0.5">
+                                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
+                                    </p>
+                                  </td>
+                                  <td className="p-4 align-top">
+                                    <p className="font-extrabold text-sm">{order.customerName || 'Farmer'}</p>
+                                    {order.customerEmail || order.email ? (
+                                      <p className="text-xs text-text-light">{order.customerEmail || order.email}</p>
+                                    ) : null}
+                                    <p className="text-xs text-text-light font-medium">{order.phoneNumber || '-'}</p>
                                   </td>
                                   <td className="p-4 align-top max-w-[200px]">
-                                    <p className="text-xs font-semibold">{order.villageName}</p>
-                                    <p className="text-xs text-text-light mt-0.5 line-clamp-2">{order.address}</p>
+                                    {order.villageName && (
+                                      <p className="text-xs font-semibold text-text-dark">{order.villageName}</p>
+                                    )}
+                                    <p className="text-xs text-text-light mt-0.5 line-clamp-2">{order.address || '-'}</p>
                                   </td>
                                   <td className="p-4 align-top text-xs">
                                     <div className="space-y-1">
-                                      {order.items?.map((item, idx) => (
-                                        <p key={idx}>
-                                          <span className="font-bold text-text-dark">{item.name}</span>
-                                          <span className="bg-primary-light text-text-dark font-black px-1 py-0.5 rounded ml-1 text-[10px]">
-                                            ×{item.quantity}
-                                          </span>
-                                        </p>
-                                      ))}
+                                      {order.items && order.items.length > 0 ? (
+                                        order.items.map((item, idx) => (
+                                          <p key={idx}>
+                                            <span className="font-bold text-text-dark">{item.name || 'Feed Product'}</span>
+                                            <span className="bg-primary-light text-text-dark font-black px-1 py-0.5 rounded ml-1 text-[10px]">
+                                              ×{item.quantity}
+                                            </span>
+                                            {item.price ? (
+                                              <span className="text-[11px] text-text-light ml-1">
+                                                (₹{item.price})
+                                              </span>
+                                            ) : null}
+                                          </p>
+                                        ))
+                                      ) : (
+                                        <p className="text-text-light italic text-xs">Direct cattle order / standard feed</p>
+                                      )}
                                     </div>
                                   </td>
-                                  <td className="p-4 align-top font-bold text-primary-dark">
+                                  <td className="p-4 align-top font-black text-primary-dark">
                                     ₹{order.totalPrice?.toLocaleString()}
                                   </td>
                                   <td className="p-4 align-top">
@@ -525,7 +634,11 @@ export const AdminDashboard = () => {
                                           ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                           : order.status === 'pending'
                                           ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                          : 'border-blue-200 bg-blue-50 text-blue-700'
+                                          : order.status === 'confirmed'
+                                          ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                          : order.status === 'shipped'
+                                          ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                          : 'border-red-200 bg-red-50 text-red-700'
                                       }`}
                                     >
                                       <option value="pending">Pending</option>
@@ -548,76 +661,95 @@ export const AdminDashboard = () => {
                 {/* 4. USERS TAB */}
                 {activeTab === 'users' && (
                   <div className="space-y-4 animate-slide-up">
-                    <div className="flex items-center justify-between px-1">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 px-1">
                       <h3 className="text-lg font-bold text-text-dark">{t('admin.users')} ({usersList.length})</h3>
                       <span className="text-xs text-text-light font-medium">
-                        {isSuperAdmin ? 'Super Admin Mode: You can promote/demote administrators' : 'Admin Mode'}
+                        {isSuperAdmin ? 'Super Admin Mode: You can promote/demote administrators' : 'Admin Mode (View Only)'}
                       </span>
                     </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm border-collapse text-text-dark">
-                          <thead>
-                            <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
-                              <th className="p-4">User</th>
-                              <th className="p-4">Phone</th>
-                              <th className="p-4">Role</th>
-                              <th className="p-4">Address</th>
-                              <th className="p-4">Joined</th>
-                              <th className="p-4 text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border-light">
-                            {usersList.map((usr) => (
-                              <tr key={usr.id} className="hover:bg-bg-light/40 transition-colors">
-                                <td className="p-4 font-bold">
-                                  <p className="text-sm font-black">{usr.name || 'Farmer'}</p>
-                                  <p className="text-xs text-text-light font-normal">{usr.email || 'No email'}</p>
-                                </td>
-                                <td className="p-4 text-xs font-bold">{usr.phone || '-'}</td>
-                                <td className="p-4">
-                                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                                    usr.role === 'super_admin'
-                                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                      : usr.role === 'admin' 
-                                      ? 'bg-purple-100 text-purple-700 border border-purple-200' 
-                                      : 'bg-blue-100 text-blue-700 border border-blue-200'
-                                  }`}>
-                                    {usr.role === 'super_admin' ? 'Super Admin' : usr.role === 'admin' ? 'Admin' : 'User'}
-                                  </span>
-                                </td>
-                                <td className="p-4 text-xs">{usr.address || '-'}</td>
-                                <td className="p-4 text-xs text-text-light">
-                                  {usr.created_at ? new Date(usr.created_at).toLocaleDateString() : '-'}
-                                </td>
-                                <td className="p-4 text-right">
-                                  {isSuperAdmin && usr.id !== currentUser?.id && usr.role !== 'super_admin' && (
-                                    <button
-                                      onClick={() => handleToggleAdminRole(usr.id, usr.role)}
-                                      className={`text-[11px] font-bold px-2.5 py-1 rounded border transition-colors ${
-                                        usr.role === 'admin'
-                                          ? 'text-purple-600 border-purple-200 hover:bg-purple-50'
-                                          : 'text-amber-600 border-amber-200 hover:bg-amber-50'
-                                      }`}
-                                    >
-                                      {usr.role === 'admin' ? 'Demote to User' : 'Make Admin'}
-                                    </button>
-                                  )}
-                                  {usr.role === 'super_admin' && (
-                                    <span className="text-[11px] text-amber-600 font-bold">Super Admin</span>
-                                  )}
-                                </td>
+                      {usersList.length === 0 ? (
+                        <p className="text-center text-text-light text-sm py-12">No registered users found.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm border-collapse text-text-dark">
+                            <thead>
+                              <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
+                                <th className="p-4">Name & Email</th>
+                                <th className="p-4">Phone</th>
+                                <th className="p-4">Role</th>
+                                <th className="p-4">Address</th>
+                                <th className="p-4">Registration Date</th>
+                                <th className="p-4 text-right">Actions</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody className="divide-y divide-border-light">
+                              {usersList.map((usr) => (
+                                <tr key={usr.id} className="hover:bg-bg-light/40 transition-colors">
+                                  <td className="p-4 font-bold">
+                                    <p className="text-sm font-black">{usr.name || 'Farmer'}</p>
+                                    {usr.email ? (
+                                      <a href={`mailto:${usr.email}`} className="text-xs text-primary-dark hover:underline font-normal">
+                                        {usr.email}
+                                      </a>
+                                    ) : (
+                                      <p className="text-xs text-text-light font-normal">No email</p>
+                                    )}
+                                  </td>
+                                  <td className="p-4 text-xs font-bold">
+                                    {usr.phone ? (
+                                      <a href={`tel:${usr.phone}`} className="text-text-dark hover:underline">
+                                        {usr.phone}
+                                      </a>
+                                    ) : (
+                                      <span className="text-text-light">-</span>
+                                    )}
+                                  </td>
+                                  <td className="p-4">
+                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                      usr.role === 'super_admin'
+                                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                        : usr.role === 'admin' 
+                                        ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                                        : 'bg-blue-100 text-blue-700 border border-blue-200'
+                                    }`}>
+                                      {usr.role === 'super_admin' ? 'Super Admin' : usr.role === 'admin' ? 'Admin' : 'User'}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 text-xs">{usr.address || '-'}</td>
+                                  <td className="p-4 text-xs text-text-light">
+                                    {usr.created_at ? new Date(usr.created_at).toLocaleDateString() : '-'}
+                                  </td>
+                                  <td className="p-4 text-right">
+                                    {isSuperAdmin && usr.id !== currentUser?.id && usr.role !== 'super_admin' && (
+                                      <button
+                                        onClick={() => handleToggleAdminRole(usr.id, usr.role)}
+                                        className={`text-[11px] font-bold px-2.5 py-1 rounded border transition-colors ${
+                                          usr.role === 'admin'
+                                            ? 'text-purple-600 border-purple-200 hover:bg-purple-50'
+                                            : 'text-amber-600 border-amber-200 hover:bg-amber-50'
+                                        }`}
+                                      >
+                                        {usr.role === 'admin' ? 'Demote to User' : 'Make Admin'}
+                                      </button>
+                                    )}
+                                    {usr.role === 'super_admin' && (
+                                      <span className="text-[11px] text-amber-600 font-bold">Super Admin</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* 5. CATTLE TAB */}
+
                 {activeTab === 'cattle' && (
                   <div className="space-y-4 animate-slide-up">
                     <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.cattle')} ({cattleList.length})</h3>

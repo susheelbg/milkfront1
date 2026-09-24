@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -18,19 +18,52 @@ from app.utils.response import json_response
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 
+async def _sync_auth_users_to_profiles(db: AsyncSession):
+    """Idempotently sync registered Supabase auth users into public.profiles."""
+    try:
+        sync_stmt = text("""
+            INSERT INTO public.profiles (id, email, name, phone, address, role, created_at, updated_at)
+            SELECT 
+                id, 
+                email, 
+                COALESCE(raw_user_meta_data->>'name', raw_user_meta_data->>'full_name', ''), 
+                COALESCE(raw_user_meta_data->>'phone', raw_user_meta_data->>'phone_number', ''), 
+                COALESCE(raw_user_meta_data->>'address', ''),
+                'user',
+                created_at,
+                updated_at
+            FROM auth.users
+            ON CONFLICT (id) DO UPDATE 
+            SET email = EXCLUDED.email
+            WHERE public.profiles.email IS NULL OR public.profiles.email = '';
+        """)
+        await db.execute(sync_stmt)
+        await db.commit()
+    except Exception:
+        # If DB user does not have permission on auth.users in non-supabase test env, continue safely
+        pass
+
 @router.get("/stats")
 async def get_admin_stats(
     admin_user: Profile = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve administrative metrics and analytics summaries."""
-    # 1. Total profiles count
+    # Ensure all registered users are synchronized
+    await _sync_auth_users_to_profiles(db)
+
+    # 1. Total profiles count (All registered users)
     users_res = await db.execute(select(func.count(Profile.id)))
     total_users = users_res.scalar_one()
 
-    # 2. Total feeds count
-    feeds_res = await db.execute(select(func.count(Feed.id)))
-    total_feeds = feeds_res.scalar_one()
+    # 2. Feeds count (Total products vs Active feeds)
+    all_feeds_res = await db.execute(select(func.count(Feed.id)))
+    total_feeds = all_feeds_res.scalar_one()
+
+    active_feeds_res = await db.execute(
+        select(func.count(Feed.id)).where(Feed.is_hidden == False)
+    )
+    active_feeds = active_feeds_res.scalar_one()
 
     # 3. Total orders and pending orders
     all_orders_res = await db.execute(select(func.count(Order.id)))
@@ -56,8 +89,10 @@ async def get_admin_stats(
 
     stats_payload = {
         "usersCount": total_users,
-        "feedsCount": total_feeds,
-        "ordersCount": total_all_orders,
+        "feedsCount": active_feeds, # Active feeds count
+        "activeFeedsCount": active_feeds, # Explicit active feeds count
+        "productsCount": total_feeds, # Total catalog products count
+        "ordersCount": total_all_orders, # Total orders
         "pendingOrdersCount": total_pending_orders,
         "cattleCount": active_cattle_posts,
         "totalRevenue": float(total_revenue)
@@ -75,6 +110,8 @@ async def get_all_users(
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve all user profiles in the system (Admin only)."""
+    await _sync_auth_users_to_profiles(db)
+
     result = await db.execute(select(Profile).order_by(Profile.created_at.desc()))
     profiles = result.scalars().all()
     
@@ -97,6 +134,7 @@ async def get_all_users(
         message="Fetched users directory successfully",
         data=payload
     )
+
 
 @router.put("/users/{user_id}/role")
 async def update_user_role(
@@ -169,7 +207,10 @@ async def get_all_orders_admin(
     """Retrieve all orders placed across the system, including legacy orders (Admin only)."""
     stmt = (
         select(Order)
-        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+        .options(
+            selectinload(Order.profile),
+            selectinload(Order.items).selectinload(OrderItem.feed)
+        )
         .order_by(Order.created_at.desc())
     )
     result = await db.execute(stmt)
@@ -193,7 +234,10 @@ async def update_order_status_admin(
     stmt = (
         select(Order)
         .where(Order.id == order_id)
-        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+        .options(
+            selectinload(Order.profile),
+            selectinload(Order.items).selectinload(OrderItem.feed)
+        )
     )
     result = await db.execute(stmt)
     order = result.scalars().first()
@@ -210,7 +254,10 @@ async def update_order_status_admin(
     reload_stmt = (
         select(Order)
         .where(Order.id == order_id)
-        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+        .options(
+            selectinload(Order.profile),
+            selectinload(Order.items).selectinload(OrderItem.feed)
+        )
     )
     reload_res = await db.execute(reload_stmt)
     updated_order = reload_res.scalars().first()

@@ -3,26 +3,32 @@ import { apiClient } from './apiClient';
 export const feedsApi = {
   // Retrieve list of feeds
   getFeeds: async () => {
-    return await apiClient.get('/feeds');
+    const res = await apiClient.get('/feeds');
+    return res && res.success ? res.data : (Array.isArray(res) ? res : (res?.data || []));
   },
 
   // Retrieve list of feeds including hidden ones (Admin action)
   getAdminFeeds: async () => {
-    return await apiClient.get('/feeds/admin');
+    const res = await apiClient.get('/feeds/admin');
+    return res && res.success ? res.data : (Array.isArray(res) ? res : (res?.data || []));
   },
 
   // Create new feed (Admin action)
   createFeed: async (feedData) => {
-    return await apiClient.post('/feeds', feedData);
+    const res = await apiClient.post('/feeds', feedData);
+    return res && res.success ? res.data : res;
   },
 
   // Update existing feed (Admin action)
   updateFeed: async (id, feedData) => {
-    return await apiClient.put(`/feeds/${id}`, feedData);
+    const res = await apiClient.put(`/feeds/${id}`, feedData);
+    return res && res.success ? res.data : res;
   },
 
   // Delete feed (Admin action)
   deleteFeed: async (id) => {
-    return await apiClient.delete(`/feeds/${id}`);
+    const res = await apiClient.delete(`/feeds/${id}`);
+    return res && res.success ? res.data : res;
   },
 };
+

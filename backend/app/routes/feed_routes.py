@@ -167,7 +167,7 @@ async def delete_feed(
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Delete a feed product item from the catalog (Admin only)."""
+    """Delete a feed product item from the catalog (Admin only). Safely hides if referenced in orders."""
     result = await db.execute(select(Feed).where(Feed.id == id))
     feed = result.scalars().first()
     
@@ -177,6 +177,19 @@ async def delete_feed(
             detail=f"Feed product with ID {id} not found."
         )
         
+    from app.models.order import OrderItem
+    from sqlalchemy import func
+    items_count_res = await db.execute(select(func.count(OrderItem.id)).where(OrderItem.feed_id == id))
+    items_count = items_count_res.scalar_one()
+
+    if items_count > 0:
+        feed.is_hidden = True
+        await db.commit()
+        return json_response(
+            success=True,
+            message="Product is associated with existing customer orders. It has been hidden from the catalog to preserve order history."
+        )
+
     await db.delete(feed)
     await db.commit()
     
@@ -184,3 +197,4 @@ async def delete_feed(
         success=True,
         message="Feed product deleted successfully"
     )
+
