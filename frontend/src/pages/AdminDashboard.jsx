@@ -3,19 +3,38 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { adminApi } from '../services/api/adminApi';
 import { feedsApi } from '../services/api/feedsApi';
-import { orderApi } from '../services/api/orderApi';
 import { cattleApi } from '../services/api/cattleApi';
 import { reportApi } from '../services/api/reportApi';
 import { toastService } from '../services/toastService';
 import { useAuth } from '../context/AuthContext';
-import { BarChart3, Users, ClipboardList, Trash2, Edit, Plus, X, Tag, IndianRupee, Layers, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import {
+  BarChart3,
+  Users,
+  ClipboardList,
+  Trash2,
+  Edit,
+  Plus,
+  X,
+  Tag,
+  IndianRupee,
+  Layers,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  Package,
+  Calendar,
+  Phone,
+  MapPin,
+  Clock,
+  CheckCircle,
+} from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user: currentUser, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, users, orders, cattle, moderation
+  const [activeTab, setActiveTab] = useState('overview'); // overview, feeds, orders, users, cattle, moderation
   const [stats, setStats] = useState({
     usersCount: 0,
     feedsCount: 0,
@@ -42,8 +61,10 @@ export const AdminDashboard = () => {
   const [feedFormData, setFeedFormData] = useState({
     name: '',
     price: '',
+    unit: '50 kg',
     description: '',
     category: 'Dairy',
+    stock_quantity: 100,
     image: '',
     is_hidden: false,
   });
@@ -57,23 +78,6 @@ export const AdminDashboard = () => {
     }
     loadData();
   }, [authLoading, isAdmin, navigate]);
-
-  const handleToggleAdminRole = async (userId, currentRole) => {
-    const targetRole = currentRole === 'admin' ? 'user' : 'admin';
-    const actionWord = targetRole === 'admin' ? 'promote to Admin' : 'demote to User';
-
-    if (!window.confirm(`Are you sure you want to ${actionWord} this user?`)) {
-      return;
-    }
-
-    try {
-      await adminApi.updateUserRole(userId, targetRole);
-      toastService.success(`User role successfully changed to ${targetRole}.`);
-      loadData();
-    } catch (err) {
-      toastService.error(err.message || "Failed to update user role.");
-    }
-  };
 
   const loadData = async () => {
     setLoading(true);
@@ -91,7 +95,7 @@ export const AdminDashboard = () => {
         adminApi.getUsers(),
         adminApi.getOrders(),
         feedsApi.getAdminFeeds(),
-        cattleApi.getCattleListings(null, true),
+        adminApi.getCattle(),
         reportApi.getReports(),
       ]);
 
@@ -137,11 +141,144 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleToggleAdminRole = async (userId, currentRole) => {
+    const targetRole = currentRole === 'admin' ? 'user' : 'admin';
+    const actionWord = targetRole === 'admin' ? 'promote to Admin' : 'demote to User';
+
+    if (!window.confirm(`Are you sure you want to ${actionWord} this user?`)) {
+      return;
+    }
+
+    try {
+      await adminApi.updateUserRole(userId, targetRole);
+      toastService.success(`User role successfully changed to ${targetRole}.`);
+      loadData();
+    } catch (err) {
+      toastService.error(err.message || "Failed to update user role.");
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await adminApi.updateOrderStatus(orderId, newStatus);
+      toastService.success(`Order ${orderId} status set to ${newStatus}`);
+      loadData();
+    } catch (e) {
+      toastService.error('Failed to update order status.');
+    }
+  };
+
+  const openAddFeed = () => {
+    setEditingFeed(null);
+    setFeedFormData({
+      name: '',
+      price: '',
+      unit: '50 kg',
+      description: '',
+      category: 'Dairy',
+      stock_quantity: 100,
+      image: '',
+      is_hidden: false,
+    });
+    setIsFeedModalOpen(true);
+  };
+
+  const openEditFeed = (feed) => {
+    setEditingFeed(feed);
+    setFeedFormData({
+      name: feed.name || feed.title || '',
+      price: (feed.price || '').toString(),
+      unit: feed.unit || '50 kg',
+      description: feed.description || '',
+      category: feed.category || 'Dairy',
+      stock_quantity: feed.stock_quantity ?? 100,
+      image: feed.image || feed.image_url || '',
+      is_hidden: feed.is_hidden || false,
+    });
+    setIsFeedModalOpen(true);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFeedFormData(prev => ({
+          ...prev,
+          image: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFeedSubmit = async (e) => {
+    e.preventDefault();
+    if (!feedFormData.name.trim() || !feedFormData.price) {
+      toastService.error('Please enter product name and price.');
+      return;
+    }
+
+    try {
+      if (editingFeed) {
+        await feedsApi.updateFeed(editingFeed.id, feedFormData);
+        toastService.success('Feed product updated.');
+      } else {
+        await feedsApi.createFeed(feedFormData);
+        toastService.success('New feed product added to catalog.');
+      }
+      setIsFeedModalOpen(false);
+      loadData();
+    } catch (e) {
+      toastService.error(e.message || 'Operation failed.');
+    }
+  };
+
+  const handleDeleteFeed = async (feedId) => {
+    if (!window.confirm('Delete this feed product item from catalog?')) return;
+    try {
+      const res = await feedsApi.deleteFeed(feedId);
+      toastService.success(res?.message || 'Product removed.');
+      loadData();
+    } catch (e) {
+      toastService.error(e.message || 'Failed to delete feed.');
+    }
+  };
+
+  const handleToggleHideFeed = async (feed) => {
+    try {
+      await feedsApi.updateFeed(feed.id, {
+        name: feed.name || feed.title,
+        price: feed.price,
+        unit: feed.unit || '50 kg',
+        description: feed.description,
+        category: feed.category,
+        image: feed.image || feed.image_url,
+        is_hidden: !feed.is_hidden,
+      });
+      toastService.success(feed.is_hidden ? 'Product is now visible to customers.' : 'Product is now hidden from customers.');
+      loadData();
+    } catch (e) {
+      toastService.error('Failed to toggle visibility.');
+    }
+  };
+
+  const handleDeleteCattle = async (id) => {
+    if (!window.confirm('Delete this cattle listing from Sante marketplace?')) return;
+    try {
+      await adminApi.deleteCattle(id);
+      toastService.success('Cattle listing removed.');
+      loadData();
+    } catch (e) {
+      toastService.error('Failed to delete listing.');
+    }
+  };
+
   const handleDismissReport = async (reportId) => {
     try {
       const res = await reportApi.dismissReport(reportId);
       if (res && res.success) {
-        toastService.success('Report dismissed successfully.');
+        toastService.success('Report dismissed.');
         loadData();
       } else {
         toastService.error(res?.message || 'Failed to dismiss report.');
@@ -152,7 +289,7 @@ export const AdminDashboard = () => {
   };
 
   const handleActionReport = async (reportId) => {
-    if (!window.confirm('Are you sure you want to remove this listing?')) return;
+    if (!window.confirm('Are you sure you want to remove this reported listing?')) return;
     try {
       const res = await reportApi.actionReport(reportId);
       if (res && res.success) {
@@ -181,138 +318,13 @@ export const AdminDashboard = () => {
     }
   };
 
-  const handleUnsuspendUser = async (phone) => {
-    try {
-      const res = await reportApi.unsuspendUser(phone);
-      if (res && res.success) {
-        toastService.success('User account restored.');
-        loadData();
-      } else {
-        toastService.error(res?.message || 'Failed to restore user.');
-      }
-    } catch (e) {
-      toastService.error('Failed to restore user.');
-    }
-  };
-
-  // Status updates
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    try {
-      await adminApi.updateOrderStatus(orderId, newStatus);
-      toastService.success(`Order ${orderId} status set to ${newStatus}`);
-      loadData();
-    } catch (e) {
-      toastService.error('Failed to update status.');
-    }
-  };
-
-  // Feed Actions
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFeedFormData(prev => ({
-          ...prev,
-          image: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const openAddFeed = () => {
-    setEditingFeed(null);
-    setFeedFormData({ name: '', price: '', description: '', category: 'Dairy', image: '', is_hidden: false });
-    setIsFeedModalOpen(true);
-  };
-
-  const openEditFeed = (feed) => {
-    setEditingFeed(feed);
-    setFeedFormData({
-      name: feed.name,
-      price: feed.price.toString(),
-      description: feed.description || '',
-      category: feed.category || 'Dairy',
-      image: feed.image || '',
-      is_hidden: feed.is_hidden || false,
-    });
-    setIsFeedModalOpen(true);
-  };
-
-  const handleFeedSubmit = async (e) => {
-    e.preventDefault();
-    if (!feedFormData.name || !feedFormData.price) {
-      toastService.error('Please enter name and price');
-      return;
-    }
-
-    try {
-      if (editingFeed) {
-        await feedsApi.updateFeed(editingFeed.id, feedFormData);
-        toastService.success('Feed item updated.');
-      } else {
-        await feedsApi.createFeed(feedFormData);
-        toastService.success('New feed catalog item added.');
-      }
-      setIsFeedModalOpen(false);
-      loadData();
-    } catch (e) {
-      toastService.error(e.message || 'Operation failed.');
-    }
-  };
-
-  const handleDeleteFeed = async (feedId) => {
-    if (!window.confirm('Delete this feed product item? If it is linked to past orders, it will be safely hidden instead.')) return;
-    try {
-      const res = await feedsApi.deleteFeed(feedId);
-      if (res && res.message) {
-        toastService.success(res.message);
-      } else {
-        toastService.success('Product removed.');
-      }
-      loadData();
-    } catch (e) {
-      toastService.error(e.message || 'Failed to delete feed.');
-    }
-  };
-
-  const handleToggleHideFeed = async (feed) => {
-    try {
-      await feedsApi.updateFeed(feed.id, {
-        name: feed.name,
-        price: feed.price,
-        description: feed.description,
-        category: feed.category,
-        image: feed.image,
-        is_hidden: !feed.is_hidden,
-      });
-      toastService.success(feed.is_hidden ? 'Feed product is now visible to customers.' : 'Feed product has been hidden from customers.');
-      loadData();
-    } catch (e) {
-      toastService.error('Failed to toggle visibility.');
-    }
-  };
-
-  // Cattle Delete
-  const handleDeleteCattle = async (id) => {
-    if (!window.confirm('Delete this cattle listing?')) return;
-    try {
-      await cattleApi.deleteCattleListing(id);
-      toastService.success('Cattle listing deleted.');
-      loadData();
-    } catch (e) {
-      toastService.error('Failed to delete listing.');
-    }
-  };
-
   const tabs = [
-    { id: 'overview', label: t('admin.overview'), icon: BarChart3 },
-    { id: 'feeds', label: t('admin.products'), icon: Layers },
-    { id: 'orders', label: t('admin.orders'), icon: ClipboardList },
-    { id: 'users', label: t('admin.users'), icon: Users },
-    { id: 'cattle', label: t('admin.cattle'), icon: Users },
-    { id: 'moderation', label: t('compliance.adminModeration'), icon: ShieldAlert },
+    { id: 'overview', label: 'Dashboard', icon: BarChart3 },
+    { id: 'feeds', label: 'Products / Feeds', icon: Layers },
+    { id: 'orders', label: 'Orders', icon: ClipboardList },
+    { id: 'users', label: 'Registered Users', icon: Users },
+    { id: 'cattle', label: 'Cattle Listings', icon: Tag },
+    { id: 'moderation', label: 'Moderation', icon: ShieldAlert },
   ];
 
   if (authLoading) {
@@ -332,20 +344,20 @@ export const AdminDashboard = () => {
       <Header showBack onBack={() => navigate('/home')} />
 
       {/* Page Header */}
-      <section className="bg-text-dark text-white py-8 px-4">
+      <section className="bg-text-dark text-white py-8 px-4 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-extrabold tracking-tight">{t('admin.dashboard')}</h1>
-              <span className="bg-primary/20 text-primary border border-primary/30 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase">
+              <h1 className="text-3xl font-extrabold tracking-tight">Admin Dashboard</h1>
+              <span className="bg-primary/20 text-primary border border-primary/30 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                 {isSuperAdmin ? 'Super Admin' : 'Admin'}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mt-0.5">Control panel & live database analytics</p>
+            <p className="text-gray-400 text-sm mt-0.5">Control panel & live Supabase database management</p>
           </div>
           <button
             onClick={loadData}
-            className="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl border border-white/20 transition-all flex items-center gap-2"
+            className="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl border border-white/20 transition-all flex items-center gap-2 active:scale-95"
           >
             <span>↻</span>
             <span>Refresh Live Data</span>
@@ -397,57 +409,106 @@ export const AdminDashboard = () => {
                 {/* 1. OVERVIEW TAB */}
                 {activeTab === 'overview' && (
                   <div className="space-y-6 animate-slide-up">
-                    {/* Stats Blocks */}
+                    {/* Live Stats Blocks */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                       <Card className="border border-border-light" padding="sm">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.totalRevenue')}</p>
-                        <p className="text-xl font-black text-emerald-600 mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase tracking-wider">Total Revenue</p>
+                        <p className="text-xl font-black text-emerald-600 mt-1">₹{(stats.totalRevenue || 0).toLocaleString()}</p>
                       </Card>
                       <Card className="border border-border-light" padding="sm">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.activeFeeds')}</p>
-                        <p className="text-xl font-black text-primary-dark mt-1">{stats.activeFeedsCount}</p>
-                        <p className="text-[10px] text-text-light mt-0.5">{stats.productsCount} total in catalog</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase tracking-wider">Active Feeds</p>
+                        <p className="text-xl font-black text-primary-dark mt-1">{stats.activeFeedsCount ?? 0}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">{stats.productsCount ?? 0} total in catalog</p>
                       </Card>
                       <Card className="border border-border-light" padding="sm">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.products')}</p>
-                        <p className="text-xl font-black text-text-dark mt-1">{stats.productsCount}</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase tracking-wider">Total Products</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.productsCount ?? 0}</p>
                         <p className="text-[10px] text-text-light mt-0.5">{hiddenFeedsCount} hidden</p>
                       </Card>
                       <Card className="border border-border-light" padding="sm">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.orders')}</p>
-                        <p className="text-xl font-black text-text-dark mt-1">{stats.ordersCount}</p>
-                        <p className="text-[10px] text-amber-600 font-semibold mt-0.5">{stats.pendingOrdersCount} pending</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase tracking-wider">Total Orders</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.ordersCount ?? 0}</p>
+                        <p className="text-[10px] text-amber-600 font-semibold mt-0.5">{stats.pendingOrdersCount ?? 0} pending</p>
                       </Card>
                       <Card className="border border-border-light" padding="sm">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.users')}</p>
-                        <p className="text-xl font-black text-text-dark mt-1">{stats.usersCount}</p>
-                        <p className="text-[10px] text-text-light mt-0.5">registered</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase tracking-wider">Registered Users</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.usersCount ?? 0}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">in public.profiles</p>
                       </Card>
                       <Card className="border border-border-light" padding="sm">
-                        <p className="text-[10px] text-text-light font-bold uppercase">{t('admin.activeCattle')}</p>
-                        <p className="text-xl font-black text-text-dark mt-1">{stats.cattleCount}</p>
-                        <p className="text-[10px] text-text-light mt-0.5">listings</p>
+                        <p className="text-[10px] text-text-light font-bold uppercase tracking-wider">Cattle Listings</p>
+                        <p className="text-xl font-black text-text-dark mt-1">{stats.cattleCount ?? 0}</p>
+                        <p className="text-[10px] text-text-light mt-0.5">Sante marketplace</p>
                       </Card>
                     </div>
 
-                    {/* Stats Info & Quick Actions */}
+                    {/* Quick Navigation Card */}
                     <Card padding="lg" className="border border-border-light">
-                      <h3 className="text-lg font-bold text-text-dark mb-3">Quick Navigation</h3>
-                      <div className="flex flex-wrap gap-3">
-                        <Button variant="primary" size="md" onClick={openAddFeed}>
-                          + {t('admin.addProduct')}
+                      <h3 className="text-base font-bold text-text-dark mb-3">Quick Navigation</h3>
+                      <div className="flex flex-wrap gap-2.5">
+                        <Button variant="primary" size="sm" onClick={openAddFeed}>
+                          + Add Feed
                         </Button>
-                        <Button variant="secondary" size="md" onClick={() => setActiveTab('orders')}>
-                          View All Orders ({stats.ordersCount})
+                        <Button variant="secondary" size="sm" onClick={() => setActiveTab('orders')}>
+                          View Orders ({stats.ordersCount ?? 0})
                         </Button>
-                        <Button variant="secondary" size="md" onClick={() => setActiveTab('users')}>
-                          View Registered Users ({stats.usersCount})
+                        <Button variant="secondary" size="sm" onClick={() => setActiveTab('users')}>
+                          View Users ({stats.usersCount ?? 0})
                         </Button>
-                        <Button variant="secondary" size="md" onClick={() => setActiveTab('feeds')}>
-                          Manage Products ({stats.productsCount})
+                        <Button variant="secondary" size="sm" onClick={() => setActiveTab('feeds')}>
+                          Manage Products ({stats.productsCount ?? 0})
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => setActiveTab('cattle')}>
+                          Cattle Listings ({stats.cattleCount ?? 0})
                         </Button>
                       </div>
                     </Card>
+
+                    {/* Recent Orders Preview */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center px-1">
+                        <h3 className="text-base font-bold text-text-dark">Recent Orders</h3>
+                        <button onClick={() => setActiveTab('orders')} className="text-xs font-bold text-primary-dark hover:underline">
+                          View All ({ordersList.length}) →
+                        </button>
+                      </div>
+                      <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
+                        {ordersList.length === 0 ? (
+                          <div className="text-center py-10 text-text-light text-xs">No orders yet.</div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-bg-light border-b border-border-light font-bold text-text-light uppercase text-[10px]">
+                                  <th className="p-3">Order ID</th>
+                                  <th className="p-3">Customer</th>
+                                  <th className="p-3">Total</th>
+                                  <th className="p-3">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-border-light text-text-dark">
+                                {ordersList.slice(0, 5).map((ord) => (
+                                  <tr key={ord.id} className="hover:bg-bg-light/40">
+                                    <td className="p-3 font-mono font-bold text-primary-dark">{ord.id}</td>
+                                    <td className="p-3 font-semibold">{ord.customerName || 'Farmer'}</td>
+                                    <td className="p-3 font-black">₹{(ord.totalPrice ?? ord.total_amount ?? 0).toLocaleString()}</td>
+                                    <td className="p-3">
+                                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                                        (ord.status || ord.order_status) === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                        (ord.status || ord.order_status) === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                        'bg-blue-100 text-blue-700'
+                                      }`}>
+                                        {ord.status || ord.order_status}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -456,19 +517,26 @@ export const AdminDashboard = () => {
                   <div className="space-y-4 animate-slide-up">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 px-1">
                       <div>
-                        <h3 className="text-lg font-bold text-text-dark">{t('admin.products')} ({feedsList.length})</h3>
+                        <h3 className="text-lg font-bold text-text-dark">Products / Feeds ({feedsList.length})</h3>
                         <p className="text-xs text-text-light">
-                          Active (visible to customers): <span className="font-bold text-emerald-600">{activeFeedsCount}</span> | Hidden: <span className="font-bold text-amber-600">{hiddenFeedsCount}</span>
+                          Active (visible in shop): <span className="font-bold text-emerald-600">{activeFeedsCount}</span> | Hidden: <span className="font-bold text-amber-600">{hiddenFeedsCount}</span>
                         </p>
                       </div>
                       <Button variant="primary" size="sm" onClick={openAddFeed}>
-                        + {t('admin.addProduct')}
+                        + Add Feed
                       </Button>
                     </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {feedsList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">No products found in database.</p>
+                        <div className="text-center py-16 px-4">
+                          <Layers className="w-12 h-12 text-primary mx-auto mb-3 opacity-60" />
+                          <h4 className="text-base font-bold text-text-dark mb-1">No products have been added yet.</h4>
+                          <p className="text-xs text-text-light mb-4">Start your live feed catalog by adding your first product.</p>
+                          <Button variant="primary" size="sm" onClick={openAddFeed}>
+                            + Add Your First Feed
+                          </Button>
+                        </div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm text-text-dark border-collapse">
@@ -476,6 +544,7 @@ export const AdminDashboard = () => {
                               <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
                                 <th className="p-4">Product</th>
                                 <th className="p-4">Category</th>
+                                <th className="p-4">Unit</th>
                                 <th className="p-4">Price</th>
                                 <th className="p-4">Status</th>
                                 <th className="p-4 text-right">Actions</th>
@@ -501,6 +570,9 @@ export const AdminDashboard = () => {
                                     <span className="bg-bg-light text-text-dark border border-border-light px-2.5 py-1 rounded-md text-xs font-semibold">
                                       {feed.category || 'Dairy'}
                                     </span>
+                                  </td>
+                                  <td className="p-4 text-xs font-bold text-text-light">
+                                    {feed.unit || '50 kg'}
                                   </td>
                                   <td className="p-4 font-extrabold text-primary-dark">₹{feed.price}</td>
                                   <td className="p-4">
@@ -555,15 +627,19 @@ export const AdminDashboard = () => {
                 {activeTab === 'orders' && (
                   <div className="space-y-4 animate-slide-up">
                     <div className="flex justify-between items-center px-1">
-                      <h3 className="text-lg font-bold text-text-dark">{t('admin.orders')} ({ordersList.length})</h3>
-                      <span className="text-xs text-text-light">
-                        Showing all live & historical orders
-                      </span>
+                      <div>
+                        <h3 className="text-lg font-bold text-text-dark">Orders ({ordersList.length})</h3>
+                        <p className="text-xs text-text-light">Live & historical customer feed dispatches</p>
+                      </div>
                     </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {ordersList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">{t('admin.noOrders')}</p>
+                        <div className="text-center py-16 px-4">
+                          <ClipboardList className="w-12 h-12 text-primary mx-auto mb-3 opacity-60" />
+                          <h4 className="text-base font-bold text-text-dark mb-1">No orders yet.</h4>
+                          <p className="text-xs text-text-light">Customer feed orders will appear here automatically.</p>
+                        </div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm border-collapse">
@@ -572,7 +648,7 @@ export const AdminDashboard = () => {
                                 <th className="p-4">Order ID & Date</th>
                                 <th className="p-4">Customer Info</th>
                                 <th className="p-4">Delivery Address</th>
-                                <th className="p-4">Cart Items</th>
+                                <th className="p-4">Products / Cart Items</th>
                                 <th className="p-4">Total</th>
                                 <th className="p-4">Status</th>
                               </tr>
@@ -616,7 +692,7 @@ export const AdminDashboard = () => {
                                           </p>
                                         ))
                                       ) : (
-                                        <p className="text-text-light italic text-xs">Direct cattle order / standard feed</p>
+                                        <p className="text-text-light italic text-xs">Standard cattle feed</p>
                                       )}
                                     </div>
                                   </td>
@@ -634,6 +710,8 @@ export const AdminDashboard = () => {
                                           ? 'border-amber-200 bg-amber-50 text-amber-700'
                                           : (order.status || order.order_status) === 'confirmed'
                                           ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                          : (order.status || order.order_status) === 'processing'
+                                          ? 'border-purple-200 bg-purple-50 text-purple-700'
                                           : (order.status || order.order_status) === 'shipped'
                                           ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
                                           : 'border-red-200 bg-red-50 text-red-700'
@@ -641,6 +719,7 @@ export const AdminDashboard = () => {
                                     >
                                       <option value="pending">Pending</option>
                                       <option value="confirmed">Confirmed</option>
+                                      <option value="processing">Processing</option>
                                       <option value="shipped">Shipped</option>
                                       <option value="delivered">Delivered</option>
                                       <option value="cancelled">Cancelled</option>
@@ -660,15 +739,22 @@ export const AdminDashboard = () => {
                 {activeTab === 'users' && (
                   <div className="space-y-4 animate-slide-up">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 px-1">
-                      <h3 className="text-lg font-bold text-text-dark">{t('admin.users')} ({usersList.length})</h3>
+                      <div>
+                        <h3 className="text-lg font-bold text-text-dark">Registered Users ({usersList.length})</h3>
+                        <p className="text-xs text-text-light">Real authenticated users from public.profiles</p>
+                      </div>
                       <span className="text-xs text-text-light font-medium">
-                        {isSuperAdmin ? 'Super Admin Mode: You can promote/demote administrators' : 'Admin Mode (View Only)'}
+                        {isSuperAdmin ? 'Super Admin Mode: You can manage administrator privileges' : 'Admin Mode (View Only)'}
                       </span>
                     </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {usersList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">No registered users found.</p>
+                        <div className="text-center py-16 px-4">
+                          <Users className="w-12 h-12 text-primary mx-auto mb-3 opacity-60" />
+                          <h4 className="text-base font-bold text-text-dark mb-1">No registered users yet.</h4>
+                          <p className="text-xs text-text-light">Users will appear here as they register on MilkMaatu.</p>
+                        </div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm border-collapse text-text-dark">
@@ -747,23 +833,32 @@ export const AdminDashboard = () => {
                 )}
 
                 {/* 5. CATTLE TAB */}
-
                 {activeTab === 'cattle' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">{t('admin.cattle')} ({cattleList.length})</h3>
+                    <div className="flex justify-between items-center px-1">
+                      <div>
+                        <h3 className="text-lg font-bold text-text-dark">Cattle Listings ({cattleList.length})</h3>
+                        <p className="text-xs text-text-light">Real Sante marketplace postings</p>
+                      </div>
+                    </div>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {cattleList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">{t('admin.noCattle')}</p>
+                        <div className="text-center py-16 px-4">
+                          <Tag className="w-12 h-12 text-primary mx-auto mb-3 opacity-60" />
+                          <h4 className="text-base font-bold text-text-dark mb-1">No cattle listings available.</h4>
+                          <p className="text-xs text-text-light">Farmer Sante cattle postings will appear here.</p>
+                        </div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm border-collapse text-text-dark">
                             <thead>
                               <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
-                                <th className="p-4">Breed/Cattle</th>
+                                <th className="p-4">Breed & Listing</th>
                                 <th className="p-4">Price</th>
-                                <th className="p-4">Village</th>
-                                <th className="p-4">Contact</th>
+                                <th className="p-4">Seller Contact</th>
+                                <th className="p-4">Location / Sante</th>
+                                <th className="p-4">Status</th>
                                 <th className="p-4 text-right">Actions</th>
                               </tr>
                             </thead>
@@ -773,15 +868,36 @@ export const AdminDashboard = () => {
                                   <td className="p-4 font-bold flex items-center gap-3">
                                     {(post.image || post.image_url) ? (
                                       <img src={post.image || post.image_url} alt="" className="w-10 h-10 rounded object-cover" />
-                                    ) : null}
+                                    ) : (
+                                      <div className="w-10 h-10 rounded bg-bg-light flex items-center justify-center text-xs text-text-light font-bold">
+                                        🐄
+                                      </div>
+                                    )}
                                     <div>
                                       <p className="text-sm font-black">{post.animalName || post.animal_name}</p>
-                                      <p className="text-xs text-text-light font-normal">{post.age} yrs old • {post.milkCapacity || post.milk_capacity}</p>
+                                      <p className="text-xs text-text-light font-normal">
+                                        ID #{post.id} • {post.age} yrs old • {post.milkCapacity || post.milk_capacity}
+                                      </p>
                                     </div>
                                   </td>
                                   <td className="p-4 font-extrabold text-primary-dark">₹{(post.price ?? 0).toLocaleString()}</td>
-                                  <td className="p-4 text-xs">{post.villageName || post.village}</td>
-                                  <td className="p-4 text-xs font-bold">{post.contactNumber || post.phone_number || post.phone}</td>
+                                  <td className="p-4 text-xs font-bold">
+                                    <p>{post.sellerName || 'Farmer'}</p>
+                                    <p className="text-text-light font-normal">{post.contactNumber || post.phone_number || post.phone}</p>
+                                  </td>
+                                  <td className="p-4 text-xs">
+                                    <p className="font-semibold">{post.villageName || post.village}</p>
+                                    <p className="text-text-light text-[11px]">{post.santeName || post.sante_name || 'Local Sante'}</p>
+                                  </td>
+                                  <td className="p-4">
+                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                      post.status === 'expired' || post.isExpired
+                                        ? 'bg-gray-100 text-gray-700 border border-gray-200'
+                                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    }`}>
+                                      {post.status === 'expired' || post.isExpired ? 'Expired' : 'Active'}
+                                    </span>
+                                  </td>
                                   <td className="p-4 text-right">
                                     <button
                                       onClick={() => handleDeleteCattle(post.id)}
@@ -804,11 +920,15 @@ export const AdminDashboard = () => {
                 {/* 6. MODERATION TAB */}
                 {activeTab === 'moderation' && (
                   <div className="space-y-4 animate-slide-up">
-                    <h3 className="text-lg font-bold text-text-dark px-1">{t('compliance.adminModeration')} ({reportsList.length})</h3>
+                    <h3 className="text-lg font-bold text-text-dark px-1">Compliance & Content Moderation ({reportsList.length})</h3>
 
                     <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
                       {reportsList.length === 0 ? (
-                        <p className="text-center text-text-light text-sm py-12">{t('compliance.noReports')}</p>
+                        <div className="text-center py-16 px-4">
+                          <ShieldAlert className="w-12 h-12 text-primary mx-auto mb-3 opacity-60" />
+                          <h4 className="text-base font-bold text-text-dark mb-1">No reports filed yet.</h4>
+                          <p className="text-xs text-text-light">Flagged cattle listings will appear here for review.</p>
+                        </div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-sm border-collapse text-text-dark">
@@ -856,20 +976,20 @@ export const AdminDashboard = () => {
                                           onClick={() => handleDismissReport(report.id)}
                                           className="text-xs font-bold text-text-light hover:text-text-dark bg-bg-light hover:bg-border-light border border-border-light px-2.5 py-1.5 rounded-lg transition-all"
                                         >
-                                          {t('compliance.dismiss')}
+                                          Dismiss
                                         </button>
                                         <button
                                           onClick={() => handleActionReport(report.id)}
                                           className="text-xs font-bold text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 px-2.5 py-1.5 rounded-lg transition-all"
                                         >
-                                          {t('compliance.takeAction')}
+                                          Take Action
                                         </button>
                                         {(report.sellerPhone || report.seller_phone) && (report.sellerPhone || report.seller_phone) !== 'N/A' && (
                                           <button
                                             onClick={() => handleSuspendUser(report.sellerPhone || report.seller_phone)}
                                             className="text-xs font-bold text-red-800 hover:text-white hover:bg-red-800 border border-red-800/20 hover:border-red-800 px-2.5 py-1.5 rounded-lg transition-all"
                                           >
-                                            {t('compliance.suspend')}
+                                            Suspend
                                           </button>
                                         )}
                                       </div>
@@ -898,19 +1018,19 @@ export const AdminDashboard = () => {
           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-border-light shadow-2xl relative" padding="lg">
             <button
               onClick={() => setIsFeedModalOpen(false)}
-              className="absolute top-4 right-4 text-text-light hover:text-text-dark"
+              className="absolute top-4 right-4 text-text-light hover:text-text-dark p-1 rounded-full hover:bg-bg-light transition-all"
             >
               <X size={20} />
             </button>
 
             <h3 className="text-xl font-bold text-text-dark mb-6">
-              {editingFeed ? t('admin.editProduct') : t('admin.addProduct')}
+              {editingFeed ? 'Edit Feed Product' : 'Add Feed Product'}
             </h3>
 
             <form onSubmit={handleFeedSubmit} className="space-y-4">
               <Input
-                label={t('admin.productName')}
-                placeholder={t('admin.productNamePlaceholder')}
+                label="Product Name"
+                placeholder="e.g. Dairy Cattle Feed"
                 value={feedFormData.name}
                 onChange={(e) => setFeedFormData({ ...feedFormData, name: e.target.value })}
                 required
@@ -918,19 +1038,29 @@ export const AdminDashboard = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label={t('admin.price')}
-                  placeholder="e.g. 500"
+                  label="Price (₹)"
+                  placeholder="e.g. 850"
                   type="number"
                   value={feedFormData.price}
                   onChange={(e) => setFeedFormData({ ...feedFormData, price: e.target.value })}
                   required
                 />
+                <Input
+                  label="Unit"
+                  placeholder="e.g. 50 kg / 25 kg"
+                  value={feedFormData.unit}
+                  onChange={(e) => setFeedFormData({ ...feedFormData, unit: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.category')}</label>
+                  <label className="block text-xs text-text-light font-bold uppercase mb-1">Category</label>
                   <select
                     value={feedFormData.category}
                     onChange={(e) => setFeedFormData({ ...feedFormData, category: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border-2 border-border-light focus:border-primary focus:outline-none text-sm"
+                    className="w-full px-4 py-2.5 rounded-lg border-2 border-border-light focus:border-primary focus:outline-none text-sm bg-white"
                   >
                     <option value="Dairy">Dairy</option>
                     <option value="Fodder">Fodder</option>
@@ -940,10 +1070,17 @@ export const AdminDashboard = () => {
                     <option value="Protein">Protein</option>
                   </select>
                 </div>
+                <Input
+                  label="Stock Quantity"
+                  placeholder="e.g. 100"
+                  type="number"
+                  value={feedFormData.stock_quantity}
+                  onChange={(e) => setFeedFormData({ ...feedFormData, stock_quantity: parseInt(e.target.value) || 0 })}
+                />
               </div>
 
               <div>
-                <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.image')}</label>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">Product Image</label>
                 {feedFormData.image ? (
                   <div className="relative w-full max-w-[200px] aspect-[4/5] overflow-hidden rounded-lg mt-1 border-2 border-border-light">
                     <img
@@ -975,7 +1112,7 @@ export const AdminDashboard = () => {
               </div>
 
               {/* Visibility Switch */}
-              <div className="flex items-center gap-2.5 py-1 bg-bg-light/40 px-1 rounded">
+              <div className="flex items-center gap-2.5 py-1 bg-bg-light/40 px-3 rounded-lg border border-border-light">
                 <input
                   type="checkbox"
                   id="is_hidden"
@@ -989,24 +1126,23 @@ export const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-text-light font-bold uppercase mb-1">{t('admin.description')}</label>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">Description</label>
                 <textarea
                   value={feedFormData.description}
                   onChange={(e) => setFeedFormData({ ...feedFormData, description: e.target.value })}
-                  placeholder="Details of feed ingredients..."
+                  placeholder="High nutrition dairy cattle feed enriched with minerals and vitamins..."
                   rows="3"
                   className="w-full px-4 py-2.5 rounded-lg border-2 border-border-light focus:border-primary focus:outline-none resize-none text-sm"
                 />
               </div>
 
               <Button type="submit" variant="primary" size="lg" className="w-full mt-4 font-bold">
-                {editingFeed ? t('admin.update') : t('admin.add')}
+                {editingFeed ? 'Update Feed Product' : 'Add Feed Product'}
               </Button>
             </form>
           </Card>
         </div>
       )}
-
-      </div>
+    </div>
   );
 };

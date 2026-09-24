@@ -14,6 +14,7 @@ from app.models.order import Order, OrderItem
 from app.models.cattle import Cattle
 from app.schemas.user import ProfileResponse, UserRoleUpdate
 from app.schemas.order import OrderResponse, OrderUpdate
+from app.schemas.feed import FeedResponse
 from app.utils.response import json_response
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
@@ -74,12 +75,15 @@ async def get_admin_stats(
     )
     total_pending_orders = orders_res.scalar_one()
 
-    # 4. Active cattle posts
+    # 4. Cattle posts
+    all_cattle_res = await db.execute(select(func.count(Cattle.id)))
+    total_cattle = all_cattle_res.scalar_one()
+
     current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-    cattle_res = await db.execute(
+    active_cattle_res = await db.execute(
         select(func.count(Cattle.id)).where(Cattle.expires_at > current_time)
     )
-    active_cattle_posts = cattle_res.scalar_one()
+    active_cattle_posts = active_cattle_res.scalar_one()
 
     # 5. Total revenue (sum total_amount for non-cancelled orders)
     revenue_res = await db.execute(
@@ -94,7 +98,8 @@ async def get_admin_stats(
         "productsCount": total_feeds, # Total catalog products count
         "ordersCount": total_all_orders, # Total orders
         "pendingOrdersCount": total_pending_orders,
-        "cattleCount": active_cattle_posts,
+        "cattleCount": total_cattle,
+        "activeCattleCount": active_cattle_posts,
         "totalRevenue": float(total_revenue)
     }
 
@@ -268,3 +273,85 @@ async def update_order_status_admin(
         message="Order status updated successfully",
         data=payload
     )
+
+@router.get("/feeds")
+async def get_all_feeds_admin(
+    admin_user: Profile = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve all feed products in the system including hidden ones (Admin only)."""
+    result = await db.execute(select(Feed).order_by(Feed.id.asc()))
+    feeds = result.scalars().all()
+    payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
+    return json_response(
+        success=True,
+        message="Fetched all catalog feeds successfully",
+        data=payload
+    )
+
+@router.get("/cattle")
+async def get_all_cattle_admin(
+    admin_user: Profile = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve all Sante cattle listings in the system with real seller information (Admin only)."""
+    result = await db.execute(
+        select(Cattle)
+        .options(selectinload(Cattle.profile))
+        .order_by(Cattle.created_at.desc())
+    )
+    cattle_list = result.scalars().all()
+    current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+    
+    payload = []
+    for c in cattle_list:
+        seller_name = c.profile.name if (c.profile and c.profile.name) else "Farmer"
+        seller_email = c.profile.email if (c.profile and c.profile.email) else ""
+        is_expired = c.expires_at < current_time if c.expires_at else False
+        payload.append({
+            "id": c.id,
+            "animalName": c.animal_name,
+            "animalType": c.animal_type or "Cow",
+            "age": c.age,
+            "milkCapacity": c.milk_capacity,
+            "price": c.price,
+            "villageName": c.village,
+            "santeName": c.sante_name,
+            "description": c.description,
+            "image": c.image_url or "",
+            "contactNumber": c.phone_number,
+            "sellerName": seller_name,
+            "sellerEmail": seller_email,
+            "isExpired": is_expired,
+            "status": "expired" if is_expired else "active",
+            "expiresAt": c.expires_at.isoformat() if c.expires_at else "",
+            "postedDate": c.created_at.isoformat() if c.created_at else "",
+        })
+        
+    return json_response(
+        success=True,
+        message="Fetched all cattle listings successfully",
+        data=payload
+    )
+
+@router.delete("/cattle/{cattle_id}")
+async def delete_cattle_admin(
+    cattle_id: int,
+    admin_user: Profile = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete a Sante cattle listing (Admin moderation)."""
+    result = await db.execute(select(Cattle).where(Cattle.id == cattle_id))
+    cattle = result.scalars().first()
+    if not cattle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Cattle listing {cattle_id} not found."
+        )
+    await db.delete(cattle)
+    await db.commit()
+    return json_response(
+        success=True,
+        message="Cattle listing deleted successfully."
+    )
+

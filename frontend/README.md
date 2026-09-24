@@ -2,7 +2,11 @@
 
 This is the complete, responsive, mobile-first web client application for the **MilkMaatu** dairy farmer ecosystem portal. Built using React, Vite, and Tailwind CSS, it connects asynchronously to the FastAPI backend service to provide seamless local trade, cattle feed deliveries, and smart AI assistance.
 
-**Zero Friction Architecture:** Farmers are never forced to register, log in, or remember passwords. The application launches directly into the Home dashboard, pre-filling contact details from the farmer's locally saved preferences.
+**Authentication & Session Architecture:**
+MilkMaatu utilizes **Supabase Authentication** with persistent sessions:
+- **Normal Users:** Register or log in once to establish a persistent Supabase session across refreshes and mobile app sessions. User profile data is fetched and synced with `public.profiles`.
+- **Admins & Super Admins:** Use the same Supabase Authentication system with roles (`admin`, `super_admin`) verified server-side.
+- **Admin Panel:** Secured via `AdminRoute` and powered by real database APIs for feeds, orders, users, and cattle listings.
 
 ---
 
@@ -10,7 +14,8 @@ This is the complete, responsive, mobile-first web client application for the **
 - **Core:** React 18, Vite 5 (Fast Refresh dev server)
 - **Styling:** Tailwind CSS (Curated emerald + gold color theme, glassmorphism elements, dynamic micro-animations)
 - **Icons:** Lucide React
-- **Router:** React Router DOM (Frictionless direct access routes)
+- **Router:** React Router DOM (RBAC protected routes)
+- **Auth:** Supabase Auth SDK with persistent sessions & token passing
 - **i18n:** Custom Kannada / English translation system
 - **Build Tooling:** PostCSS, Autoprefixer
 
@@ -21,29 +26,34 @@ This is the complete, responsive, mobile-first web client application for the **
 ```
 frontend/
 ├── src/
-│   ├── main.jsx               # Entrypoint mounting App with LanguageProvider
+│   ├── main.jsx               # Entrypoint mounting App with LanguageProvider & AuthProvider
 │   ├── App.jsx                # Route canvas & persistent bottom navigation bar
 │   ├── assets/                # Local static graphics & logo
 │   ├── components/            # Reusable UI elements (Header, Button, Card, Toast, BottomNav)
+│   ├── context/
+│   │   └── AuthContext.jsx    # Supabase Auth state, session management & profile loading
 │   ├── pages/                 # Full screen page views
 │   │   ├── HomePage.jsx       # Services dashboard, quick actions, news & feed ticker
-│   │   ├── BuyFeedsPage.jsx   # Cattle feed shopping catalog (2-col mobile grid)
+│   │   ├── BuyFeedsPage.jsx   # Cattle feed shopping catalog (2-col mobile grid, real DB feeds)
 │   │   ├── OrderSummaryPage.jsx # Checkout & order placement with prefilling
-│   │   ├── OrdersPage.jsx     # Live order tracking
+│   │   ├── OrdersPage.jsx     # Live order tracking for authenticated user
 │   │   ├── SanteActionPage.jsx # Sante market hub action selector
 │   │   ├── SanteBuyPage.jsx   # Browse & filter cattle listings
 │   │   ├── SanteSellPage.jsx  # List new cattle for sale with photo upload
 │   │   ├── DairyNewsPage.jsx  # Full farmers news page
 │   │   ├── NandiniAIPage.jsx  # Gemini-powered Nandini AI chat assistant
-│   │   ├── ProfilePage.jsx    # Local farmer details & language switcher
-│   │   ├── AdminDashboard.jsx # Admin metrics & moderation (PIN guarded)
+│   │   ├── ProfilePage.jsx    # Farmer profile details, auth management & language switcher
+│   │   ├── AdminDashboard.jsx # Real DB-driven Admin control panel (Products, Orders, Users, Cattle)
+│   │   ├── LoginPage.jsx      # Supabase Auth login
+│   │   ├── RegisterPage.jsx   # Supabase Auth registration
 │   │   └── compliance/        # Privacy Policy, Terms, and Support pages
 │   ├── routes/
-│   │   └── index.jsx          # Direct route paths & Admin PIN challenge guard
+│   │   └── index.jsx          # ProtectedRoute, PublicOnlyRoute, AdminRoute definitions
 │   ├── services/
 │   │   ├── api/
-│   │   │   ├── apiClient.js   # Central fetch wrapper with optional Admin PIN header
-│   │   │   ├── authApi.js     # Local farmer profile storage & admin PIN session
+│   │   │   ├── apiClient.js   # Central fetch wrapper injecting Supabase Bearer tokens
+│   │   │   ├── authApi.js     # Supabase Auth client & profile API integration
+│   │   │   ├── adminApi.js    # Admin panel API endpoints (feeds, orders, users, cattle)
 │   │   │   ├── feedsApi.js    # Feeds catalog actions
 │   │   │   ├── cattleApi.js   # Sante marketplace actions
 │   │   │   ├── orderApi.js    # Feed order placements & tracking
@@ -71,6 +81,8 @@ npm install
 Create a `.env` file in the `frontend/` root folder:
 ```env
 VITE_API_URL=http://localhost:8000/api
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 ### 3. Launch Development Server
@@ -86,7 +98,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 This client is optimized to deploy on **Vercel** with client-side routing support:
 - [vercel.json](file:///Users/susheel/milkfront1/frontend/vercel.json) rewrites all sub-routes to `index.html` to prevent `404: NOT_FOUND` on page refreshes.
-- Ensure the production environment variable `VITE_API_URL` is set in your Vercel project settings, pointing to your active backend (e.g., `https://milkfront1.onrender.com/api`).
+- Ensure the production environment variables (`VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) are set in your Vercel project settings.
 
 ---
 

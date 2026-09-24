@@ -59,10 +59,11 @@ async def place_order(
         line_total = feed.price * item.quantity
         calculated_total += line_total
         
-        # Build OrderItem model
+        # Build OrderItem model with product_name snapshot
         items_to_create.append(
             OrderItem(
                 feed_id=feed.id,
+                product_name=feed.title,
                 quantity=item.quantity,
                 price=feed.price
             )
@@ -70,15 +71,19 @@ async def place_order(
 
     # 2. Create Order Header linked to user UUID if authenticated
     order_id = f"ORD-{int(time.time() * 1000)}"
+    cust_name = (req.customerName or "").strip() or (current_user.name if current_user else None) or "Farmer"
+    cust_phone = (req.phoneNumber or "").strip() or (current_user.phone if current_user else None) or "-"
+    cust_addr = (req.address or "").strip() or (current_user.address if current_user else None) or ""
+
     new_order = Order(
         id=order_id,
         user_id=current_user.id if current_user else None,
         total_amount=calculated_total,
         order_status="pending",
-        delivery_address=req.address,
+        delivery_address=cust_addr,
         village_name=req.villageName,
-        customer_name=req.customerName,
-        phone_number=req.phoneNumber,
+        customer_name=cust_name,
+        phone_number=cust_phone,
         payment_status="pending"
     )
     

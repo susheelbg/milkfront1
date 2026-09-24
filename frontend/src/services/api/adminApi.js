@@ -37,4 +37,19 @@ export const adminApi = {
     const res = await apiClient.put(`/admin/orders/${orderId}/status`, { status });
     return res && res.success ? (res.data || res) : res;
   },
+
+  // Get all cattle listings
+  getCattle: async () => {
+    const res = await apiClient.get('/admin/cattle');
+    if (res && res.success && Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
+  },
+
+  // Delete cattle listing
+  deleteCattle: async (cattleId) => {
+    const res = await apiClient.delete(`/admin/cattle/${cattleId}`);
+    return res && res.success ? (res.data || res) : res;
+  },
 };

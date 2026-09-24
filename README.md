@@ -1,10 +1,14 @@
 # 🥛 MilkMaatu — Premium Dairy Farming Platform
 
-MilkMaatu is a **mobile-first, multilingual, and frictionless** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), delivers daily farmer news, and gives administrators control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
+MilkMaatu is a **mobile-first, multilingual** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), delivers daily farmer news, and gives administrators full control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
 
-**Zero Login Friction:** MilkMaatu does not require farmers to create accounts, remember passwords, or verify OTPs. Farmers open the app directly into `/home` and can immediately browse feeds, post cattle in Sante, consult Nandini AI, and place orders.
+**Authentication & Security Architecture:**
+MilkMaatu utilizes **Supabase Authentication** with persistent sessions and server-enforced **Role-Based Access Control (RBAC)**:
+- **Normal Users:** Register or log in once on first use to establish a persistent Supabase session across browser refreshes and mobile app sessions. They can browse feeds, post cattle in Sante, consult Nandini AI, and place orders tied to their authenticated profile.
+- **Admins:** Authenticate through the standard Supabase Auth system and access the Admin Dashboard to manage feeds, audit orders, and moderate Sante listings based on `public.profiles.role = 'admin'`.
+- **Super Admins:** Possess top-level administrative authority including role management (promoting/demoting users) guarded by last-super-admin safeguards.
 
-The project is a monorepo containing a high-performance FastAPI backend, a responsive React + Vite frontend, and native Android packaging via Capacitor.
+FastAPI acts as the strict backend security boundary, cryptographically verifying Supabase JWTs via Supabase JWKS (ES256).
 
 🔗 **Production Deployments:**
 - **App / Portal:** [https://milkfront1.onrender.com](https://milkfront1.onrender.com)
@@ -21,8 +25,8 @@ Designed for single-thumb usage. A persistent bottom nav bar provides access to:
 | Home | `/home` | Dashboard — quick services, news, recommended feeds |
 | Sante | `/sante` | Local cattle marketplace (Buy & Sell) |
 | Buy Feeds | `/feeds` | Cattle feed shop with 2-column mobile layout |
-| My Orders | `/orders` | Order tracking by device history and phone |
-| Profile | `/profile` | Local farmer details, language toggle, and support links |
+| My Orders | `/orders` | Order tracking by authenticated customer profile |
+| Profile | `/profile` | Farmer details, language toggle, and account settings |
 
 ---
 
@@ -74,17 +78,6 @@ Farmer taps article ─→ Original publisher website (direct link)
 - **Direct links** — tapping any article opens the original publisher website.
 - **Public & Unauthenticated** — accessible to all farmers instantly.
 
-#### Relevance Categories
-| Category | ಕನ್ನಡ |
-|----------|-------|
-| `cattle_health` | ಹಸುಗಳ ಆರೋಗ್ಯ |
-| `government_scheme` | ಸರ್ಕಾರಿ ಯೋಜನೆ |
-| `weather_advisory` | ಹವಾಮಾನ & ನೀರಾವರಿ |
-| `milk_price` | ಹಾಲಿನ ಬೆಲೆ |
-| `farmer_advisory` | ರೈತ ಸಲಹೆ |
-| `disease_alert` | ರೋಗ ಎಚ್ಚರಿಕೆ |
-| `dairy_business` | ಮಾರುಕಟ್ಟೆ ಬೆಲೆ |
-
 ---
 
 ### 5. 🔐 Supabase Authentication & Role-Based Access Control (RBAC)
@@ -101,27 +94,29 @@ MilkMaatu implements cryptographically verified authentication and role-based au
 - **Idempotent Super Admin Bootstrap**:
   - Reads `INITIAL_SUPER_ADMIN_EMAIL` and `INITIAL_SUPER_ADMIN_PASSWORD` from backend-only `.env`.
   - Automatically verifies and upserts the Super Admin account and profile on startup.
-- **Historical Data Preservation**:
-  - Safely preserves all 27 historical orders, 33 order items, and 11 cattle listings.
-  - Historical integer user IDs preserved in `legacy_user_id` while new records link to UUID `user_id` referencing `public.profiles(id)`.
+- **Data Integrity & Line-Item Snapshotting**:
+  - Order line items snapshot `product_name` directly onto `order_items`.
+  - Orders link directly to UUID `user_id` referencing `public.profiles(id)` for verified customer records.
 - **Order Placement Experience**:
   - Order confirmation screen displays only after the backend successfully creates the order.
   - Submit button is disabled during submission to prevent duplicate requests.
-  - Confirmation screen displays for exactly 5000ms before auto-navigating to `/home`.
+  - Confirmation screen displays for approximately 5000ms before auto-navigating to `/home`.
 
 ---
 
 ### 6. 🐄 Sante Cattle Marketplace
-- Listings scoped to local market hubs (e.g. *KRS Sante*, *Thendekere Sante*) within a 20 km radius.
+- Listings scoped to local market hubs within a 20 km radius.
 - **24-hour auto-expiry** — a background daemon sweeps the DB hourly to delete expired posts.
 - **Direct seller phone contact** — one-tap phone calls to farmers.
-- **Owner post management** — easily delete your own listings without needing an account.
+- **Owner post management** — delete your own listings easily.
 
 ---
 
 ### 7. 🛍️ Buy Feeds Shop
 - **2-column grid** on mobile, 3-column on desktop.
-- **Compact product cards** — image, name, price, and Add button only.
+- **Real Database-Driven:** Feeds are sourced live from PostgreSQL via FastAPI (`/api/feeds`). Only active, non-hidden feeds are shown to users.
+- **Dynamic Units & Pricing:** Displays units (e.g., `50 kg`, `1 bag`) as configured by administrators.
+- **Compact product cards** — image, name, price, unit, and Add button.
 - **Tap a card → bottom sheet detail view** slides up with full description and a large Add to Cart button.
 - **Glassmorphic floating cart bar** — real-time quantity + price totals.
 - Pre-filled checkout using saved profile delivery address with instant cash-on-delivery order placement.
@@ -133,21 +128,18 @@ Powered by **Google Gemini 2.5 Flash**:
 - Responds in the farmer's active language (Kannada or English).
 - Scoped to dairy husbandry, feed management, vaccination, milk fat, and Karnataka government schemes.
 - Politely declines non-farming topics.
-- Completely open and accessible without login.
 
 ---
 
 ### 9. 🛡️ Admin Dashboard (`/admin`)
-Administrative functions are protected by Supabase Auth RBAC (Admin or Super Admin required) with resilient dual-property fallback rendering ensuring 100% data visibility:
-| Section | Capabilities | Access | Data Visibility & Features |
-|---------|-------------|--------|----------------------------|
-| Overview | Live database analytics, total revenue, catalog feeds, registered users, total & pending orders, cattle listings | Admin & Super Admin | Calculates system metrics, revenue totals, and instant quick actions |
-| Feeds | Add / edit / hide / remove feed products | Admin & Super Admin | Complete feed catalog with visibility toggles, image previews, and price management |
-| Orders | Audit all customer orders, view line items, delivery addresses, and customer contacts, update status | Admin & Super Admin | Full historical & live order audit with itemized feed breakdowns, addresses, and status selectors |
-| Users | View registered user directory, promote users to Admin, demote Admins | Super Admin only | Registered user profiles with email, phone, address, registration dates, and Super Admin RBAC management |
-| Cattle | Browse & moderate all Sante cattle listings (active & historical) | Admin & Super Admin | Full cattle listings view including breed, price, village, seller contact, and deletion actions |
-| Moderation | Review compliance reports and suspend bad actors | Admin & Super Admin | Compliance review table with listing IDs, reporter phone numbers, report reasons, dismissal, actioning, and user account suspension |
-
+Administrative functions are protected by Supabase Auth RBAC (Admin or Super Admin required) with 100% database-driven visibility:
+| Section | Capabilities | Access | Data Source |
+|---------|-------------|--------|-------------|
+| Overview | Live database analytics: active feeds, total products, orders, registered users, cattle listings | Admin & Super Admin | PostgreSQL (`/api/admin/stats`) |
+| Feeds | Add, edit, hide/unhide, delete cattle feeds (Name, description, price, unit, stock, image, status) | Admin & Super Admin | PostgreSQL (`/api/admin/feeds`) |
+| Orders | Audit real customer orders, customer contact info, itemized snapshots, order status updates | Admin & Super Admin | PostgreSQL (`/api/admin/orders`) |
+| Users | View registered user profiles (name, email, phone, address, role, joined date), Super Admin role promotions | Admin (view) / Super Admin (roles) | `public.profiles` (`/api/admin/users`) |
+| Cattle | Browse & moderate all Sante cattle listings with real seller contacts, location, expiry status | Admin & Super Admin | PostgreSQL (`/api/admin/cattle`) |
 
 ---
 
@@ -158,7 +150,7 @@ Administrative functions are protected by Supabase Auth RBAC (Admin or Super Adm
 |-----------|---------|
 | **React 18 + Vite** | Fast SPA with hot module replacement |
 | **Tailwind CSS** | Utility-first responsive styling (emerald + gold palette) |
-| **React Router DOM v6** | Client-side routing with direct access |
+| **React Router DOM v6** | Client-side routing with RBAC protection |
 | **Capacitor JS** | Native Android bridge |
 | **Lucide React** | Icon library |
 | **i18n (custom)** | Kannada/English translation context |
@@ -168,7 +160,7 @@ Administrative functions are protected by Supabase Auth RBAC (Admin or Super Adm
 |-----------|---------|
 | **FastAPI** | Async Python REST API |
 | **SQLAlchemy 2.0 (Async)** | ORM with async session management |
-| **PostgreSQL / Supabase** | Production database |
+| **PostgreSQL / Supabase** | Production database & Auth source of truth |
 | **SQLite + aiosqlite** | Zero-config local development database |
 | **Cloudinary SDK** | Image CDN for cattle photos |
 | **Google GenAI SDK** | Gemini 2.5 Flash for Nandini AI |
@@ -195,44 +187,45 @@ milkfront1/
 │   │   │   ├── SanteSellPage.jsx     # Post cattle ad with direct photo upload
 │   │   │   ├── NandiniAIPage.jsx     # AI chat assistant
 │   │   │   ├── ProfilePage.jsx       # Local farmer details & language toggle
-│   │   │   └── AdminDashboard.jsx    # Admin control panel (PIN guarded)
+│   │   │   └── AdminDashboard.jsx    # Admin control panel (Supabase RBAC)
 │   │   ├── i18n/
 │   │   │   ├── kn.json               # Kannada translations
 │   │   │   ├── en.json               # English translations
 │   │   │   ├── LanguageContext.jsx   # React context provider
 │   │   │   └── useTranslation.js     # Hook to access t()
 │   │   ├── services/api/
-│   │   │   ├── apiClient.js          # Fetch wrapper supporting optional Admin PIN
-│   │   │   ├── authApi.js            # Local farmer profile & admin PIN manager
+│   │   │   ├── apiClient.js          # Fetch wrapper with Supabase Bearer Auth
+│   │   │   ├── authApi.js            # Supabase Auth integration & profile sync
 │   │   │   ├── feedsApi.js           # Feed catalog actions
 │   │   │   ├── cattleApi.js          # Sante marketplace actions
 │   │   │   ├── orderApi.js           # Feed order placements & status
 │   │   │   └── newsApi.js            # Farmers News API calls
 │   │   └── styles/index.css          # Global styles + animations
 │   ├── android/                      # Capacitor Android native project
-│   └── .env                          # VITE_API_URL
+│   └── .env                          # VITE_API_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 │
 ├── backend/                          # FastAPI backend
 │   ├── app/
 │   │   ├── main.py                   # App bootstrap + background daemons
 │   │   ├── core/
-│   │   │   ├── config.py             # Settings from environment (ACCESS_PIN, etc.)
+│   │   │   ├── config.py             # Settings from environment (DATABASE_URL, SUPABASE_*, etc.)
 │   │   │   ├── database.py           # Async SQLAlchemy engine
-│   │   │   └── dependencies.py       # Admin PIN & guest user dependencies
+│   │   │   ├── auth.py               # Supabase JWKS cryptographic verification
+│   │   │   └── dependencies.py       # RBAC dependencies (get_current_user, get_current_admin)
 │   │   ├── models/
-│   │   │   ├── user.py               # User / farmer ORM model
-│   │   │   ├── feed.py               # Feed product ORM model
-│   │   │   ├── order.py              # Order & items ORM model
+│   │   │   ├── user.py               # Profile & user DB table mapping
+│   │   │   ├── feed.py               # Feeds product DB table mapping with unit
+│   │   │   ├── order.py              # Order & items DB table mapping with snapshot product_name
 │   │   │   ├── cattle.py             # Sante cattle listing ORM model
 │   │   │   └── news.py               # NewsArticle ORM model
 │   │   ├── routes/
 │   │   │   ├── feed_routes.py        # Feed catalog (public + admin)
-│   │   │   ├── order_routes.py       # Order placement & tracking (public + admin)
+│   │   │   ├── order_routes.py       # Order placement & tracking (authenticated + admin)
 │   │   │   ├── cattle_routes.py      # Sante marketplace (public)
-│   │   │   ├── profile_routes.py     # Profile details
+│   │   │   ├── profile_routes.py     # Profile details & update
 │   │   │   ├── ai_routes.py          # Nandini AI chat (public)
 │   │   │   ├── news_routes.py        # Farmers News API (public)
-│   │   │   └── admin_routes.py       # Admin stats & moderation
+│   │   │   └── admin_routes.py       # Admin stats, users, feeds, cattle & orders
 │   │   └── services/
 │   │       ├── ai/nandini_ai.py      # Gemini integration
 │   │       ├── news/                 # RSS news fetch & filter workers
@@ -275,9 +268,6 @@ cd frontend
 
 npm install
 
-# Configure environment
-echo "VITE_API_URL=http://localhost:8000/api" > .env
-
 # Start dev server
 npm run dev
 
@@ -312,14 +302,17 @@ See [ANDROID_BUILD.md](ANDROID_BUILD.md) for keystore setup, versioning, and sig
 
 ### `backend/.env`
 
-| Variable | Default (Dev) | Purpose |
-|----------|--------------|---------|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./milkmaatu.db` | DB connection string |
-| `ACCESS_PIN` | `4512` | Admin Access PIN for `/admin` |
-| `GEMINI_API_KEY` | *(Google AI Studio)* | Nandini AI assistant |
-| `CLOUDINARY_CLOUD_NAME` | *(optional)* | Image CDN |
-| `CLOUDINARY_API_KEY` | *(optional)* | Image CDN |
-| `CLOUDINARY_API_SECRET` | *(optional)* | Image CDN |
+| Variable | Example | Purpose |
+|----------|---------|---------|
+| `DATABASE_URL` | `postgresql+asyncpg://postgres:pwd@db.host:5432/postgres` | DB connection string |
+| `SUPABASE_URL` | `https://xxxx.supabase.co` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` | Supabase service role secret |
+| `INITIAL_SUPER_ADMIN_EMAIL` | `admin@milkmaatu.com` | Initial super admin bootstrap email |
+| `INITIAL_SUPER_ADMIN_PASSWORD`| `securepassword` | Initial super admin bootstrap password |
+| `GEMINI_API_KEY` | `AIza...` | Nandini AI assistant |
+| `CLOUDINARY_CLOUD_NAME` | `mycloud` | Image CDN (optional) |
+| `CLOUDINARY_API_KEY` | `123456` | Image CDN (optional) |
+| `CLOUDINARY_API_SECRET` | `secret` | Image CDN (optional) |
 
 ---
 
@@ -330,10 +323,10 @@ All endpoints are prefixed with `/api`.
 | Method | Endpoint | Auth | Description |
 |--------|----------|:----:|-------------|
 | `GET` | `/` | — | Health check |
-| `GET` | `/api/feeds` | — | Feed product catalog (public) |
-| `POST` | `/api/orders` | — | Place order (customer name + phone) |
-| `GET` | `/api/orders/my-orders` | — | Order history by phone / order IDs |
-| `PUT` | `/api/orders/{id}/cancel` | — | Cancel pending order |
+| `GET` | `/api/feeds` | — | Feed product catalog (public, active only) |
+| `POST` | `/api/orders` | 🛡️ Bearer JWT | Place order linked to authenticated profile |
+| `GET` | `/api/orders/my-orders` | 🛡️ Bearer JWT | Order history for authenticated user |
+| `PUT` | `/api/orders/{id}/cancel` | 🛡️ Bearer JWT | Cancel pending order |
 | `GET` | `/api/cattle` | — | Browse active Sante cattle |
 | `POST` | `/api/cattle` | — | Post cattle listing |
 | `DELETE` | `/api/cattle/{id}` | — | Delete cattle listing |
@@ -341,10 +334,17 @@ All endpoints are prefixed with `/api`.
 | `POST` | `/api/ai/nandini` | — | Nandini AI chat (Kannada / English) |
 | `GET` | `/api/news/latest` | — | Latest 6 farmer news articles |
 | `GET` | `/api/news` | — | Paginated full news list |
-| `GET` | `/api/admin/stats` | 🛡️ Admin PIN | Platform metrics and counters |
-| `GET` | `/api/admin/orders` | 🛡️ Admin PIN | Audit all system orders |
-| `PUT` | `/api/admin/orders/{id}/status` | 🛡️ Admin PIN | Update dispatch status |
-| `GET` | `/api/feeds/admin` | 🛡️ Admin PIN | View all feeds including hidden |
+| `GET` | `/api/admin/stats` | 🛡️ Bearer JWT (Admin) | Platform metrics from real database |
+| `GET` | `/api/admin/users` | 🛡️ Bearer JWT (Admin) | Registered users list from `public.profiles` |
+| `PATCH`| `/api/admin/users/{id}/role` | 🛡️ Bearer JWT (Super Admin) | Change user role with last-super-admin protection |
+| `GET` | `/api/admin/feeds` | 🛡️ Bearer JWT (Admin) | View all feeds including hidden |
+| `POST` | `/api/feeds/admin` | 🛡️ Bearer JWT (Admin) | Create new feed |
+| `PATCH`| `/api/feeds/admin/{id}` | 🛡️ Bearer JWT (Admin) | Update / hide / unhide feed |
+| `DELETE`| `/api/feeds/admin/{id}` | 🛡️ Bearer JWT (Admin) | Delete feed |
+| `GET` | `/api/admin/orders` | 🛡️ Bearer JWT (Admin) | Audit all system orders with line items |
+| `PUT` | `/api/admin/orders/{id}/status` | 🛡️ Bearer JWT (Admin) | Update order status |
+| `GET` | `/api/admin/cattle` | 🛡️ Bearer JWT (Admin) | Moderate Sante cattle listings |
+| `DELETE`| `/api/admin/cattle/{id}` | 🛡️ Bearer JWT (Admin) | Remove moderated cattle listing |
 
 ---
 

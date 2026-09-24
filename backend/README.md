@@ -2,7 +2,13 @@
 
 This is the complete, modular, and production-ready Python FastAPI backend for the **MilkMaatu** cattle farmer application. It integrates asynchronously with **PostgreSQL (Supabase)**, supports Cloudinary CDN media uploads, manages an automated background worker purging Sante cattle postings older than 24 hours, and runs an RSS news aggregation daemon for dairy farmers.
 
-**Frictionless Farmer Architecture:** Farmer endpoints (Feeds, Sante Marketplace, Nandini AI, Dairy News, Orders) are open and require no farmer authentication or passwords. Administrative endpoints are secured via an **Admin Access PIN** (`ACCESS_PIN=4512`).
+**Authentication & Security Architecture:**
+MilkMaatu utilizes **Supabase Authentication** with persistent sessions and role-based access control (RBAC):
+- **Normal Users:** Register or log in once to establish a persistent Supabase session. User orders and profile modifications link directly to their authenticated `public.profiles.id`.
+- **Admins:** Authenticate through the standard Supabase Auth system and access the Admin Dashboard to manage feeds, audit orders, and moderate Sante listings based on `public.profiles.role = 'admin'`.
+- **Super Admins:** Possess top-level administrative authority including role management (promoting/demoting users) guarded by last-super-admin safeguards.
+
+FastAPI cryptographically verifies Supabase JWT access tokens via public JWKS key sets (ES256).
 
 ---
 
@@ -11,6 +17,7 @@ This is the complete, modular, and production-ready Python FastAPI backend for t
 * **Server:** Uvicorn
 * **Database ORM:** SQLAlchemy 2.0 (Asyncio support)
 * **Database Drivers:** `asyncpg` (PostgreSQL / Supabase), `aiosqlite` (Local fallback SQLite)
+* **Auth & Security:** Supabase Auth + PyJWT with JWKS verification + RBAC
 * **Media Uploads:** Cloudinary SDK
 * **AI Integration:** Google GenAI SDK (`gemini-2.5-flash`)
 * **News Aggregation:** `feedparser` / `xml.etree`
@@ -24,13 +31,14 @@ backend/
 ├── app/
 │   ├── main.py                # Server boot initializer & background worker daemons
 │   ├── core/
-│   │   ├── config.py          # Config Pydantic-settings (ACCESS_PIN, DATABASE_URL, etc.)
+│   │   ├── config.py          # Config Pydantic-settings (DATABASE_URL, SUPABASE_*, etc.)
 │   │   ├── database.py        # SQLAlchemy engine pools & async session managers
-│   │   └── dependencies.py    # Admin PIN verification & optional guest user helpers
+│   │   ├── auth.py            # Supabase JWKS cryptographic verification
+│   │   └── dependencies.py    # RBAC dependencies (get_current_user, get_current_admin)
 │   ├── models/
-│   │   ├── user.py            # Farmer & admin DB table mapping
-│   │   ├── feed.py            # Feeds product DB table mapping
-│   │   ├── order.py           # Orders & line-items DB table mapping
+│   │   ├── user.py            # Profile & user DB table mapping
+│   │   ├── feed.py            # Feeds product DB table mapping with unit
+│   │   ├── order.py           # Orders & line-items DB table mapping with snapshot product_name
 │   │   ├── cattle.py          # Sante ads & expiry DB table mapping
 │   │   └── news.py            # Dairy news articles DB table mapping
 │   ├── schemas/
@@ -40,10 +48,10 @@ backend/
 │   │   └── cattle.py          # Sante marketplace schemas
 │   ├── routes/
 │   │   ├── feed_routes.py     # Public feed catalog + Admin product management
-│   │   ├── order_routes.py    # Public order placement + Admin order audits
+│   │   ├── order_routes.py    # Authenticated order placement + Admin order audits
 │   │   ├── cattle_routes.py   # Public Sante marketplace (Buy, Sell, Delete)
 │   │   ├── profile_routes.py  # Profile retrieval & address updates
-│   │   ├── admin_routes.py    # Administrative dashboard counters & moderation
+│   │   ├── admin_routes.py    # Administrative dashboard, stats, users, feeds, cattle & orders
 │   │   ├── ai_routes.py       # Public Nandini AI chat assistant endpoint
 │   │   ├── news_routes.py     # Public Farmers News API
 │   │   └── report_routes.py   # Public Sante cattle listing reporting
@@ -124,14 +132,14 @@ To configure it:
    GEMINI_API_KEY=your_gemini_api_key
    ```
 * Nandini AI acts as a dedicated dairy assistant for Karnataka farmers (Kannada & English).
-* Fully accessible to all farmers without requiring authentication.
 
 ---
 
 ## 🛡️ Admin Security & Role-Based Access Control (RBAC)
-Administrative endpoints (`/admin/*`, `/feeds/admin`, `/cattle?include_expired=true`) are secured via **Supabase Auth Bearer Tokens** and **JWKS Key Verification**:
-- **Role Verification**: FastAPI dependency (`get_current_admin` / `get_current_super_admin`) validates Supabase JWT tokens and checks `public.profiles` for `admin` or `super_admin` roles.
-- **Fallback Access**: Legacy PIN verification (`X-Admin-PIN` header) remains available for testing admin functions when `ACCESS_PIN` is configured in `backend/.env`.
+Administrative endpoints (`/api/admin/*`, `/api/feeds/admin`, etc.) are secured via **Supabase Auth Bearer Tokens** and **JWKS Key Verification**:
+- **Role Verification**: FastAPI dependencies (`get_current_admin` / `get_current_super_admin`) validate Supabase JWT tokens and verify `public.profiles` for `admin` or `super_admin` roles.
+- **Single Security Boundary**: FastAPI enforces authorization at the server boundary. Client-side roles are never trusted.
+- **Super Admin Protection**: Last remaining Super Admin cannot be demoted or removed.
 
 ---
 

@@ -100,6 +100,7 @@ async def create_feed(
         stock_quantity=req.stock_quantity,
         image_url=cdn_url,
         category=req.category,
+        unit=req.unit or "50 kg",
         is_hidden=req.is_hidden
     )
     
@@ -142,6 +143,8 @@ async def update_feed(
         feed.description = update_data["description"]
     if "category" in update_data:
         feed.category = update_data["category"]
+    if "unit" in update_data:
+        feed.unit = update_data["unit"]
     if "image" in update_data:
         feed.image_url = upload_image(update_data["image"])
     if "brand" in update_data:
@@ -167,7 +170,7 @@ async def delete_feed(
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Delete a feed product item from the catalog (Admin only). Safely hides if referenced in orders."""
+    """Delete a feed product item from the catalog (Admin only). Preserves order history snapshots."""
     result = await db.execute(select(Feed).where(Feed.id == id))
     feed = result.scalars().first()
     
@@ -178,23 +181,22 @@ async def delete_feed(
         )
         
     from app.models.order import OrderItem
-    from sqlalchemy import func
-    items_count_res = await db.execute(select(func.count(OrderItem.id)).where(OrderItem.feed_id == id))
-    items_count = items_count_res.scalar_one()
-
-    if items_count > 0:
-        feed.is_hidden = True
-        await db.commit()
-        return json_response(
-            success=True,
-            message="Product is associated with existing customer orders. It has been hidden from the catalog to preserve order history."
+    from sqlalchemy import update
+    # Snapshot product name into any referencing order items and disassociate feed_id
+    await db.execute(
+        update(OrderItem)
+        .where(OrderItem.feed_id == id)
+        .values(
+            product_name=feed.title,
+            feed_id=None
         )
+    )
 
     await db.delete(feed)
     await db.commit()
     
     return json_response(
         success=True,
-        message="Feed product deleted successfully"
+        message="Feed product deleted successfully from catalog."
     )
 

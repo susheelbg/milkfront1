@@ -19,27 +19,37 @@ class OrderItemResponse(BaseModel):
     def resolve_feed_name(cls, values):
         if isinstance(values, dict):
             if not values.get("name"):
-                feed = values.get("feed")
-                if feed:
-                    if hasattr(feed, "title"):
-                        values["name"] = feed.title
-                    elif hasattr(feed, "name"):
-                        values["name"] = feed.name
-                    elif isinstance(feed, dict):
-                        values["name"] = feed.get("title") or feed.get("name")
-                if not values.get("name") and values.get("feed_id"):
-                    values["name"] = f"Feed Item #{values.get('feed_id')}"
-                if not values.get("name"):
-                    values["name"] = "Cattle Feed"
+                prod_name = values.get("product_name")
+                if prod_name:
+                    values["name"] = prod_name
+                else:
+                    feed = values.get("feed")
+                    if feed:
+                        if hasattr(feed, "title"):
+                            values["name"] = feed.title
+                        elif hasattr(feed, "name"):
+                            values["name"] = feed.name
+                        elif isinstance(feed, dict):
+                            values["name"] = feed.get("title") or feed.get("name")
+                    if not values.get("name") and values.get("feed_id"):
+                        values["name"] = f"Feed Item #{values.get('feed_id')}"
+                    if not values.get("name"):
+                        values["name"] = "Cattle Feed"
             return values
         else:
-            feed = getattr(values, "feed", None)
-            if feed:
-                feed_title = getattr(feed, "title", None) or getattr(feed, "name", None)
-                if feed_title:
-                    values.__dict__["name"] = feed_title
-            if not getattr(values, "name", None) and getattr(values, "feed_id", None):
-                values.__dict__["name"] = f"Feed Item #{getattr(values, 'feed_id')}"
+            prod_name = getattr(values, "product_name", None)
+            if prod_name:
+                values.__dict__["name"] = prod_name
+            else:
+                feed = getattr(values, "feed", None)
+                if feed:
+                    feed_title = getattr(feed, "title", None) or getattr(feed, "name", None)
+                    if feed_title:
+                        values.__dict__["name"] = feed_title
+                if not getattr(values, "name", None) and getattr(values, "feed_id", None):
+                    values.__dict__["name"] = f"Feed Item #{getattr(values, 'feed_id')}"
+                if not getattr(values, "name", None):
+                    values.__dict__["name"] = "Cattle Feed"
             return values
 
     class Config:
@@ -84,7 +94,7 @@ class OrderResponse(BaseModel):
             cust_name = getattr(values, "customer_name", None)
             if not cust_name and profile and profile.name:
                 cust_name = profile.name
-            d["customerName"] = cust_name or "Farmer"
+            d["customerName"] = cust_name or ("Farmer" if profile else "Historical Order (Unlinked)")
 
             cust_email = getattr(profile, "email", None) if profile else None
             d["customerEmail"] = cust_email or ""

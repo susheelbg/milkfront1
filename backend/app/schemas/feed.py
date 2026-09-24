@@ -7,6 +7,7 @@ class FeedBase(BaseModel):
     price: float
     description: Optional[str] = None
     category: str = "Dairy"
+    unit: Optional[str] = "50 kg"
     image: Optional[str] = Field(None, validation_alias=AliasChoices("image", "image_url"), serialization_alias="image")
     brand: Optional[str] = None
     stock_quantity: int = 100
@@ -20,6 +21,7 @@ class FeedUpdate(BaseModel):
     price: Optional[float] = None
     description: Optional[str] = None
     category: Optional[str] = None
+    unit: Optional[str] = None
     image: Optional[str] = Field(None, validation_alias=AliasChoices("image", "image_url"))
     brand: Optional[str] = None
     stock_quantity: Optional[int] = None

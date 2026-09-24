@@ -106,10 +106,14 @@ export const BuyFeedsPage = () => {
             <p className="font-semibold text-sm">{t('common.loading')}</p>
           </div>
         ) : feeds.length === 0 ? (
-          <div className="text-center py-16 bg-white border border-border-light rounded-2xl">
-            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-text-dark mb-1">{t('feeds.noProducts')}</h3>
-            <p className="text-text-light text-sm">{t('feeds.noProducts')}</p>
+          <div className="text-center py-16 bg-white border border-border-light rounded-3xl max-w-md mx-auto p-8 shadow-xs">
+            <div className="w-16 h-16 bg-primary-light/50 text-primary-dark rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20">
+              <ShoppingCart className="w-8 h-8 text-primary-dark" />
+            </div>
+            <h3 className="text-lg font-black text-text-dark mb-1">No feeds available yet</h3>
+            <p className="text-text-light text-xs max-w-xs mx-auto leading-relaxed">
+              New cattle feeds will appear here when the administrator adds them.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
@@ -134,7 +138,12 @@ export const BuyFeedsPage = () => {
                     {/* Name */}
                     <div className="px-2.5 pt-2.5 pb-1">
                       <h3 className="text-xs font-extrabold text-text-dark leading-snug line-clamp-2">{feed.name}</h3>
-                      <p className="text-primary-dark font-black text-sm mt-0.5">₹{feed.price}<span className="text-[10px] text-text-light font-bold"> /kg</span></p>
+                      <p className="text-primary-dark font-black text-sm mt-0.5">
+                        ₹{feed.price}
+                        {feed.unit && (
+                          <span className="text-[10px] text-text-light font-bold"> / {feed.unit}</span>
+                        )}
+                      </p>
                     </div>
                   </button>
 
@@ -199,7 +208,9 @@ export const BuyFeedsPage = () => {
                 <h2 className="text-lg font-extrabold text-text-dark mt-2 leading-snug">{selectedFeed.name}</h2>
                 <p className="text-2xl font-black text-primary-dark mt-1">
                   ₹{selectedFeed.price}
-                  <span className="text-xs text-text-light font-bold"> /kg</span>
+                  {selectedFeed.unit && (
+                    <span className="text-xs text-text-light font-bold"> / {selectedFeed.unit}</span>
+                  )}
                 </p>
               </div>
             </div>

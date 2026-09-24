@@ -30,6 +30,7 @@ class OrderItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(String, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
     feed_id = Column(Integer, ForeignKey("feeds.id", ondelete="SET NULL"), nullable=True)
+    product_name = Column(String, nullable=True) # Snapshotted product name at time of order
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False) # Capture historical price at purchase time
 
