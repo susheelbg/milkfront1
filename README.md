@@ -138,15 +138,15 @@ Powered by **Google Gemini 2.5 Flash**:
 ---
 
 ### 9. 🛡️ Admin Dashboard (`/admin`)
-Administrative functions are protected by Supabase Auth RBAC (Admin or Super Admin required):
-| Section | Capabilities | Access |
-|---------|-------------|--------|
-| Overview | Revenue (₹35,960+), active listings, total orders (all 27+), active cattle | Admin & Super Admin |
-| Feeds | Add / edit / hide / remove feed products | Admin & Super Admin |
-| Orders | Audit all customer orders (including 27 historical orders), update dispatch status | Admin & Super Admin |
-| Users | View user directory, promote users to Admin, demote Admins | Super Admin only |
-| Cattle | Moderate / delete inappropriate Sante listings | Admin & Super Admin |
-| Moderation | Review compliance reports and suspend bad actors | Admin & Super Admin |
+Administrative functions are protected by Supabase Auth RBAC (Admin or Super Admin required) with resilient dual-property fallback rendering ensuring 100% data visibility:
+| Section | Capabilities | Access | Data Visibility & Features |
+|---------|-------------|--------|----------------------------|
+| Overview | Live database analytics, total revenue, catalog feeds, registered users, total & pending orders, cattle listings | Admin & Super Admin | Calculates system metrics, revenue totals, and instant quick actions |
+| Feeds | Add / edit / hide / remove feed products | Admin & Super Admin | Complete feed catalog with visibility toggles, image previews, and price management |
+| Orders | Audit all customer orders, view line items, delivery addresses, and customer contacts, update status | Admin & Super Admin | Full historical & live order audit with itemized feed breakdowns, addresses, and status selectors |
+| Users | View registered user directory, promote users to Admin, demote Admins | Super Admin only | Registered user profiles with email, phone, address, registration dates, and Super Admin RBAC management |
+| Cattle | Browse & moderate all Sante cattle listings (active & historical) | Admin & Super Admin | Full cattle listings view including breed, price, village, seller contact, and deletion actions |
+| Moderation | Review compliance reports and suspend bad actors | Admin & Super Admin | Compliance review table with listing IDs, reporter phone numbers, report reasons, dismissal, actioning, and user account suspension |
 
 
 ---

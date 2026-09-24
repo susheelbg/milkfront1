@@ -128,10 +128,10 @@ To configure it:
 
 ---
 
-## 🛡️ Admin Security (ACCESS_PIN)
-Administrative endpoints (`/admin/*`, `/api/feeds/admin`) are secured via the `X-Admin-PIN` header:
-- Default PIN: `4512` (configurable in `backend/.env` via `ACCESS_PIN`).
-- When an admin unlocks the Admin Portal on the frontend, the client passes this header to authorize administrative operations.
+## 🛡️ Admin Security & Role-Based Access Control (RBAC)
+Administrative endpoints (`/admin/*`, `/feeds/admin`, `/cattle?include_expired=true`) are secured via **Supabase Auth Bearer Tokens** and **JWKS Key Verification**:
+- **Role Verification**: FastAPI dependency (`get_current_admin` / `get_current_super_admin`) validates Supabase JWT tokens and checks `public.profiles` for `admin` or `super_admin` roles.
+- **Fallback Access**: Legacy PIN verification (`X-Admin-PIN` header) remains available for testing admin functions when `ACCESS_PIN` is configured in `backend/.env`.
 
 ---
 
