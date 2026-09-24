@@ -4,30 +4,37 @@ export const adminApi = {
   // Get all users registered
   getUsers: async () => {
     const res = await apiClient.get('/admin/users');
-    return res && res.success ? res.data : res;
+    if (res && res.success && Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
   },
 
   // Get admin stats / dashboard metrics
   getStats: async () => {
     const res = await apiClient.get('/admin/stats');
-    return res && res.success ? res.data : res;
+    if (res && res.success && res.data) return res.data;
+    return res || {};
   },
 
   // Update user role (Super Admin only) - pass UUID string
   updateUserRole: async (userId, role) => {
     const res = await apiClient.put(`/admin/users/${userId}/role`, { role });
-    return res && res.success ? res.data : res;
+    return res && res.success ? (res.data || res) : res;
   },
 
   // Get all system orders
   getOrders: async () => {
     const res = await apiClient.get('/admin/orders');
-    return res && res.success ? res.data : res;
+    if (res && res.success && Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
   },
 
   // Update order status
   updateOrderStatus: async (orderId, status) => {
     const res = await apiClient.put(`/admin/orders/${orderId}/status`, { status });
-    return res && res.success ? res.data : res;
+    return res && res.success ? (res.data || res) : res;
   },
 };

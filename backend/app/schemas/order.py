@@ -17,17 +17,30 @@ class OrderItemResponse(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resolve_feed_name(cls, values):
-        # When loading from ORM, pull name from the related feed relationship
-        if hasattr(values, "feed") and values.feed is not None:
-            values.__dict__["name"] = values.feed.title
-        elif hasattr(values, "name") and values.name:
-            pass
-        elif hasattr(values, "feed_id") and values.feed_id:
-            values.__dict__["name"] = f"Feed Item #{values.feed_id}"
-        elif isinstance(values, dict) and not values.get("name"):
-            feed_id = values.get("feed_id")
-            values["name"] = f"Feed Item #{feed_id}" if feed_id else "Cattle Feed"
-        return values
+        if isinstance(values, dict):
+            if not values.get("name"):
+                feed = values.get("feed")
+                if feed:
+                    if hasattr(feed, "title"):
+                        values["name"] = feed.title
+                    elif hasattr(feed, "name"):
+                        values["name"] = feed.name
+                    elif isinstance(feed, dict):
+                        values["name"] = feed.get("title") or feed.get("name")
+                if not values.get("name") and values.get("feed_id"):
+                    values["name"] = f"Feed Item #{values.get('feed_id')}"
+                if not values.get("name"):
+                    values["name"] = "Cattle Feed"
+            return values
+        else:
+            feed = getattr(values, "feed", None)
+            if feed:
+                feed_title = getattr(feed, "title", None) or getattr(feed, "name", None)
+                if feed_title:
+                    values.__dict__["name"] = feed_title
+            if not getattr(values, "name", None) and getattr(values, "feed_id", None):
+                values.__dict__["name"] = f"Feed Item #{getattr(values, 'feed_id')}"
+            return values
 
     class Config:
         from_attributes = True

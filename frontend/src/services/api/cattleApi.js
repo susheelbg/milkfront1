@@ -1,11 +1,14 @@
 import { apiClient } from './apiClient';
 
 export const cattleApi = {
-  // Get active cattle posts - safely unpacks response envelope and guarantees an Array
-  getCattleListings: async (santeName = null) => {
+  // Get active or all cattle posts - safely unpacks response envelope and guarantees an Array
+  getCattleListings: async (santeName = null, includeExpired = false) => {
     try {
-      const url = santeName ? `/cattle?sante=${encodeURIComponent(santeName)}` : '/cattle';
-      const res = await apiClient.get(url);
+      const params = [];
+      if (santeName) params.push(`sante=${encodeURIComponent(santeName)}`);
+      if (includeExpired) params.push('include_expired=true');
+      const queryString = params.length > 0 ? `?${params.join('&')}` : '';
+      const res = await apiClient.get(`/cattle${queryString}`);
       if (res && Array.isArray(res.data)) {
         return res.data;
       }

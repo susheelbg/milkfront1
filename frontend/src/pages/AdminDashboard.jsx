@@ -91,7 +91,7 @@ export const AdminDashboard = () => {
         adminApi.getUsers(),
         adminApi.getOrders(),
         feedsApi.getAdminFeeds(),
-        cattleApi.getCattleListings(),
+        cattleApi.getCattleListings(null, true),
         reportApi.getReports(),
       ]);
 
@@ -102,34 +102,32 @@ export const AdminDashboard = () => {
       const cattleData = cattleRes.status === 'fulfilled' ? cattleRes.value : [];
       const reportsData = reportsRes.status === 'fulfilled' ? reportsRes.value : [];
 
+      const statsObj = statsData && statsData.data ? statsData.data : statsData;
+
       const parsedUsers = Array.isArray(usersData) ? usersData : (Array.isArray(usersData?.data) ? usersData.data : []);
       const parsedOrders = Array.isArray(ordersData) ? ordersData : (Array.isArray(ordersData?.data) ? ordersData.data : []);
       const parsedFeeds = Array.isArray(feedsDataRes) ? feedsDataRes : (Array.isArray(feedsDataRes?.data) ? feedsDataRes.data : []);
       const parsedCattle = Array.isArray(cattleData) ? cattleData : (Array.isArray(cattleData?.data) ? cattleData.data : []);
+      const parsedReports = Array.isArray(reportsData) ? reportsData : (Array.isArray(reportsData?.data) ? reportsData.data : []);
 
       const activeFeedsCalculated = parsedFeeds.filter(f => !f.is_hidden).length;
 
       setStats({
-        usersCount: statsData?.usersCount ?? parsedUsers.length,
-        feedsCount: statsData?.feedsCount ?? activeFeedsCalculated,
-        activeFeedsCount: statsData?.activeFeedsCount ?? activeFeedsCalculated,
-        productsCount: statsData?.productsCount ?? parsedFeeds.length,
-        ordersCount: statsData?.ordersCount ?? parsedOrders.length,
-        pendingOrdersCount: statsData?.pendingOrdersCount ?? parsedOrders.filter(o => o.status === 'pending').length,
-        cattleCount: statsData?.cattleCount ?? parsedCattle.length,
-        totalRevenue: statsData?.totalRevenue ?? parsedOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0),
+        usersCount: statsObj?.usersCount ?? parsedUsers.length,
+        feedsCount: statsObj?.feedsCount ?? activeFeedsCalculated,
+        activeFeedsCount: statsObj?.activeFeedsCount ?? activeFeedsCalculated,
+        productsCount: statsObj?.productsCount ?? parsedFeeds.length,
+        ordersCount: statsObj?.ordersCount ?? parsedOrders.length,
+        pendingOrdersCount: statsObj?.pendingOrdersCount ?? parsedOrders.filter(o => (o.status || o.order_status) === 'pending').length,
+        cattleCount: statsObj?.cattleCount ?? parsedCattle.length,
+        totalRevenue: statsObj?.totalRevenue ?? parsedOrders.reduce((sum, o) => sum + (o.totalPrice || o.total_amount || 0), 0),
       });
 
       setUsersList(parsedUsers);
       setOrdersList(parsedOrders);
       setFeedsList(parsedFeeds);
       setCattleList(parsedCattle);
-
-      if (reportsData && reportsData.success && Array.isArray(reportsData.data)) {
-        setReportsList(reportsData.data);
-      } else {
-        setReportsList(Array.isArray(reportsData) ? reportsData : []);
-      }
+      setReportsList(parsedReports);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       setLoadError('Unable to load admin dashboard data. Please try again.');
@@ -487,15 +485,15 @@ export const AdminDashboard = () => {
                               {feedsList.map((feed) => (
                                 <tr key={feed.id} className="hover:bg-bg-light/40 transition-colors">
                                   <td className="p-4 font-bold flex items-center gap-3">
-                                    {feed.image ? (
-                                      <img src={feed.image} alt={feed.name} className="w-10 h-10 rounded-lg object-cover border border-border-light" />
+                                    {(feed.image || feed.image_url) ? (
+                                      <img src={feed.image || feed.image_url} alt={feed.name || feed.title} className="w-10 h-10 rounded-lg object-cover border border-border-light" />
                                     ) : (
                                       <div className="w-10 h-10 rounded-lg bg-bg-light flex items-center justify-center text-xs font-bold text-text-light">
                                         No img
                                       </div>
                                     )}
                                     <div>
-                                      <p className="text-sm font-black">{feed.name}</p>
+                                      <p className="text-sm font-black">{feed.name || feed.title}</p>
                                       <p className="text-xs text-text-light font-normal line-clamp-1">{feed.description || 'No description'}</p>
                                     </div>
                                   </td>
@@ -585,28 +583,28 @@ export const AdminDashboard = () => {
                                   <td className="p-4 align-top">
                                     <p className="font-extrabold text-xs text-primary-dark font-mono">{order.id}</p>
                                     <p className="text-[11px] text-text-light mt-0.5">
-                                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
+                                      {(order.createdAt || order.created_at) ? new Date(order.createdAt || order.created_at).toLocaleDateString() : '-'}
                                     </p>
                                   </td>
                                   <td className="p-4 align-top">
-                                    <p className="font-extrabold text-sm">{order.customerName || 'Farmer'}</p>
-                                    {order.customerEmail || order.email ? (
-                                      <p className="text-xs text-text-light">{order.customerEmail || order.email}</p>
+                                    <p className="font-extrabold text-sm">{order.customerName || order.customer_name || order.name || (order.profile?.name) || 'Farmer'}</p>
+                                    {(order.customerEmail || order.email || order.customer_email || (order.profile?.email)) ? (
+                                      <p className="text-xs text-text-light">{order.customerEmail || order.email || order.customer_email || (order.profile?.email)}</p>
                                     ) : null}
-                                    <p className="text-xs text-text-light font-medium">{order.phoneNumber || '-'}</p>
+                                    <p className="text-xs text-text-light font-medium">{order.phoneNumber || order.phone_number || order.phone || (order.profile?.phone) || '-'}</p>
                                   </td>
                                   <td className="p-4 align-top max-w-[200px]">
-                                    {order.villageName && (
-                                      <p className="text-xs font-semibold text-text-dark">{order.villageName}</p>
+                                    {(order.villageName || order.village_name || order.village) && (
+                                      <p className="text-xs font-semibold text-text-dark">{order.villageName || order.village_name || order.village}</p>
                                     )}
-                                    <p className="text-xs text-text-light mt-0.5 line-clamp-2">{order.address || '-'}</p>
+                                    <p className="text-xs text-text-light mt-0.5 line-clamp-2">{order.address || order.delivery_address || (order.profile?.address) || '-'}</p>
                                   </td>
                                   <td className="p-4 align-top text-xs">
                                     <div className="space-y-1">
                                       {order.items && order.items.length > 0 ? (
                                         order.items.map((item, idx) => (
                                           <p key={idx}>
-                                            <span className="font-bold text-text-dark">{item.name || 'Feed Product'}</span>
+                                            <span className="font-bold text-text-dark">{item.name || item.title || (item.feed?.title) || (item.feed?.name) || 'Feed Product'}</span>
                                             <span className="bg-primary-light text-text-dark font-black px-1 py-0.5 rounded ml-1 text-[10px]">
                                               ×{item.quantity}
                                             </span>
@@ -623,20 +621,20 @@ export const AdminDashboard = () => {
                                     </div>
                                   </td>
                                   <td className="p-4 align-top font-black text-primary-dark">
-                                    ₹{order.totalPrice?.toLocaleString()}
+                                    ₹{(order.totalPrice ?? order.total_amount ?? 0).toLocaleString()}
                                   </td>
                                   <td className="p-4 align-top">
                                     <select
-                                      value={order.status}
+                                      value={order.status || order.order_status || 'pending'}
                                       onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                                       className={`text-xs font-bold rounded-lg border-2 p-1.5 outline-none transition-colors ${
-                                        order.status === 'delivered'
+                                        (order.status || order.order_status) === 'delivered'
                                           ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                          : order.status === 'pending'
+                                          : (order.status || order.order_status) === 'pending'
                                           ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                          : order.status === 'confirmed'
+                                          : (order.status || order.order_status) === 'confirmed'
                                           ? 'border-blue-200 bg-blue-50 text-blue-700'
-                                          : order.status === 'shipped'
+                                          : (order.status || order.order_status) === 'shipped'
                                           ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
                                           : 'border-red-200 bg-red-50 text-red-700'
                                       }`}
@@ -688,7 +686,7 @@ export const AdminDashboard = () => {
                               {usersList.map((usr) => (
                                 <tr key={usr.id} className="hover:bg-bg-light/40 transition-colors">
                                   <td className="p-4 font-bold">
-                                    <p className="text-sm font-black">{usr.name || 'Farmer'}</p>
+                                    <p className="text-sm font-black">{usr.name || usr.full_name || 'Farmer'}</p>
                                     {usr.email ? (
                                       <a href={`mailto:${usr.email}`} className="text-xs text-primary-dark hover:underline font-normal">
                                         {usr.email}
@@ -698,9 +696,9 @@ export const AdminDashboard = () => {
                                     )}
                                   </td>
                                   <td className="p-4 text-xs font-bold">
-                                    {usr.phone ? (
-                                      <a href={`tel:${usr.phone}`} className="text-text-dark hover:underline">
-                                        {usr.phone}
+                                    {(usr.phone || usr.phone_number) ? (
+                                      <a href={`tel:${usr.phone || usr.phone_number}`} className="text-text-dark hover:underline">
+                                        {usr.phone || usr.phone_number}
                                       </a>
                                     ) : (
                                       <span className="text-text-light">-</span>
@@ -719,7 +717,7 @@ export const AdminDashboard = () => {
                                   </td>
                                   <td className="p-4 text-xs">{usr.address || '-'}</td>
                                   <td className="p-4 text-xs text-text-light">
-                                    {usr.created_at ? new Date(usr.created_at).toLocaleDateString() : '-'}
+                                    {(usr.created_at || usr.createdAt) ? new Date(usr.created_at || usr.createdAt).toLocaleDateString() : '-'}
                                   </td>
                                   <td className="p-4 text-right">
                                     {isSuperAdmin && usr.id !== currentUser?.id && usr.role !== 'super_admin' && (
@@ -773,15 +771,17 @@ export const AdminDashboard = () => {
                               {cattleList.map((post) => (
                                 <tr key={post.id} className="hover:bg-bg-light/40 transition-colors">
                                   <td className="p-4 font-bold flex items-center gap-3">
-                                    <img src={post.image} alt="" className="w-10 h-10 rounded object-cover" />
+                                    {(post.image || post.image_url) ? (
+                                      <img src={post.image || post.image_url} alt="" className="w-10 h-10 rounded object-cover" />
+                                    ) : null}
                                     <div>
-                                      <p className="text-sm font-black">{post.animalName}</p>
-                                      <p className="text-xs text-text-light font-normal">{post.age} yrs old • {post.milkCapacity}</p>
+                                      <p className="text-sm font-black">{post.animalName || post.animal_name}</p>
+                                      <p className="text-xs text-text-light font-normal">{post.age} yrs old • {post.milkCapacity || post.milk_capacity}</p>
                                     </div>
                                   </td>
-                                  <td className="p-4 font-extrabold text-primary-dark">₹{post.price.toLocaleString()}</td>
-                                  <td className="p-4 text-xs">{post.villageName}</td>
-                                  <td className="p-4 text-xs font-bold">{post.contactNumber}</td>
+                                  <td className="p-4 font-extrabold text-primary-dark">₹{(post.price ?? 0).toLocaleString()}</td>
+                                  <td className="p-4 text-xs">{post.villageName || post.village}</td>
+                                  <td className="p-4 text-xs font-bold">{post.contactNumber || post.phone_number || post.phone}</td>
                                   <td className="p-4 text-right">
                                     <button
                                       onClick={() => handleDeleteCattle(post.id)}
@@ -825,15 +825,15 @@ export const AdminDashboard = () => {
                               {reportsList.map((report) => (
                                 <tr key={report.id} className="hover:bg-bg-light/40 transition-colors">
                                   <td className="p-4 align-top">
-                                    <p className="font-bold text-sm">{report.cattleName}</p>
-                                    <p className="text-xs text-text-light">Listing ID: {report.cattleId}</p>
-                                    {report.sellerPhone && report.sellerPhone !== 'N/A' && (
-                                      <p className="text-xs font-semibold mt-1">Seller: {report.sellerPhone}</p>
+                                    <p className="font-bold text-sm">{report.cattleName || report.cattle_name || 'Listing'}</p>
+                                    <p className="text-xs text-text-light">Listing ID: {report.cattleId || report.cattle_id}</p>
+                                    {(report.sellerPhone || report.seller_phone) && (report.sellerPhone || report.seller_phone) !== 'N/A' && (
+                                      <p className="text-xs font-semibold mt-1">Seller: {report.sellerPhone || report.seller_phone}</p>
                                     )}
                                   </td>
                                   <td className="p-4 align-top">
-                                    <p className="font-semibold text-xs">{report.reporterName}</p>
-                                    <p className="text-xs text-text-light">{report.reporterPhone}</p>
+                                    <p className="font-semibold text-xs">{report.reporterName || report.reporter_name || 'Anonymous'}</p>
+                                    <p className="text-xs text-text-light">{report.reporterPhone || report.reporter_phone || 'N/A'}</p>
                                   </td>
                                   <td className="p-4 align-top text-xs font-semibold max-w-[200px] break-words">
                                     {t(`compliance.${report.reason}`) || report.reason}
@@ -864,9 +864,9 @@ export const AdminDashboard = () => {
                                         >
                                           {t('compliance.takeAction')}
                                         </button>
-                                        {report.sellerPhone && report.sellerPhone !== 'N/A' && (
+                                        {(report.sellerPhone || report.seller_phone) && (report.sellerPhone || report.seller_phone) !== 'N/A' && (
                                           <button
-                                            onClick={() => handleSuspendUser(report.sellerPhone)}
+                                            onClick={() => handleSuspendUser(report.sellerPhone || report.seller_phone)}
                                             className="text-xs font-bold text-red-800 hover:text-white hover:bg-red-800 border border-red-800/20 hover:border-red-800 px-2.5 py-1.5 rounded-lg transition-all"
                                           >
                                             {t('compliance.suspend')}

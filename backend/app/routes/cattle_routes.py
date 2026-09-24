@@ -18,12 +18,16 @@ router = APIRouter(tags=["Cattle Sante Marketplace"])
 async def get_cattle_listings(
     sante: Optional[str] = None,
     q: Optional[str] = None,
+    include_expired: Optional[bool] = False,
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve active (non-expired) cattle listings, optionally filtered by Sante and search text."""
+    """Retrieve cattle listings, optionally filtered by Sante, search text, or including expired posts."""
     current_time = datetime.now(timezone.utc).replace(tzinfo=None)
     
-    query = select(Cattle).where(Cattle.expires_at > current_time)
+    if include_expired:
+        query = select(Cattle)
+    else:
+        query = select(Cattle).where(Cattle.expires_at > current_time)
     
     if sante:
         query = query.where(Cattle.sante_name.ilike(f"%{sante}%"))

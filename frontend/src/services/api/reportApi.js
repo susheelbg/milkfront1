@@ -8,7 +8,11 @@ export const reportApi = {
 
   // Get all reports (Admin only)
   getReports: async () => {
-    return await apiClient.get('/admin/reports');
+    const res = await apiClient.get('/admin/reports');
+    if (res && res.success && Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.data)) return res.data;
+    return res || [];
   },
 
   // Dismiss report (Admin only)
