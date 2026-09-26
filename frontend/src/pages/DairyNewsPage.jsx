@@ -44,12 +44,12 @@ function NewsCard({ article }) {
 
       {/* Category badge */}
       <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full w-fit">
-        {article.category_kn}
+        {article.category_kn || article.category}
       </span>
 
       {/* Original Kannada headline */}
       <h3 className="text-sm font-extrabold text-text-dark leading-snug flex-1">
-        {article.kannada_title}
+        {article.kannada_title || article.title_kn || article.title || article.original_title}
       </h3>
 
       {/* Source + date */}

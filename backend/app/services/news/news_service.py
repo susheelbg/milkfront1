@@ -122,10 +122,14 @@ def _parse_rss(url: str, source_name: str) -> list[dict]:
 # ─── Cleanup old articles ─────────────────────────────────────────────────────
 
 async def cleanup_old_news(db: AsyncSession) -> int:
-    """Delete articles older than NEWS_RETENTION_DAYS to keep the feed fresh."""
+    """Delete articles older than NEWS_RETENTION_DAYS (7 days) based on published_at or created_at."""
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=NEWS_RETENTION_DAYS)
     result = await db.execute(
-        delete(NewsArticle).where(NewsArticle.created_at < cutoff)
+        delete(NewsArticle).where(
+            (NewsArticle.published_at < cutoff) |
+            ((NewsArticle.published_at == None) & (NewsArticle.created_at < cutoff)) |
+            (NewsArticle.created_at < cutoff)
+        )
     )
     deleted = result.rowcount or 0
     if deleted:
@@ -145,6 +149,7 @@ async def refresh_news(db: AsyncSession) -> int:
     # 1. Cleanup old articles first
     await cleanup_old_news(db)
 
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=NEWS_RETENTION_DAYS)
     stored = 0
 
     for source in NEWS_SOURCES:
@@ -159,6 +164,11 @@ async def refresh_news(db: AsyncSession) -> int:
             title = art["title"]
             desc = art.get("desc", "")
             link = art["link"]
+            pub_date = art.get("pub_date")
+
+            # 0. Skip articles older than 7 days
+            if pub_date and pub_date < cutoff:
+                continue
 
             # 1. Language gate
             if source.get("require_kannada") and not _is_kannada(title):
@@ -180,6 +190,9 @@ async def refresh_news(db: AsyncSession) -> int:
                 continue
 
             cat_key, cat_kn = _detect_category(title, desc)
+            is_kn = _is_kannada(title) or (source.get("language") == "kn")
+            # 1st Priority for Kannada articles: score 10.0 vs 1.0 for English
+            relevance = 10.0 if is_kn else 1.0
 
             # 5. Store METADATA ONLY — no content, no translation
             news = NewsArticle(
@@ -193,14 +206,14 @@ async def refresh_news(db: AsyncSession) -> int:
                 category=cat_key,
                 category_kn=cat_kn,
                 is_alert=(cat_key == "disease_alert"),
-                relevance_score=1.0,
-                published_at=art.get("pub_date"),
+                relevance_score=relevance,
+                published_at=pub_date,
                 fetched_at=datetime.now(timezone.utc).replace(tzinfo=None),
                 created_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             db.add(news)
             stored += 1
-            logger.info(f"[News] ✅ {title[:65]} [{cat_kn}]")
+            logger.info(f"[News] ✅ {title[:65]} [{cat_kn}] (Priority: {'Kannada' if is_kn else 'English'})")
 
     if stored:
         await db.commit()
@@ -212,9 +225,17 @@ async def refresh_news(db: AsyncSession) -> int:
 # ─── Query helpers ────────────────────────────────────────────────────────────
 
 async def get_latest_news(db: AsyncSession, limit: int = 6) -> list[NewsArticle]:
+    """Retrieve latest farmer news. Strictly under 7 days old, with Kannada articles having 1st priority."""
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=NEWS_RETENTION_DAYS)
+    valid_window = (
+        (NewsArticle.published_at >= cutoff) |
+        ((NewsArticle.published_at == None) & (NewsArticle.created_at >= cutoff))
+    )
     result = await db.execute(
         select(NewsArticle)
+        .where(valid_window)
         .order_by(
+            NewsArticle.relevance_score.desc(),  # 1st priority: Kannada (10.0) first
             NewsArticle.published_at.desc().nullslast(),
             NewsArticle.created_at.desc(),
         )
@@ -229,11 +250,22 @@ async def get_all_news(
     page: int = 1,
     limit: int = 12,
 ) -> tuple[list[NewsArticle], int]:
-    q = select(NewsArticle).order_by(
-        NewsArticle.published_at.desc().nullslast(),
-        NewsArticle.created_at.desc(),
+    """Retrieve paginated farmer news. Strictly under 7 days old, with Kannada articles having 1st priority."""
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=NEWS_RETENTION_DAYS)
+    valid_window = (
+        (NewsArticle.published_at >= cutoff) |
+        ((NewsArticle.published_at == None) & (NewsArticle.created_at >= cutoff))
     )
-    count_q = select(func.count()).select_from(NewsArticle)
+    q = (
+        select(NewsArticle)
+        .where(valid_window)
+        .order_by(
+            NewsArticle.relevance_score.desc(),  # 1st priority: Kannada (10.0) first
+            NewsArticle.published_at.desc().nullslast(),
+            NewsArticle.created_at.desc(),
+        )
+    )
+    count_q = select(func.count()).select_from(NewsArticle).where(valid_window)
 
     if category and category != "all":
         q = q.where(NewsArticle.category == category)
@@ -243,3 +275,4 @@ async def get_all_news(
     items = await db.execute(q)
     total = await db.execute(count_q)
     return items.scalars().all(), (total.scalar() or 0)
+

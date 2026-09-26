@@ -179,15 +179,19 @@ export const HomePage = () => {
       <section className="max-w-4xl mx-auto px-4 pb-6">
         {/* Section header */}
         <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <Newspaper size={18} className="text-amber-600" />
-            <h3 className="text-lg font-bold text-text-dark">{t('home.farmersNews')}</h3>
+          <div
+            onClick={() => navigate('/news')}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <Newspaper size={18} className="text-amber-600 group-hover:scale-110 transition-transform" />
+            <h3 className="text-lg font-bold text-text-dark group-hover:text-amber-700 transition-colors">{t('home.farmersNews')}</h3>
           </div>
           <button
             onClick={() => navigate('/news')}
-            className="text-xs font-bold text-primary-dark hover:underline transition-colors"
+            className="text-xs font-bold text-primary-dark hover:underline flex items-center gap-1 transition-colors cursor-pointer"
           >
-            {t('home.allNews')}
+            <span>{t('home.allNews')}</span>
+            <span>→</span>
           </button>
         </div>
 
@@ -201,19 +205,19 @@ export const HomePage = () => {
               ))}
             </div>
           ) : newsError ? (
-            <div className="px-4 py-8 text-center">
+            <div className="px-4 py-8 text-center cursor-pointer" onClick={() => navigate('/news')}>
               <p className="text-xs text-text-light font-semibold">
                 {t('home.loadingNews')}
               </p>
             </div>
           ) : news.length === 0 ? (
-            <div className="px-4 py-8 text-center">
+            <div className="px-4 py-8 text-center cursor-pointer" onClick={() => navigate('/news')}>
               <p className="text-xs text-text-light font-semibold">
                 {t('home.noNews')}
               </p>
             </div>
           ) : (
-            /* Horizontal scroll-snap card track — no page overflow */
+            /* Horizontal scroll-snap card track — clicking any card redirects to /news */
             <div
               ref={newsScrollRef}
               className="flex gap-3 p-4 overflow-x-auto scroll-smooth snap-x snap-mandatory"
@@ -222,7 +226,8 @@ export const HomePage = () => {
               {news.map(article => (
                 <div
                   key={article.id}
-                  className="flex-shrink-0 w-64 snap-start bg-gradient-to-b from-amber-50 to-white border border-amber-200/60 rounded-xl p-3 flex flex-col gap-2"
+                  onClick={() => navigate('/news')}
+                  className="flex-shrink-0 w-64 snap-start bg-gradient-to-b from-amber-50 to-white border border-amber-200/60 rounded-xl p-3 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:border-amber-300 transition-all active:scale-[0.98] group"
                 >
                   {/* Alert indicator */}
                   {article.is_alert && (
@@ -233,27 +238,22 @@ export const HomePage = () => {
 
                   {/* Category */}
                   <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full w-fit">
-                    {article.category_kn}
+                    {article.category_kn || article.category}
                   </span>
 
-                  {/* Headline */}
-                  <p className="text-xs font-black text-text-dark leading-snug line-clamp-3 flex-1">
-                    {article.kannada_title}
+                  {/* Headline (Kannada prioritized) */}
+                  <p className="text-xs font-black text-text-dark leading-snug line-clamp-3 flex-1 group-hover:text-amber-900 transition-colors">
+                    {article.kannada_title || article.title_kn || article.title || article.original_title}
                   </p>
 
-                  {/* Footer: source + read more */}
+                  {/* Footer: source + redirect CTA */}
                   <div className="flex items-center justify-between mt-auto pt-2 border-t border-amber-200/50">
                     <p className="text-[9px] font-bold text-text-light uppercase tracking-wider truncate max-w-[100px]">
                       {article.source_name}
                     </p>
-                    <a
-                      href={article.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary-dark hover:underline flex-shrink-0"
-                    >
-                      {t('home.readFull')} <ExternalLink size={9} />
-                    </a>
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary-dark group-hover:underline flex-shrink-0">
+                      {t('home.readFull') || 'ಓದಿ'} →
+                    </span>
                   </div>
                 </div>
               ))}
@@ -267,9 +267,10 @@ export const HomePage = () => {
             </p>
             <button
               onClick={() => navigate('/news')}
-              className="text-[10px] font-bold text-primary-dark hover:underline"
+              className="text-[10px] font-bold text-primary-dark hover:underline flex items-center gap-1 cursor-pointer"
             >
-              {t('home.allNews')}
+              <span>{t('home.allNews')}</span>
+              <span>→</span>
             </button>
           </div>
         </div>
