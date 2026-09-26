@@ -17,6 +17,20 @@ export const adminApi = {
     return res || {};
   },
 
+  // Get all catalog feeds (Admin)
+  getFeeds: async () => {
+    try {
+      const res = await apiClient.get('/admin/feeds');
+      if (res && res.success && Array.isArray(res.data)) return res.data;
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+    } catch {}
+    const res2 = await apiClient.get('/feeds/admin');
+    if (res2 && res2.success && Array.isArray(res2.data)) return res2.data;
+    if (Array.isArray(res2)) return res2;
+    return [];
+  },
+
   // Update user role (Super Admin only) - pass UUID string
   updateUserRole: async (userId, role) => {
     const res = await apiClient.put(`/admin/users/${userId}/role`, { role });

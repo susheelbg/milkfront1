@@ -99,12 +99,28 @@ export const AdminDashboard = () => {
         reportApi.getReports(),
       ]);
 
+      if (statsRes.status === 'rejected') console.warn('[AdminDashboard] statsRes rejected:', statsRes.reason);
+      if (usersRes.status === 'rejected') console.warn('[AdminDashboard] usersRes rejected:', usersRes.reason);
+      if (ordersRes.status === 'rejected') console.warn('[AdminDashboard] ordersRes rejected:', ordersRes.reason);
+      if (feedsRes.status === 'rejected') console.warn('[AdminDashboard] feedsRes rejected:', feedsRes.reason);
+      if (cattleRes.status === 'rejected') console.warn('[AdminDashboard] cattleRes rejected:', cattleRes.reason);
+      if (reportsRes.status === 'rejected') console.warn('[AdminDashboard] reportsRes rejected:', reportsRes.reason);
+
       const statsData = statsRes.status === 'fulfilled' ? statsRes.value : null;
       const usersData = usersRes.status === 'fulfilled' ? usersRes.value : [];
       const ordersData = ordersRes.status === 'fulfilled' ? ordersRes.value : [];
-      const feedsDataRes = feedsRes.status === 'fulfilled' ? feedsRes.value : [];
+      let feedsDataRes = feedsRes.status === 'fulfilled' ? feedsRes.value : [];
       const cattleData = cattleRes.status === 'fulfilled' ? cattleRes.value : [];
       const reportsData = reportsRes.status === 'fulfilled' ? reportsRes.value : [];
+
+      if (!feedsDataRes || (Array.isArray(feedsDataRes) && feedsDataRes.length === 0)) {
+        try {
+          const fallbackFeeds = await adminApi.getFeeds();
+          if (Array.isArray(fallbackFeeds) && fallbackFeeds.length > 0) {
+            feedsDataRes = fallbackFeeds;
+          }
+        } catch {}
+      }
 
       const statsObj = statsData && statsData.data ? statsData.data : statsData;
 
@@ -586,32 +602,37 @@ export const AdminDashboard = () => {
                                       </span>
                                     )}
                                   </td>
-                                  <td className="p-4 text-right space-x-2">
-                                    <button
-                                      onClick={() => handleToggleHideFeed(feed)}
-                                      className={`p-1.5 rounded transition-colors inline-block ${
-                                        feed.is_hidden 
-                                          ? 'text-amber-600 hover:text-amber-800 hover:bg-amber-50' 
-                                          : 'text-text-light hover:text-text-dark hover:bg-bg-light'
-                                      }`}
-                                      title={feed.is_hidden ? 'Make visible to customers' : 'Hide from customers'}
-                                    >
-                                      {feed.is_hidden ? <EyeOff size={16} /> : <Eye size={16} />}
-                                    </button>
-                                    <button
-                                      onClick={() => openEditFeed(feed)}
-                                      className="p-1.5 text-text-light hover:text-text-dark hover:bg-bg-light rounded transition-colors inline-block"
-                                      title="Edit Product"
-                                    >
-                                      <Edit size={16} />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteFeed(feed.id)}
-                                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors inline-block"
-                                      title="Delete Product"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
+                                  <td className="p-4 text-right whitespace-nowrap">
+                                    <div className="inline-flex items-center gap-1.5 justify-end">
+                                      <button
+                                        onClick={() => openEditFeed(feed)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 border border-border-light rounded-lg transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                        title="Edit Product"
+                                      >
+                                        <Edit size={13} className="text-gray-500" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleToggleHideFeed(feed)}
+                                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shadow-2xs active:scale-95 cursor-pointer ${
+                                          feed.is_hidden 
+                                            ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' 
+                                            : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                        }`}
+                                        title={feed.is_hidden ? 'Make visible to customers' : 'Hide from customers'}
+                                      >
+                                        {feed.is_hidden ? <Eye size={13} /> : <EyeOff size={13} />}
+                                        <span>{feed.is_hidden ? 'Unhide' : 'Hide'}</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteFeed(feed.id)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                        title="Delete Product"
+                                      >
+                                        <Trash2 size={13} />
+                                        <span>Delete</span>
+                                      </button>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
@@ -898,13 +919,14 @@ export const AdminDashboard = () => {
                                       {post.status === 'expired' || post.isExpired ? 'Expired' : 'Active'}
                                     </span>
                                   </td>
-                                  <td className="p-4 text-right">
+                                  <td className="p-4 text-right whitespace-nowrap">
                                     <button
                                       onClick={() => handleDeleteCattle(post.id)}
-                                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors inline-block"
-                                      title="Delete Post"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                      title="Delete Cattle Post"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 size={13} />
+                                      <span>Delete</span>
                                     </button>
                                   </td>
                                 </tr>
