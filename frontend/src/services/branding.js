@@ -1,7 +1,7 @@
 /**
  * MilkMaatu Branding Configuration
  * Single source of truth for brand assets across the entire application.
- * Logo is hosted on Cloudinary CDN for fast global delivery.
+ * Logo is hosted on Supabase Storage for fast global delivery.
  */
 
 // Official MilkMaatu logo — Supabase Storage

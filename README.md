@@ -1,145 +1,126 @@
 # 🥛 MilkMaatu — Premium Dairy Farming Platform
 
-MilkMaatu is a **mobile-first, multilingual** full-stack platform built specifically for dairy farmers in Karnataka. It connects farmers to feed suppliers, provides a local cattle marketplace (Sante), offers an AI-powered dairy assistant (Nandini AI), delivers daily farmer news, and gives administrators full control over the platform — all translated dynamically in **Kannada (ಕನ್ನಡ)** and **English**.
+MilkMaatu is a **mobile-first, multilingual** full-stack digital platform built specifically for dairy farmers in Karnataka. It connects farmers directly to cattle feed suppliers, provides a local cattle marketplace (**Sante**), offers an AI-powered dairy advisory assistant (**Nandini AI**), delivers automated real-time local agriculture news (**Farmers News**), and provides administrators with comprehensive system governance and content moderation tools — all dynamically localized in **Kannada (ಕನ್ನಡ)** and **English**.
 
-**Authentication & Security Architecture:**
-MilkMaatu utilizes **Supabase Authentication** with persistent sessions and server-enforced **Role-Based Access Control (RBAC)**:
-- **Normal Users:** Register or log in once on first use to establish a persistent Supabase session across browser refreshes and mobile app sessions. They can browse feeds, post cattle in Sante, consult Nandini AI, and place orders tied to their authenticated profile.
-- **Admins:** Authenticate through the standard Supabase Auth system and access the Admin Dashboard to manage feeds, audit orders, and moderate Sante listings based on `public.profiles.role = 'admin'`.
-- **Super Admins:** Possess top-level administrative authority including role management (promoting/demoting users) guarded by last-super-admin safeguards.
+---
 
-FastAPI acts as the strict backend security boundary, cryptographically verifying Supabase JWTs via Supabase JWKS (ES256).
+## 🔐 Authentication & Security Architecture
+
+MilkMaatu utilizes **Supabase Auth** integrated with persistent client-side sessions and server-enforced **Role-Based Access Control (RBAC)** via **FastAPI**:
+
+- **Normal Users (`user`):** Register or log in once to establish a persistent session across browser refreshes and native mobile app restarts. Users can browse feed products, place orders, post cattle listings on Sante, consult Nandini AI, track their order history, and submit content moderation reports.
+- **Administrators (`admin`):** Authenticated users elevated to access the Admin Dashboard to manage feed catalogs, audit customer orders, update delivery statuses, moderate Sante cattle listings, and review reported content based on `public.profiles.role = 'admin'`.
+- **Super Admins (`super_admin`):** Hold full system governance capabilities, including promoting or demoting user roles. Protected by automated **last-super-admin safeguards** to prevent accidental lockout.
+
+FastAPI serves as the backend security boundary, cryptographically validating Supabase JWTs via **Supabase JWKS (ES256 signature verification)** on all protected endpoints.
 
 🔗 **Production Deployments:**
-- **App / Portal:** [https://milkfront1.onrender.com](https://milkfront1.onrender.com)
-- **API Docs (Swagger):** [https://milkfront1.onrender.com/docs](https://milkfront1.onrender.com/docs)
+- **Web App / Portal:** [https://milkfront1.onrender.com](https://milkfront1.onrender.com)
+- **API Documentation (Swagger):** [https://milkfront1.onrender.com/docs](https://milkfront1.onrender.com/docs)
 
 ---
 
 ## 🌟 Key Features
 
-### 1. 📱 Mobile-First Bottom Navigation
-Designed for single-thumb usage. A persistent bottom nav bar provides access to:
-| Tab | Route | Description |
-|-----|-------|-------------|
-| Home | `/home` | Dashboard — quick services, news, recommended feeds |
-| Sante | `/sante` | Local cattle marketplace (Buy & Sell) |
-| Buy Feeds | `/feeds` | Cattle feed shop with 2-column mobile layout |
-| My Orders | `/orders` | Order tracking by authenticated customer profile |
-| Profile | `/profile` | Farmer details, language toggle, and account settings |
+### 1. 📱 Mobile-First Ergonomic Navigation
+Designed for seamless single-thumb usage on mobile screens:
+| Screen | Route | Description |
+|--------|-------|-------------|
+| **Home** | `/home` | Main dashboard — Quick Services, News Ticker, Recommended Feeds |
+| **Sante** | `/sante` | Local cattle marketplace action hub (Buy & Sell) |
+| **Buy Feeds** | `/feeds` | Cattle feed catalog with 2-column grid & bottom-sheet details |
+| **My Orders** | `/orders` | Real-time order tracking and cancellation for logged-in farmers |
+| **Profile** | `/profile` | Farmer profile management, language toggle, and account settings |
 
 ---
 
-### 2. 🌐 Multilingual — Kannada & English
-- **Kannada by default** — maximum accessibility for Karnataka dairy farmers.
-- **Instant toggle** on the Profile page. No page refresh needed.
-- **Fully translated UI:** every label, message, button, and section heading switches language — including the Farmers News widget, Quick Services, Recommended Feeds, and error states.
-- Translations live in [`src/i18n/kn.json`](frontend/src/i18n/kn.json) and [`src/i18n/en.json`](frontend/src/i18n/en.json).
-- Selected locale is persisted in `localStorage` (`appLanguage`).
+### 2. 🌐 Multilingual Engine — Kannada (ಕನ್ನಡ) & English
+- **Kannada by default** — engineered for high accessibility among dairy farmers in regional Karnataka.
+- **Instant Language Toggle** — accessible from the Profile page header and persistent state. No page reload required.
+- **Comprehensive UI Localization** — every button, dialog, navigation link, feed product, news widget, error state, and AI prompt context translates dynamically.
+- **Locale Persistence** — stored in browser `localStorage` (`appLanguage`) for smooth navigation.
+- Translation files: [`frontend/src/i18n/kn.json`](frontend/src/i18n/kn.json) and [`frontend/src/i18n/en.json`](frontend/src/i18n/en.json).
 
 ---
 
 ### 3. 🏠 Home Dashboard
-The home screen is organized into clean, stacked sections:
+The home screen organizes essential tools into structured sections:
 
-#### 🌾 Recommended Feeds Ticker
-Horizontally scrolling card carousel showing catalog feeds with instant navigation to details.
-
-#### ⚡ Quick Services — 4 Circular Buttons
-Four large circular icon buttons in a single row for instant access:
-- 🌾 **Buy Feeds** — Feed shop
-- 🐄 **Sante** — Cattle marketplace
-- 🥛 **Milk Record** — OCR milk slip extraction *(coming soon)*
-- 🤖 **Nandini AI** — AI dairy assistant
-
-#### 📰 Farmers News (ರೈತರ ಸುದ್ದಿ)
-A horizontally scrollable news card widget sitting below Quick Services. Shows the latest farmer-relevant news articles fetched from trusted Karnataka news sources. Fully translates its heading and labels based on language setting.
+- **🌾 Recommended Feeds Ticker:** Horizontally scrollable product carousel with immediate access to feed details and purchase options.
+- **⚡ Quick Services Grid:** 4 prominent quick-access buttons:
+  - 🌾 **Buy Feeds** — Access the cattle feed store.
+  - 🐄 **Sante** — Local cattle marketplace.
+  - 🥛 **Milk Record** — OCR milk slip scanner utility.
+  - 🤖 **Nandini AI** — AI-powered dairy virtual assistant.
+- **📰 Farmers News (ರೈತರ ಸುದ್ದಿ):** Horizontally scrolling news card widget showing verified regional agricultural news articles direct from trusted publishers.
 
 ---
 
-### 4. 📰 Farmers News Feature
-A lightweight, reliable news aggregation system that **never generates or stores article content** — only metadata.
+### 4. 📰 Farmers News Auto-Aggregator (ರೈತರ ಸುದ್ದಿ)
+A lightweight, compliance-friendly news aggregation subsystem that **never stores full article content** — preserving publisher copyright.
 
-#### Architecture
 ```
-Prajavani RSS (Kannada) ──┐
-                          ├─→ Keyword filter ─→ Store metadata only ─→ DB
-The Hindu Agriculture ────┘   (no AI, no content copy)
+Prajavani RSS (Kannada) ──────┐
+                              ├─→ Keyword Filter ─→ Store Metadata Only ─→ PostgreSQL
+The Hindu Agriculture (EN) ──┘   (Title, Source, Date, URL)
 
-Farmer taps article ─→ Original publisher website (direct link)
+Farmer taps news item ──────────→ Opens publisher website directly in new browser tab
 ```
 
-#### How it works
-- **RSS-based** — fetches from verified Kannada and English agriculture news feeds every **3 hours**.
-- **Keyword filtering** — 55 Kannada + 36 English broad farmer keywords (dairy, cattle, crops, irrigation, government schemes, market prices, weather, etc.).
-- **Exclusion filter** — 13 patterns block cartoons, horoscopes, almanacs, letters to editor.
-- **Metadata only** — title, source name, source URL, category, published date. No article content is stored or reproduced.
-- **Auto-cleanup** — articles older than **7 days** are automatically deleted to keep the feed fresh.
-- **Direct links** — tapping any article opens the original publisher website.
-- **Public & Unauthenticated** — accessible to all farmers instantly.
+- **Automated RSS Fetching:** Background worker syncs verified feeds every **6 hours**.
+- **Targeted Keyword Filtering:** Matches against 55 Kannada + 36 English dairy and agricultural keywords (milk prices, cattle care, irrigation, KMF updates, government schemes).
+- **Noise Suppression:** 13 exclusion rules filter out horoscopes, entertainment, and non-relevant content.
+- **Automated Purge:** Articles older than **7 days** are automatically cleaned up to keep feeds fresh.
+- **Direct Publisher Links:** Tapping any card opens the original article on the publisher's website.
 
 ---
 
-### 5. 🔐 Supabase Authentication & Role-Based Access Control (RBAC)
-MilkMaatu implements cryptographically verified authentication and role-based authorization:
-- **Supabase Auth Integration**: User registration, login, session tokens, and password reset powered by Supabase Auth with persistent sessions across refreshes and Capacitor mobile restarts.
-- **Three Core Roles**:
-  - `user`: Default role for registering farmers. Can browse, purchase feeds, post cattle in Sante, and track orders. Cannot elevate own role.
-  - `admin`: Can access the Admin Dashboard, manage feeds (create, edit, hide, delete), audit and dispatch customer orders, and moderate Sante listings.
-  - `super_admin`: Full system control. Can promote users to `admin`, demote admins back to `user`, and manage administrative access. Protected by last Super Admin safeguards.
-- **Server-Side Security & Cryptographic JWKS Verification**:
-  - Tokens are cryptographically verified using Supabase JWKS public signing keys (ES256).
-  - No insecure JWT decoding without signature verification.
-  - All sensitive operations strictly guarded on FastAPI endpoints and database RLS.
-- **Idempotent Super Admin Bootstrap**:
-  - Reads `INITIAL_SUPER_ADMIN_EMAIL` and `INITIAL_SUPER_ADMIN_PASSWORD` from backend-only `.env`.
-  - Automatically verifies and upserts the Super Admin account and profile on startup.
-- **Data Integrity & Line-Item Snapshotting**:
-  - Order line items snapshot `product_name` directly onto `order_items`.
-  - Orders link directly to UUID `user_id` referencing `public.profiles(id)` for verified customer records.
-- **Order Placement Experience**:
-  - Order confirmation screen displays only after the backend successfully creates the order.
-  - Submit button is disabled during submission to prevent duplicate requests.
-  - Confirmation screen displays for approximately 5000ms before auto-navigating to `/home`.
+### 5. 🐄 Sante Cattle Marketplace & Moderation
+- **Local Market Hubs:** Listings grouped by local Sante hubs (e.g., Mandya, Tumkur, Hassan, Shivamogga).
+- **24-Hour Listing Expiry:** Posts expire after 24 hours. An automated background sweeper daemon cleans up expired listings hourly.
+- **Direct Seller Dialing:** One-tap phone dialer button (`tel:` protocol) connects buyers to cattle sellers instantly.
+- **Supabase Storage Integration:** Photos are uploaded and served via public bucket `milkmaatu-images`.
+- **Community Moderation & Reporting:** Users can flag inappropriate or fraudulent cattle listings (`/api/cattle/report`). Administrators can review, dismiss, or action reports to remove listings.
 
 ---
 
-### 6. 🐄 Sante Cattle Marketplace
-- Listings scoped to local market hubs within a 20 km radius.
-- **24-hour auto-expiry** — a background daemon sweeps the DB hourly to delete expired posts.
-- **Direct seller phone contact** — one-tap phone calls to farmers.
-- **Owner post management** — delete your own listings easily.
+### 6. 🛍️ Buy Feeds Shop & Cart Management
+- **Responsive Layout:** 2-column card grid on mobile devices, expanding on tablet and desktop screens.
+- **Dynamic Pricing & Flexible Units:** Products support custom unit descriptions (e.g., `50 kg`, `1 bag`, `25 kg`).
+- **Interactive Product Details:** Tapping any product opens a slide-up bottom sheet with detailed descriptions and full specs.
+- **Floating Cart Bar:** Real-time glassmorphic cart bar showing item counts and total amount.
+- **Cash on Delivery Checkout:** Pre-fills saved address details from the user's profile with instant order creation.
+- **Order Tracking & Cancellation:** Farmers can track order status (`pending`, `processing`, `dispatched`, `delivered`, `cancelled`) and cancel pending orders.
 
 ---
 
-### 7. 🛍️ Buy Feeds Shop
-- **2-column grid** on mobile, 3-column on desktop.
-- **Real Database-Driven:** Feeds are sourced live from PostgreSQL via FastAPI (`/api/feeds`). Only active, non-hidden feeds are shown to users.
-- **Dynamic Units & Pricing:** Displays units (e.g., `50 kg`, `1 bag`) as configured by administrators.
-- **Compact product cards** — image, name, price, unit, and Add button.
-- **Tap a card → bottom sheet detail view** slides up with full description and a large Add to Cart button.
-- **Glassmorphic floating cart bar** — real-time quantity + price totals.
-- Pre-filled checkout using saved profile delivery address with instant cash-on-delivery order placement.
-
----
-
-### 8. 🧠 Nandini AI — Dairy Assistant
+### 7. 🧠 Nandini AI — Smart Dairy Assistant
 Powered by **Google Gemini 2.5 Flash**:
-- Responds in the farmer's active language (Kannada or English).
-- Scoped to dairy husbandry, feed management, vaccination, milk fat, and Karnataka government schemes.
-- Politely declines non-farming topics.
+- **Bilingual Conversations:** Interacts fluently in Kannada or English depending on the active locale.
+- **Dairy Husbandry Domain Focus:** Specializes in cattle nutrition, milk yield optimization, fat/SNF improvement, vaccination schedules, disease prevention, and Karnataka government schemes (KMF, KCC, Pasu Bhagya).
+- **Polite Off-Topic Guardrails:** Redirects non-agricultural queries back to dairy farming.
 
 ---
 
-### 9. 🛡️ Admin Dashboard (`/admin`)
-Administrative functions are protected by Supabase Auth RBAC (Admin or Super Admin required) with 100% database-driven visibility:
-| Section | Capabilities | Access | Data Source |
-|---------|-------------|--------|-------------|
-| Overview | Live database analytics: active feeds, total products, orders, registered users, cattle listings | Admin & Super Admin | PostgreSQL (`/api/admin/stats`) |
-| Feeds | Add, edit, hide/unhide, delete cattle feeds (Name, description, price, unit, stock, image, status) | Admin & Super Admin | PostgreSQL (`/api/admin/feeds`) |
-| Orders | Audit real customer orders, customer contact info, itemized snapshots, order status updates | Admin & Super Admin | PostgreSQL (`/api/admin/orders`) |
-| Users | View registered user profiles (name, email, phone, address, role, joined date), Super Admin role promotions | Admin (view) / Super Admin (roles) | `public.profiles` (`/api/admin/users`) |
-| Cattle | Browse & moderate all Sante cattle listings with real seller contacts, location, expiry status | Admin & Super Admin | PostgreSQL (`/api/admin/cattle`) |
+### 8. 🛡️ Admin Dashboard & Governance (`/admin`)
+Restricted to users with `admin` or `super_admin` roles:
+
+| Section | Capabilities | Data Source |
+|---------|-------------|-------------|
+| **Overview** | Platform metrics: total users, active feeds, total catalog items, pending orders, total orders, active cattle listings, total revenue | Live PostgreSQL query (`/api/admin/stats`) |
+| **Feeds** | Add new feeds, edit price/unit/stock/image, toggle visibility (hide/unhide), delete products | PostgreSQL (`/api/admin/feeds`) |
+| **Orders** | Review all customer orders, inspect itemized line snapshots, view contact info, update order status | PostgreSQL (`/api/admin/orders`) |
+| **Users** | View user directory (name, email, phone, address, role, registration date), promote/demote roles (Super Admin) | `public.profiles` (`/api/admin/users`) |
+| **Cattle** | Audit active and expired Sante listings, moderate content, remove invalid posts | PostgreSQL (`/api/admin/cattle`) |
+| **Reports** | Review flagged cattle listing reports submitted by users; dismiss or remove offending posts | PostgreSQL (`/api/admin/reports`) |
+
+---
+
+### 9. 📜 Compliance & Support Pages
+MilkMaatu includes full static and compliance documentation accessible to all users:
+- **Privacy Policy (`/privacy-policy`):** Details data privacy, Supabase Auth session security, and profile metadata policies.
+- **Terms & Conditions (`/terms`):** Terms of service for Sante marketplace listings, feed purchases, and community guidelines.
+- **Farmer Support (`/support`):** Help center with contact details and platform usage guides.
 
 ---
 
@@ -148,214 +129,211 @@ Administrative functions are protected by Supabase Auth RBAC (Admin or Super Adm
 ### Frontend
 | Technology | Purpose |
 |-----------|---------|
-| **React 18 + Vite** | Fast SPA with hot module replacement |
-| **Tailwind CSS** | Utility-first responsive styling (emerald + gold palette) |
-| **React Router DOM v6** | Client-side routing with RBAC protection |
-| **Capacitor JS** | Native Android bridge |
-| **Lucide React** | Icon library |
-| **i18n (custom)** | Kannada/English translation context |
+| **React 18 + Vite** | Fast SPA framework with hot module reloading |
+| **Tailwind CSS** | Custom responsive styling with emerald/amber color system |
+| **React Router DOM v6** | Client-side routing with role-based route guards |
+| **Capacitor JS** | Native Android container bridge |
+| **Lucide React** | Modern SVG icon suite |
+| **Custom i18n Context** | Multilingual Kannada/English translation provider |
 
 ### Backend
 | Technology | Purpose |
 |-----------|---------|
-| **FastAPI** | Async Python REST API |
-| **SQLAlchemy 2.0 (Async)** | ORM with async session management |
-| **PostgreSQL / Supabase** | Production database & Auth source of truth |
+| **FastAPI** | High-performance asynchronous Python web framework |
+| **SQLAlchemy 2.0 (Async)** | Async ORM engine for PostgreSQL and SQLite |
+| **PostgreSQL / Supabase** | Production database and auth backend |
+| **Supabase Storage** | Public object storage bucket `milkmaatu-images` |
 | **SQLite + aiosqlite** | Zero-config local development database |
-| **Cloudinary SDK** | Image CDN for cattle photos |
-| **Google GenAI SDK** | Gemini 2.5 Flash for Nandini AI |
-| **feedparser / xml.etree** | RSS parsing for Farmers News |
-| **anyio** | Async thread pool for blocking I/O |
+| **Google GenAI SDK** | Gemini 2.5 Flash LLM engine for Nandini AI |
+| **feedparser & xml.etree** | RSS parser for Farmers News worker |
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Directory Structure
 
 ```
 milkfront1/
-├── frontend/                         # React 18 + Vite frontend
+├── frontend/                         # React 18 + Vite Web App
 │   ├── src/
-│   │   ├── components/               # Header, BottomNav, Card, Button, etc.
-│   │   ├── pages/
-│   │   │   ├── HomePage.jsx          # Dashboard with Quick Services + News + Feeds
-│   │   │   ├── BuyFeedsPage.jsx      # Feed shop (2-col grid + bottom sheet detail)
-│   │   │   ├── OrderSummaryPage.jsx  # Checkout & order placement
-│   │   │   ├── OrdersPage.jsx        # My Orders live tracking
-│   │   │   ├── DairyNewsPage.jsx     # Full news listing page
-│   │   │   ├── SanteActionPage.jsx   # Sante hub selector (Buy / Sell)
-│   │   │   ├── SanteBuyPage.jsx      # Browse & filter cattle listings
-│   │   │   ├── SanteSellPage.jsx     # Post cattle ad with direct photo upload
-│   │   │   ├── NandiniAIPage.jsx     # AI chat assistant
-│   │   │   ├── ProfilePage.jsx       # Local farmer details & language toggle
-│   │   │   └── AdminDashboard.jsx    # Admin control panel (Supabase RBAC)
-│   │   ├── i18n/
-│   │   │   ├── kn.json               # Kannada translations
-│   │   │   ├── en.json               # English translations
-│   │   │   ├── LanguageContext.jsx   # React context provider
-│   │   │   └── useTranslation.js     # Hook to access t()
-│   │   ├── services/api/
-│   │   │   ├── apiClient.js          # Fetch wrapper with Supabase Bearer Auth
-│   │   │   ├── authApi.js            # Supabase Auth integration & profile sync
-│   │   │   ├── feedsApi.js           # Feed catalog actions
-│   │   │   ├── cattleApi.js          # Sante marketplace actions
-│   │   │   ├── orderApi.js           # Feed order placements & status
-│   │   │   └── newsApi.js            # Farmers News API calls
-│   │   └── styles/index.css          # Global styles + animations
-│   ├── android/                      # Capacitor Android native project
+│   │   ├── components/               # Header, BottomNav, Card, Button, Input, ToastContainer
+│   │   ├── context/                  # AuthContext (Supabase Auth provider)
+│   │   ├── i18n/                     # kn.json, en.json, LanguageContext, useTranslation
+│   │   ├── lib/                      # Supabase client initializer
+│   │   ├── pages/                    # Web pages
+│   │   │   ├── HomePage.jsx          # Dashboard (Quick Services, News, Feeds)
+│   │   │   ├── BuyFeedsPage.jsx      # Feed catalog & cart bottom sheet
+│   │   │   ├── OrderSummaryPage.jsx  # Checkout & order confirmation
+│   │   │   ├── OrdersPage.jsx        # Customer order tracking & cancellation
+│   │   │   ├── DairyNewsPage.jsx     # Paginated full news section
+│   │   │   ├── SanteActionPage.jsx   # Cattle hub selection
+│   │   │   ├── SanteBuyPage.jsx      # Sante cattle browsing & filtering
+│   │   │   ├── SanteSellPage.jsx     # Post cattle listing with photo upload
+│   │   │   ├── NandiniAIPage.jsx     # Gemini 2.5 Flash chat screen
+│   │   │   ├── ProfilePage.jsx       # Profile settings & language toggle
+│   │   │   ├── AdminDashboard.jsx    # Admin control panel (RBAC protected)
+│   │   │   ├── auth/                 # LoginPage, RegisterPage, ForgotPassword
+│   │   │   └── compliance/           # PrivacyPolicy, TermsAndConditions, Support
+│   │   ├── routes/                   # Route definitions & guards (ProtectedRoute, AdminRoute)
+│   │   ├── services/api/             # API clients (auth, feeds, cattle, orders, news)
+│   │   └── styles/index.css          # Tailwind CSS & global animations
+│   ├── android/                      # Native Android project (Capacitor)
 │   └── .env                          # VITE_API_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 │
-├── backend/                          # FastAPI backend
+├── backend/                          # FastAPI Backend Application
 │   ├── app/
-│   │   ├── main.py                   # App bootstrap + background daemons
-│   │   ├── core/
-│   │   │   ├── config.py             # Settings from environment (DATABASE_URL, SUPABASE_*, etc.)
-│   │   │   ├── database.py           # Async SQLAlchemy engine
-│   │   │   ├── auth.py               # Supabase JWKS cryptographic verification
-│   │   │   └── dependencies.py       # RBAC dependencies (get_current_user, get_current_admin)
-│   │   ├── models/
-│   │   │   ├── user.py               # Profile & user DB table mapping
-│   │   │   ├── feed.py               # Feeds product DB table mapping with unit
-│   │   │   ├── order.py              # Order & items DB table mapping with snapshot product_name
-│   │   │   ├── cattle.py             # Sante cattle listing ORM model
-│   │   │   └── news.py               # NewsArticle ORM model
-│   │   ├── routes/
-│   │   │   ├── feed_routes.py        # Feed catalog (public + admin)
-│   │   │   ├── order_routes.py       # Order placement & tracking (authenticated + admin)
-│   │   │   ├── cattle_routes.py      # Sante marketplace (public)
-│   │   │   ├── profile_routes.py     # Profile details & update
-│   │   │   ├── ai_routes.py          # Nandini AI chat (public)
-│   │   │   ├── news_routes.py        # Farmers News API (public)
-│   │   │   └── admin_routes.py       # Admin stats, users, feeds, cattle & orders
-│   │   └── services/
-│   │       ├── ai/nandini_ai.py      # Gemini integration
-│   │       ├── news/                 # RSS news fetch & filter workers
-│   │       └── cloudinary_service.py # Cloudinary image upload helper
-│   ├── requirements.txt
-│   └── .env                          # Backend secrets
+│   │   ├── main.py                   # App entrypoint, middleware, background workers
+│   │   ├── core/                     # config.py, database.py, auth.py (JWKS), dependencies.py
+│   │   ├── models/                   # User/Profile, Feed, Order/OrderItem, Cattle, CattleReport, News
+│   │   ├── routes/                   # auth, feed, order, cattle, profile, admin, ai, report, news
+│   │   ├── schemas/                  # Pydantic validation schemas
+│   │   ├── services/                 # Nandini AI, news fetcher, storage_service, Super Admin bootstrap
+│   │   └── utils/                    # JSON response formatters
+│   ├── requirements.txt              # Python dependencies
+│   └── .env                          # Backend database & API keys
 │
-├── ANDROID_BUILD.md                  # Android keystore + APK/AAB guide
-└── README.md                         # This file
+├── ANDROID_BUILD.md                  # Android release signing & build instructions
+└── README.md                         # Project documentation
 ```
 
 ---
 
 ## 🚀 Local Development Setup
 
-### Backend
+### 1. Backend Setup (FastAPI)
 
 ```bash
 cd backend
 
-# Create and activate virtual environment
+# Create virtual environment
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 
-# Install dependencies
+# Install requirements
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Run with hot-reload
+# Start FastAPI server
 uvicorn app.main:app --reload --port 8000
 ```
+- API Root: `http://localhost:8000`
+- Interactive Swagger API Docs: `http://localhost:8000/docs`
 
-- API available at **`http://localhost:8000`**
-- Swagger docs at **`http://localhost:8000/docs`**
-
-### Frontend
+### 2. Frontend Setup (React + Vite)
 
 ```bash
 cd frontend
 
+# Install packages
 npm install
 
-# Start dev server
+# Start Vite dev server
 npm run dev
 
-# Expose on local Wi-Fi for phone testing
+# Expose to local network for mobile testing
 npm run dev -- --host
 ```
-
-Open **`http://localhost:5173`** in your browser.
+- Local Web Portal: `http://localhost:5173`
 
 ---
 
-## 🤖 Android Build
+## 🤖 Android Native Build
 
-The React bundle is packaged into a native Android app via **Capacitor**.
+The web app is compiled into a native Android APK / AAB package using **Capacitor**:
 
 ```bash
-# 1. Build frontend
+# 1. Build production React app
 cd frontend && npm run build
 
-# 2. Sync to Android project
+# 2. Sync web build to native Android project
 npx cap sync
 
-# 3. Open in Android Studio
-npx cap open android
+# 3. Compile signed release APK via Gradle (macOS example)
+cd android
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+./gradlew assembleRelease
 ```
 
-See [ANDROID_BUILD.md](ANDROID_BUILD.md) for keystore setup, versioning, and signed APK/AAB release instructions.
+Detailed guide for keystore setup, versioning, and Google Play Store AAB generation is available in **[ANDROID_BUILD.md](ANDROID_BUILD.md)**.
 
 ---
 
-## 🔑 Environment Variables
+## 🔑 Environment Variables Reference
 
-### `backend/.env`
+### Backend Environment File (`backend/.env`)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection URL | `postgresql+asyncpg://postgres:pass@db.xxx.supabase.co:5432/postgres` |
+| `SUPABASE_URL` | Supabase project URL | `https://xxxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | `eyJ...` |
+| `INITIAL_SUPER_ADMIN_EMAIL` | Bootstrap Super Admin email | `admin@milkmaatu.com` |
+| `INITIAL_SUPER_ADMIN_PASSWORD` | Bootstrap Super Admin password | `SuperSecretPass123` |
+| `GEMINI_API_KEY` | Google Gemini API Key | `AIzaSy...` |
 
-| Variable | Example | Purpose |
-|----------|---------|---------|
-| `DATABASE_URL` | `postgresql+asyncpg://postgres:pwd@db.host:5432/postgres` | DB connection string |
-| `SUPABASE_URL` | `https://xxxx.supabase.co` | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` | Supabase service role secret |
-| `INITIAL_SUPER_ADMIN_EMAIL` | `admin@milkmaatu.com` | Initial super admin bootstrap email |
-| `INITIAL_SUPER_ADMIN_PASSWORD`| `securepassword` | Initial super admin bootstrap password |
-| `GEMINI_API_KEY` | `AIza...` | Nandini AI assistant |
-| `CLOUDINARY_CLOUD_NAME` | `mycloud` | Image CDN (optional) |
-| `CLOUDINARY_API_KEY` | `123456` | Image CDN (optional) |
-| `CLOUDINARY_API_SECRET` | `secret` | Image CDN (optional) |
+### Frontend Environment File (`frontend/.env`)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_API_URL` | FastAPI Backend API URL | `http://localhost:8000` or `https://milkfront1.onrender.com` |
+| `VITE_SUPABASE_URL` | Supabase Project URL | `https://xxxx.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase Client Anon Key | `eyJ...` |
 
 ---
 
-## 📋 API Routes Reference
+## 📋 API Endpoints Reference
 
 All endpoints are prefixed with `/api`.
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|:----:|-------------|
-| `GET` | `/` | — | Health check |
-| `GET` | `/api/feeds` | — | Feed product catalog (public, active only) |
-| `POST` | `/api/orders` | 🛡️ Bearer JWT | Place order linked to authenticated profile |
-| `GET` | `/api/orders/my-orders` | 🛡️ Bearer JWT | Order history for authenticated user |
-| `PUT` | `/api/orders/{id}/cancel` | 🛡️ Bearer JWT | Cancel pending order |
-| `GET` | `/api/cattle` | — | Browse active Sante cattle |
-| `POST` | `/api/cattle` | — | Post cattle listing |
-| `DELETE` | `/api/cattle/{id}` | — | Delete cattle listing |
-| `POST` | `/api/cattle/report` | — | Report cattle listing for review |
-| `POST` | `/api/ai/nandini` | — | Nandini AI chat (Kannada / English) |
-| `GET` | `/api/news/latest` | — | Latest 6 farmer news articles |
-| `GET` | `/api/news` | — | Paginated full news list |
-| `GET` | `/api/admin/stats` | 🛡️ Bearer JWT (Admin) | Platform metrics from real database |
-| `GET` | `/api/admin/users` | 🛡️ Bearer JWT (Admin) | Registered users list from `public.profiles` |
-| `PATCH`| `/api/admin/users/{id}/role` | 🛡️ Bearer JWT (Super Admin) | Change user role with last-super-admin protection |
-| `GET` | `/api/admin/feeds` | 🛡️ Bearer JWT (Admin) | View all feeds including hidden |
-| `POST` | `/api/feeds/admin` | 🛡️ Bearer JWT (Admin) | Create new feed |
-| `PATCH`| `/api/feeds/admin/{id}` | 🛡️ Bearer JWT (Admin) | Update / hide / unhide feed |
-| `DELETE`| `/api/feeds/admin/{id}` | 🛡️ Bearer JWT (Admin) | Delete feed |
-| `GET` | `/api/admin/orders` | 🛡️ Bearer JWT (Admin) | Audit all system orders with line items |
-| `PUT` | `/api/admin/orders/{id}/status` | 🛡️ Bearer JWT (Admin) | Update order status |
-| `GET` | `/api/admin/cattle` | 🛡️ Bearer JWT (Admin) | Moderate Sante cattle listings |
-| `DELETE`| `/api/admin/cattle/{id}` | 🛡️ Bearer JWT (Admin) | Remove moderated cattle listing |
+### 🟢 Public Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | API Health Check |
+| `GET` | `/api/feeds` | List active catalog feed products |
+| `GET` | `/api/cattle` | Browse active Sante cattle listings |
+| `GET` | `/api/cattle/{id}` | Get detailed cattle listing metadata |
+| `POST` | `/api/cattle` | Post new cattle listing (optional auth) |
+| `POST` | `/api/ai/nandini` | Ask Nandini AI a question (Kannada / English) |
+| `GET` | `/api/news/latest` | Fetch 6 most recent agricultural news items |
+| `GET` | `/api/news` | Fetch paginated agricultural news articles |
+
+### 🔐 Authenticated User Endpoints (Bearer JWT Required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/auth/me` | Fetch authenticated profile details |
+| `PUT` | `/api/auth/profile` | Update profile details (Name, Phone, Address) |
+| `POST` | `/api/auth/sync-profile` | Sync Supabase Auth metadata to `public.profiles` |
+| `POST` | `/api/orders` | Create feed order linked to user profile |
+| `GET` | `/api/orders/my-orders` | Fetch user order history |
+| `PUT` | `/api/orders/{id}/cancel` | Cancel pending order |
+| `DELETE` | `/api/cattle/{id}` | Delete own cattle listing |
+| `POST` | `/api/cattle/report` | Submit moderation report against a cattle post |
+
+### 🛡️ Admin Endpoints (Admin / Super Admin JWT Required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/admin/stats` | Fetch real-time dashboard business analytics |
+| `GET` | `/api/admin/users` | List all user profiles |
+| `PUT` | `/api/admin/users/{id}/role` | Promote/demote user role (**Super Admin only**) |
+| `GET` | `/api/admin/feeds` | View all catalog feeds (including hidden items) |
+| `POST` | `/api/feeds/admin` | Create new feed product |
+| `PATCH` | `/api/feeds/admin/{id}` | Update feed product or toggle visibility |
+| `DELETE` | `/api/feeds/admin/{id}` | Delete feed product |
+| `GET` | `/api/admin/orders` | Audit all system orders with line items |
+| `PUT` | `/api/admin/orders/{id}/status` | Update order dispatch status |
+| `GET` | `/api/admin/cattle` | Audit all Sante cattle listings |
+| `DELETE` | `/api/admin/cattle/{id}` | Moderate/delete cattle listing |
+| `GET` | `/api/admin/reports` | View all user-submitted content reports |
+| `POST` | `/api/admin/reports/{id}/dismiss` | Dismiss reported item |
+| `POST` | `/api/admin/reports/{id}/action` | Action report by deleting offending cattle post |
 
 ---
 
-## 🗺️ Background Workers
+## 🗺️ Background Daemons
 
-Two long-running async daemons start automatically with the server ([`main.py`](backend/app/main.py)):
+The FastAPI application runs two automated async background daemons initialized on server startup ([`main.py`](backend/app/main.py)):
 
-| Worker | Interval | What it does |
-|--------|---------|-------------|
-| **Sante Sweeper** | Every 1 hour | Deletes cattle listings older than 24 hours |
-| **News Worker** | Every 3 hours | Fetches RSS feeds → keyword filter → stores metadata → cleans up articles >7 days old |
+| Daemon | Interval | Operation |
+|--------|----------|-----------|
+| **Sante Sweeper Daemon** | Every 1 hour | Scans cattle database table and purges listings past their `expires_at` timestamp. |
+| **News Refresh Worker** | Every 6 hours | Ingests RSS feeds, applies agricultural keyword filters, saves metadata, and deletes items older than 7 days. |
 
 ---
 

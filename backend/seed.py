@@ -7,7 +7,7 @@ from app.models.user import User
 from app.models.feed import Feed
 from app.models.cattle import Cattle
 from app.models.order import Order
-from app.services.cloudinary_service import upload_image
+from app.services.storage_service import upload_image
 
 async def seed_database():
     print("[SEED DAEMON] Starting database seed process...")

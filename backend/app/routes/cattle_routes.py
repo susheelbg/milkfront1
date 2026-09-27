@@ -9,10 +9,11 @@ from app.core.dependencies import get_current_user_optional, get_current_user
 from app.models.cattle import Cattle
 from app.models.user import Profile
 from app.schemas.cattle import CattleCreate, CattleResponse
-from app.services.cloudinary_service import upload_image
+from app.services.storage_service import upload_image
 from app.utils.response import json_response
 
 router = APIRouter(tags=["Cattle Sante Marketplace"])
+
 
 @router.get("/cattle")
 async def get_cattle_listings(
@@ -80,7 +81,7 @@ async def create_cattle_listing(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new cattle listing in Sante. Links to authenticated user UUID if logged in."""
-    cdn_url = upload_image(req.image) if req.image else ""
+    cdn_url = upload_image(req.image, folder="cattle", user_id=str(current_user.id) if current_user else None) if req.image else ""
     
     new_cattle = Cattle(
         user_id=current_user.id if current_user else None,

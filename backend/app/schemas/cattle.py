@@ -11,7 +11,7 @@ class CattleCreate(BaseModel):
     villageName: str = Field(..., validation_alias="villageName")
     santeName: str = Field(..., validation_alias="santeName")
     description: str
-    image: Optional[str] = Field(None, description="Base64 or Cloudinary URL")
+    image: Optional[str] = Field(None, description="Base64 or Supabase Storage URL")
 
 class CattleResponse(BaseModel):
     id: int

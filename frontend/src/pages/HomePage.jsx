@@ -328,10 +328,15 @@ export const HomePage = () => {
           {/* Left Side: Portrait Photo */}
           <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-primary-dark/40 overflow-hidden shadow-sm flex-shrink-0 bg-white">
             <img
-              src="https://res.cloudinary.com/drj9c8kpj/image/upload/v1780207723/milkmaatu_sante/gzgmvhcns8fo8uaf25sq.png"
+              src="https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-images/other/susheel.png"
               alt="Susheel"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop";
+              }}
             />
+
           </div>
 
           {/* Right Side: Text Content */}

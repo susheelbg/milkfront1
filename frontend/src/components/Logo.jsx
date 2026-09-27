@@ -4,7 +4,7 @@ import { LOGO_URL_NAV, LOGO_URL, BRAND_FALLBACK } from '../services/branding';
 /**
  * MilkMaatu Logo Component
  * Renders the official brand logo with:
- *  - Cloudinary CDN delivery (optimised per use-case)
+ *  - Supabase Storage delivery (optimised per use-case)
  *  - Graceful text fallback ("Milkಮಾತು") if image fails
  *  - Responsive via className props
  */

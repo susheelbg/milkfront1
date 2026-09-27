@@ -1,6 +1,6 @@
 # 🥛 MilkMaatu - Robust FastAPI Backend Services
 
-This is the complete, modular, and production-ready Python FastAPI backend for the **MilkMaatu** cattle farmer application. It integrates asynchronously with **PostgreSQL (Supabase)**, supports Cloudinary CDN media uploads, manages an automated background worker purging Sante cattle postings older than 24 hours, and runs an RSS news aggregation daemon for dairy farmers.
+This is the complete, modular, and production-ready Python FastAPI backend for the **MilkMaatu** cattle farmer application. It integrates asynchronously with **PostgreSQL (Supabase)**, supports Supabase Storage media uploads (`milkmaatu-images`), manages an automated background worker purging Sante cattle postings older than 24 hours, and runs an RSS news aggregation daemon for dairy farmers.
 
 **Authentication & Security Architecture:**
 MilkMaatu utilizes **Supabase Authentication** with persistent sessions and role-based access control (RBAC):
@@ -18,7 +18,7 @@ FastAPI cryptographically verifies Supabase JWT access tokens via public JWKS ke
 * **Database ORM:** SQLAlchemy 2.0 (Asyncio support)
 * **Database Drivers:** `asyncpg` (PostgreSQL / Supabase), `aiosqlite` (Local fallback SQLite)
 * **Auth & Security:** Supabase Auth + PyJWT with JWKS verification + RBAC
-* **Media Uploads:** Cloudinary SDK
+* **Media Uploads:** Supabase Storage REST API (`milkmaatu-images` bucket)
 * **AI Integration:** Google GenAI SDK (`gemini-2.5-flash`)
 * **News Aggregation:** `feedparser` / `xml.etree`
 
@@ -56,70 +56,53 @@ backend/
 │   │   ├── news_routes.py     # Public Farmers News API
 │   │   └── report_routes.py   # Public Sante cattle listing reporting
 │   ├── services/
-│   │   ├── cloudinary_service.py # Cloudinary base64 media uploads
+│   │   ├── storage_service.py # Supabase Storage base64 media uploads
 │   │   ├── ai/
 │   │   │   └── nandini_ai.py  # Google GenAI model config and dairy farming filters
 │   │   └── news/              # RSS news aggregation & keyword filtering daemons
 │   └── utils/
 │       └── response.py        # Standardized JSON response envelope formatting
 ├── requirements.txt           # Explicit dependencies specification
-├── .env.example               # Template environment configuration file
-└── README.md                  # Developer workflow guide (this file)
+└── .env                       # Environment secrets (DATABASE_URL, SUPABASE_URL, etc.)
 ```
 
 ---
 
-## 🚀 Local Developer Setup
+## ⚡ Quick Start & Setup
 
-### 1. Initialize Python Virtual Environment
-Navigate to the `backend/` folder and create a clean Python virtual environment:
-
+### 1. Install Dependencies
 ```bash
-cd backend
 python3 -m venv venv
-```
-
-Activate the environment:
-* **macOS / Linux:** `source venv/bin/activate`
-* **Windows:** `venv\Scripts\activate`
-
-### 2. Install Dependencies
-```bash
-pip install --upgrade pip
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Setup Local Environmental Variables
-Copy the environmental template sheet to create a local `.env`:
-```bash
-cp .env.example .env
+### 2. Configure Environment
+Create a `.env` file in the `backend/` root directory:
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:password@host:6543/postgres
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_JWT_SECRET=your-supabase-jwt-secret
+INITIAL_SUPER_ADMIN_EMAIL=admin@milkmaatu.com
+INITIAL_SUPER_ADMIN_PASSWORD=secure-password
+GEMINI_API_KEY=your-gemini-key
 ```
-*By default, the `.env` settings fall back to using a local async SQLite database (`sqlite+aiosqlite:///./milkmaatu.db`). This allows you to run and test the backend **instantly** without configuring a live Supabase connection first!*
+
+### 3. Run Development Server
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+- API Docs (Swagger): `http://localhost:8000/docs`
 
 ---
 
-## 🛢️ Connecting Supabase PostgreSQL
-To connect the backend to your live production Supabase database:
-1. Copy your **Transactional Connection string** from the Supabase Dashboard under Settings > Database.
-2. Ensure you append `+asyncpg` to the driver prefix:
-   ```env
-   DATABASE_URL=postgresql+asyncpg://postgres:[your-password]@db.[your-supabase-id].supabase.co:5432/postgres
-   ```
-3. Update the `DATABASE_URL` field in your active `backend/.env` file. The server will automatically switch from local SQLite to high-performance connection pooling.
-
----
-
-## 📸 Configuring Cloudinary Image Uploads
-For Sante direct mobile-camera photo submissions:
-1. Create a free account at [Cloudinary](https://cloudinary.com).
-2. Retrieve your **Cloud Name**, **API Key**, and **API Secret** from the console panel.
-3. Update the following fields in `backend/.env`:
-   ```env
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   ```
-*If these parameters are left blank, the `cloudinary_service` operates in robust mock mode, automatically returning a default cow photo to prevent API failures during local testing.*
+## 📸 Supabase Storage Integration
+Image uploads (Cattle photos, Feed product catalog images, Profile pictures) are stored in the public Supabase Storage bucket **`milkmaatu-images`**:
+- `cattle/{user_id}/{unique_filename}`
+- `feeds/{unique_filename}`
+- `profiles/{user_id}/{unique_filename}`
+- `other/{unique_filename}`
 
 ---
 
@@ -131,24 +114,10 @@ To configure it:
    ```env
    GEMINI_API_KEY=your_gemini_api_key
    ```
-* Nandini AI acts as a dedicated dairy assistant for Karnataka farmers (Kannada & English).
 
 ---
 
 ## 🛡️ Admin Security & Role-Based Access Control (RBAC)
 Administrative endpoints (`/api/admin/*`, `/api/feeds/admin`, etc.) are secured via **Supabase Auth Bearer Tokens** and **JWKS Key Verification**:
 - **Role Verification**: FastAPI dependencies (`get_current_admin` / `get_current_super_admin`) validate Supabase JWT tokens and verify `public.profiles` for `admin` or `super_admin` roles.
-- **Single Security Boundary**: FastAPI enforces authorization at the server boundary. Client-side roles are never trusted.
-- **Super Admin Protection**: Last remaining Super Admin cannot be demoted or removed.
-
----
-
-## 🏁 Starting the FastAPI Server
-To launch the API server locally:
-
-```bash
-uvicorn app.main:app --reload --port 8000
-```
-
-* **Interactive Swagger Documentation:** Open **[http://localhost:8000/docs](http://localhost:8000/docs)** to test the API endpoints directly from your browser!
-* **Status Endpoint:** Open **[http://localhost:8000/](http://localhost:8000/)** to verify the server is live and running.
+- **Idempotent Super Admin Bootstrap**: Automatically verifies or creates the Super Admin account on server startup.

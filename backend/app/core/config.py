@@ -32,12 +32,8 @@ class Settings(BaseSettings):
     INITIAL_SUPER_ADMIN_EMAIL: str = os.getenv("INITIAL_SUPER_ADMIN_EMAIL") or DEFAULT_SUPER_ADMIN_EMAIL
     INITIAL_SUPER_ADMIN_PASSWORD: str = os.getenv("INITIAL_SUPER_ADMIN_PASSWORD") or DEFAULT_SUPER_ADMIN_PASSWORD
 
-    # Cloudinary Config
-    CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME") or "drj9c8kpj"
-    CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY") or "634265763474295"
-    CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET") or "J96eghvyo40pqfTBMWQmkuFESis"
-
     # Gemini API settings
+
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""
 
     # CORS Settings

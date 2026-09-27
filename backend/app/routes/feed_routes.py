@@ -7,7 +7,7 @@ from app.core.dependencies import get_current_admin
 from app.models.feed import Feed
 from app.schemas.feed import FeedCreate, FeedUpdate, FeedResponse
 from app.utils.response import json_response
-from app.services.cloudinary_service import upload_image
+from app.services.storage_service import upload_image
 
 router = APIRouter(tags=["Feeds Catalog"])
 
@@ -89,7 +89,7 @@ async def create_feed(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new feed product item (Admin only)."""
-    cdn_url = upload_image(req.image)
+    cdn_url = upload_image(req.image, folder="feeds")
     
     # Create the SQLAlchemy model
     new_feed = Feed(
@@ -146,7 +146,7 @@ async def update_feed(
     if "unit" in update_data:
         feed.unit = update_data["unit"]
     if "image" in update_data:
-        feed.image_url = upload_image(update_data["image"])
+        feed.image_url = upload_image(update_data["image"], folder="feeds")
     if "brand" in update_data:
         feed.brand = update_data["brand"]
     if "stock_quantity" in update_data:
