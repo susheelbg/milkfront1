@@ -30,11 +30,10 @@ export const Header = ({ showBack = false, onBack = null }) => {
             role="button"
             aria-label="Go to home"
           >
-            <Logo
-              imgClassName="h-9 w-auto"
-              fallbackClassName="text-xl font-black"
-              alt="MilkMaatu"
-            />
+            <Logo imgClassName="h-8 w-auto object-contain" />
+            <span className="text-2xl font-black text-black tracking-tight">
+              Milk<span className="text-black">ಮಾತು</span>
+            </span>
           </div>
         </div>
 

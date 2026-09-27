@@ -40,13 +40,10 @@ export const ForgotPassword = () => {
 
       <div className="w-full max-w-md animate-fade-in relative z-10">
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-600 p-0.5 shadow-lg shadow-emerald-950/10 mb-2">
-            <div className="w-full h-full bg-[#0A2E1F] rounded-2xl flex items-center justify-center">
-              <span className="text-xl font-black text-amber-400">M</span>
-            </div>
-          </div>
-          <h1 className="text-2xl font-black text-text-dark tracking-tight">MilkMaatu</h1>
+        <div className="text-center mb-6 flex flex-col items-center">
+          <h1 className="text-3xl font-black text-black tracking-tight">
+            Milk<span className="text-black">ಮಾತು</span>
+          </h1>
         </div>
 
         {/* Card */}

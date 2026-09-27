@@ -60,11 +60,8 @@ export const LoginPage = () => {
         {/* Brand Header */}
         <div className="text-center mb-6 flex flex-col items-center">
           <div className="mb-2">
-            <Logo size="full" imgClassName="h-16 w-auto object-contain mx-auto" />
+            <Logo size="full" imgClassName="h-20 w-auto object-contain mx-auto" />
           </div>
-          <h1 className="text-3xl font-black text-text-dark tracking-tight">
-            Milk<span className="text-emerald-800">ಮಾತು</span>
-          </h1>
           <p className="text-xs font-bold text-emerald-800 mt-1">
             {t('login.tagline') || t('common.tagline') || 'For every dairy farmer, every day!'}
           </p>
