@@ -27,6 +27,7 @@ export const LanguageProvider = ({ children }) => {
 
   // Helper function to resolve dot-notation translation keys
   const t = (keyPath) => {
+    if (!keyPath) return undefined;
     const keys = keyPath.split('.');
     let current = translations[language];
     
@@ -40,7 +41,7 @@ export const LanguageProvider = ({ children }) => {
           if (enCurrent && enCurrent[enKey] !== undefined) {
             enCurrent = enCurrent[enKey];
           } else {
-            return keyPath;
+            return undefined;
           }
         }
         return enCurrent;

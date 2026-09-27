@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
+import { Logo } from '../components/Logo';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export const LoginPage = () => {
@@ -57,15 +58,15 @@ export const LoginPage = () => {
 
       <div className="w-full max-w-md animate-fade-in relative z-10">
         {/* Brand Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-600 p-0.5 shadow-lg shadow-emerald-950/10 mb-3">
-            <div className="w-full h-full bg-[#0A2E1F] rounded-2xl flex items-center justify-center">
-              <span className="text-2xl font-black text-amber-400">M</span>
-            </div>
+        <div className="text-center mb-6 flex flex-col items-center">
+          <div className="mb-2">
+            <Logo size="full" imgClassName="h-16 w-auto object-contain mx-auto" />
           </div>
-          <h1 className="text-2xl font-black text-text-dark tracking-tight">MilkMaatu</h1>
+          <h1 className="text-3xl font-black text-text-dark tracking-tight">
+            Milk<span className="text-emerald-800">ಮಾತು</span>
+          </h1>
           <p className="text-xs font-bold text-emerald-800 mt-1">
-            {t('login.tagline') || 'Dairy Marketplace & Cattle Sante'}
+            {t('login.tagline') || t('common.tagline') || 'For every dairy farmer, every day!'}
           </p>
         </div>
 
