@@ -79,7 +79,7 @@ Farmer taps news item ──────────→ Opens publisher website 
 - **Local Market Hubs:** Listings grouped by local Sante hubs (e.g., Mandya, Tumkur, Hassan, Shivamogga).
 - **24-Hour Listing Expiry:** Posts expire after 24 hours. An automated background sweeper daemon cleans up expired listings hourly.
 - **Direct Seller Dialing:** One-tap phone dialer button (`tel:` protocol) connects buyers to cattle sellers instantly.
-- **Supabase Storage Integration:** Photos are uploaded and served via public bucket `milkmaatu-images`.
+- **Supabase Storage Integration:** Photos are uploaded and served via public bucket `milkmaatu-image`.
 - **Community Moderation & Reporting:** Users can flag inappropriate or fraudulent cattle listings (`/api/cattle/report`). Administrators can review, dismiss, or action reports to remove listings.
 
 ---
@@ -142,7 +142,7 @@ MilkMaatu includes full static and compliance documentation accessible to all us
 | **FastAPI** | High-performance asynchronous Python web framework |
 | **SQLAlchemy 2.0 (Async)** | Async ORM engine for PostgreSQL and SQLite |
 | **PostgreSQL / Supabase** | Production database and auth backend |
-| **Supabase Storage** | Public object storage bucket `milkmaatu-images` |
+| **Supabase Storage** | Public object storage bucket `milkmaatu-image` |
 | **SQLite + aiosqlite** | Zero-config local development database |
 | **Google GenAI SDK** | Gemini 2.5 Flash LLM engine for Nandini AI |
 | **feedparser & xml.etree** | RSS parser for Farmers News worker |

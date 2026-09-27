@@ -1,6 +1,6 @@
 # 🥛 MilkMaatu - Robust FastAPI Backend Services
 
-This is the complete, modular, and production-ready Python FastAPI backend for the **MilkMaatu** cattle farmer application. It integrates asynchronously with **PostgreSQL (Supabase)**, supports Supabase Storage media uploads (`milkmaatu-images`), manages an automated background worker purging Sante cattle postings older than 24 hours, and runs an RSS news aggregation daemon for dairy farmers.
+This is the complete, modular, and production-ready Python FastAPI backend for the **MilkMaatu** cattle farmer application. It integrates asynchronously with **PostgreSQL (Supabase)**, supports Supabase Storage media uploads (`milkmaatu-image`), manages an automated background worker purging Sante cattle postings older than 24 hours, and runs an RSS news aggregation daemon for dairy farmers.
 
 **Authentication & Security Architecture:**
 MilkMaatu utilizes **Supabase Authentication** with persistent sessions and role-based access control (RBAC):
@@ -18,7 +18,7 @@ FastAPI cryptographically verifies Supabase JWT access tokens via public JWKS ke
 * **Database ORM:** SQLAlchemy 2.0 (Asyncio support)
 * **Database Drivers:** `asyncpg` (PostgreSQL / Supabase), `aiosqlite` (Local fallback SQLite)
 * **Auth & Security:** Supabase Auth + PyJWT with JWKS verification + RBAC
-* **Media Uploads:** Supabase Storage REST API (`milkmaatu-images` bucket)
+* **Media Uploads:** Supabase Storage REST API (`milkmaatu-image` bucket)
 * **AI Integration:** Google GenAI SDK (`gemini-2.5-flash`)
 * **News Aggregation:** `feedparser` / `xml.etree`
 
@@ -98,7 +98,7 @@ uvicorn app.main:app --reload --port 8000
 ---
 
 ## 📸 Supabase Storage Integration
-Image uploads (Cattle photos, Feed product catalog images, Profile pictures) are stored in the public Supabase Storage bucket **`milkmaatu-images`**:
+Image uploads (Cattle photos, Feed product catalog images, Profile pictures) are stored in the public Supabase Storage bucket **`milkmaatu-image`**:
 - `cattle/{user_id}/{unique_filename}`
 - `feeds/{unique_filename}`
 - `profiles/{user_id}/{unique_filename}`

@@ -10,7 +10,7 @@ DEFAULT_CATTLE_IMAGE = "https://images.unsplash.com/photo-1570042225831-d98fa757
 
 def upload_image(image_data: str, folder: str = "other", user_id: Optional[str] = None) -> str:
     """
-    Upload base64 image data or URI to Supabase Storage bucket 'milkmaatu-images'.
+    Upload base64 image data or URI to Supabase Storage bucket 'milkmaatu-image'.
     Organizes files into:
       - cattle/{user_id}/{unique_filename}
       - feeds/{unique_filename}
@@ -95,7 +95,7 @@ def upload_image(image_data: str, folder: str = "other", user_id: Optional[str] 
 
     # Supabase Storage Upload API
     supabase_url = settings.SUPABASE_URL.rstrip("/")
-    bucket_name = "milkmaatu-images"
+    bucket_name = "milkmaatu-image"
     upload_endpoint = f"{supabase_url}/storage/v1/object/{bucket_name}/{path}"
 
     headers = {
@@ -121,13 +121,13 @@ def upload_image(image_data: str, folder: str = "other", user_id: Optional[str] 
 
 def delete_image(image_url: str) -> bool:
     """
-    Deletes an image from Supabase Storage if it belongs to 'milkmaatu-images'.
+    Deletes an image from Supabase Storage if it belongs to 'milkmaatu-image'.
     """
-    if not image_url or "milkmaatu-images" not in image_url:
+    if not image_url or "milkmaatu-image" not in image_url:
         return False
 
     supabase_url = settings.SUPABASE_URL.rstrip("/")
-    bucket_name = "milkmaatu-images"
+    bucket_name = "milkmaatu-image"
     prefix = f"{supabase_url}/storage/v1/object/public/{bucket_name}/"
 
     if not image_url.startswith(prefix):
