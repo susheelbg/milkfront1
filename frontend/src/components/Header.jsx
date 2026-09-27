@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Logo } from './Logo';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const Header = ({ showBack = false, onBack = null }) => {
@@ -30,7 +29,6 @@ export const Header = ({ showBack = false, onBack = null }) => {
             role="button"
             aria-label="Go to home"
           >
-            <Logo imgClassName="h-8 w-auto object-contain" />
             <span className="text-2xl font-black text-black tracking-tight">
               Milk<span className="text-black">ಮಾತು</span>
             </span>
