@@ -11,6 +11,8 @@ from app.models.notification import Notification
 
 logger = logging.getLogger(__name__)
 
+from sqlalchemy import text
+
 async def create_notifications_for_all_users(
     db: AsyncSession,
     title: str,
@@ -21,19 +23,39 @@ async def create_notifications_for_all_users(
 ) -> int:
     """
     Creates an in-app notification record for all registered users (excluding exclude_user_id if provided).
-    Uses bulk insertion for efficiency and is safely wrapped so notification failures never crash business actions.
+    Ensures users registered in Supabase Auth (auth.users) receive notifications even if their profile row
+    was not yet fetched by backend endpoints.
     """
     try:
-        # Fetch all registered profile IDs
-        query = select(Profile.id)
-        if exclude_user_id:
-            query = query.where(Profile.id != exclude_user_id)
-        
-        result = await db.execute(query)
-        profile_ids = result.scalars().all()
+        # 1. Fetch user IDs from public.profiles
+        res_profiles = await db.execute(select(Profile.id))
+        target_user_ids = set(res_profiles.scalars().all())
 
-        if not profile_ids:
-            logger.info("[NOTIFICATION SERVICE] No registered users to notify.")
+        # 2. Also query auth.users (Supabase Auth table) to include any newly registered users
+        try:
+            auth_res = await db.execute(text("SELECT id, email FROM auth.users"))
+            auth_rows = auth_res.fetchall()
+            for row in auth_rows:
+                u_id = row[0]
+                u_email = row[1]
+                if isinstance(u_id, str):
+                    u_id = uuid.UUID(u_id)
+                
+                # Auto-ensure profile row exists for any user in auth.users
+                if u_id not in target_user_ids:
+                    new_profile = Profile(id=u_id, email=u_email, role="user")
+                    db.add(new_profile)
+                    target_user_ids.add(u_id)
+            await db.commit()
+        except Exception as auth_err:
+            logger.debug(f"[NOTIFICATION SERVICE] auth.users direct query fallback: {auth_err}")
+
+        # Exclude listing owner/creator if requested
+        if exclude_user_id:
+            target_user_ids.discard(exclude_user_id)
+
+        if not target_user_ids:
+            logger.info("[NOTIFICATION SERVICE] No target registered users to notify.")
             return 0
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -49,7 +71,7 @@ async def create_notifications_for_all_users(
                 created_at=now,
                 read_at=None
             )
-            for pid in profile_ids
+            for pid in target_user_ids
         ]
 
         db.add_all(notifications_to_create)
