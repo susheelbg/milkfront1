@@ -122,33 +122,44 @@ async def get_my_orders(
 ):
     """
     Retrieve purchase history for authenticated user or by phone/order IDs.
+    Ensures strict privacy: authenticated users only see their own orders.
     """
-    conditions = []
-    
+    id_list = [i.strip() for i in ids.split(",") if i.strip()] if ids else []
+    clean_phone = phone.strip() if phone and phone.strip() else None
+
     if current_user:
-        conditions.append(Order.user_id == current_user.id)
-        if current_user.phone:
-            conditions.append(Order.phone_number == current_user.phone)
-            
-    if ids:
-        id_list = [i.strip() for i in ids.split(",") if i.strip()]
+        # Authenticated user: fetch orders assigned to current_user.id.
+        # Also allow claiming guest orders (user_id is None) if explicitly present in device's id_list.
         if id_list:
-            conditions.append(Order.id.in_(id_list))
-            
-    if phone and phone.strip():
-        clean_phone = phone.strip()
-        conditions.append(Order.phone_number == clean_phone)
-        
-    if not conditions:
-        return json_response(
-            success=True,
-            message="No orders requested",
-            data=[]
+            cond = or_(
+                Order.user_id == current_user.id,
+                and_(Order.user_id.is_(None), Order.id.in_(id_list))
+            )
+        else:
+            cond = (Order.user_id == current_user.id)
+    else:
+        # Unauthenticated guest user: ONLY query orders where user_id IS NULL.
+        guest_conditions = []
+        if id_list:
+            guest_conditions.append(Order.id.in_(id_list))
+        if clean_phone:
+            guest_conditions.append(Order.phone_number == clean_phone)
+
+        if not guest_conditions:
+            return json_response(
+                success=True,
+                message="No orders requested",
+                data=[]
+            )
+
+        cond = and_(
+            Order.user_id.is_(None),
+            or_(*guest_conditions) if len(guest_conditions) > 1 else guest_conditions[0]
         )
-        
+
     stmt = (
         select(Order)
-        .where(or_(*conditions) if len(conditions) > 1 else conditions[0])
+        .where(cond)
         .options(
             selectinload(Order.profile),
             selectinload(Order.items).selectinload(OrderItem.feed)
@@ -157,7 +168,17 @@ async def get_my_orders(
     )
     result = await db.execute(stmt)
     orders = result.scalars().all()
-    
+
+    # Self-heal: link unclaimed guest orders in id_list to current_user if authenticated
+    if current_user and orders:
+        claimed_any = False
+        for o in orders:
+            if o.user_id is None:
+                o.user_id = current_user.id
+                claimed_any = True
+        if claimed_any:
+            await db.commit()
+
     payload = [OrderResponse.model_validate(o).model_dump() for o in orders]
     return json_response(
         success=True,
