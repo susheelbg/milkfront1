@@ -113,6 +113,12 @@ async def place_order(
         data=payload
     )
 
+def extract_phone_digits(phone_str: Optional[str]) -> Optional[str]:
+    if not phone_str:
+        return None
+    digits = re.sub(r"\D", "", phone_str)
+    return digits[-10:] if len(digits) >= 10 else (digits if len(digits) >= 6 else None)
+
 @router.get("/orders/my-orders")
 async def get_my_orders(
     phone: Optional[str] = Query(None),
@@ -131,8 +137,9 @@ async def get_my_orders(
     if current_user:
         # Authenticated user:
         # 1. All orders already assigned to current_user.id
-        # 2. Unclaimed guest orders (user_id is None) matching user's phone or saved order IDs
+        # 2. Unclaimed guest orders (user_id is None) matching user's phone, name, or saved order IDs
         user_phone = (current_user.phone or "").strip()
+        user_name = (current_user.name or "").strip()
         phones_to_check = [p for p in set([user_phone, clean_req_phone]) if p]
 
         unclaimed_conditions = []
@@ -140,6 +147,11 @@ async def get_my_orders(
             unclaimed_conditions.append(Order.id.in_(id_list))
         for p in phones_to_check:
             unclaimed_conditions.append(Order.phone_number == p)
+            digits = extract_phone_digits(p)
+            if digits:
+                unclaimed_conditions.append(Order.phone_number.like(f"%{digits}"))
+        if user_name and len(user_name) >= 3:
+            unclaimed_conditions.append(func.lower(Order.customer_name) == user_name.lower())
 
         if unclaimed_conditions:
             cond = or_(
@@ -158,6 +170,9 @@ async def get_my_orders(
             guest_conditions.append(Order.id.in_(id_list))
         if clean_req_phone:
             guest_conditions.append(Order.phone_number == clean_req_phone)
+            digits = extract_phone_digits(clean_req_phone)
+            if digits:
+                guest_conditions.append(Order.phone_number.like(f"%{digits}"))
 
         if not guest_conditions:
             return json_response(

@@ -253,7 +253,16 @@ async def update_order_status_admin(
             detail=f"Order with ID {order_id} not found."
         )
         
-    order.order_status = req.status
+    old_status = order.order_status
+    new_status = req.status
+
+    # Restore feed stock if admin cancels an active order
+    if new_status == "cancelled" and old_status != "cancelled":
+        for item in order.items:
+            if item.feed:
+                item.feed.stock_quantity += item.quantity
+
+    order.order_status = new_status
     await db.commit()
     
     reload_stmt = (

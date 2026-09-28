@@ -137,13 +137,17 @@ export const OrdersPage = () => {
                       </p>
                     </div>
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm border ${
-                      order.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                        : order.status === 'dispatched'
+                      order.status === 'confirmed'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        : order.status === 'processing'
+                        ? 'bg-purple-100 text-purple-800 border-purple-200'
+                        : order.status === 'dispatched' || order.status === 'shipped'
                         ? 'bg-blue-100 text-blue-800 border-blue-200'
                         : order.status === 'delivered'
-                        ? 'bg-green-100 text-green-800 border-green-200'
-                        : 'bg-red-100 text-red-800 border-red-200'
+                        ? 'bg-teal-100 text-teal-800 border-teal-200'
+                        : order.status === 'cancelled'
+                        ? 'bg-red-100 text-red-800 border-red-200'
+                        : 'bg-amber-100 text-amber-800 border-amber-200'
                     }`}>
                       {order.status || 'pending'}
                     </span>
