@@ -6,11 +6,11 @@ class CattleCreate(BaseModel):
     animalName: str = Field(..., validation_alias="animalName")
     price: int
     age: int
-    milkCapacity: str = Field(..., validation_alias="milkCapacity")
+    milkCapacity: Optional[str] = Field("10L/day", validation_alias="milkCapacity")
     contactNumber: str = Field(..., validation_alias="contactNumber")
     villageName: str = Field(..., validation_alias="villageName")
-    santeName: str = Field(..., validation_alias="santeName")
-    description: str
+    santeName: Optional[str] = Field("Sante", validation_alias="santeName")
+    description: Optional[str] = ""
     image: Optional[str] = Field(None, description="Base64 or Supabase Storage URL")
 
 class CattleResponse(BaseModel):

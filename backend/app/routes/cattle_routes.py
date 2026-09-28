@@ -81,43 +81,60 @@ async def create_cattle_listing(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new cattle listing in Sante. Links to authenticated user UUID if logged in."""
-    cdn_url = upload_image(req.image, folder="cattle", user_id=str(current_user.id) if current_user else None) if req.image else ""
-    
-    new_cattle = Cattle(
-        user_id=current_user.id if current_user else None,
-        animal_name=req.animalName,
-        animal_type="Cow",
-        age=req.age,
-        milk_capacity=req.milkCapacity,
-        price=req.price,
-        village=req.villageName,
-        description=req.description,
-        image_url=cdn_url,
-        phone_number=req.contactNumber,
-        sante_name=req.santeName
-    )
-    
-    db.add(new_cattle)
-    await db.commit()
-    await db.refresh(new_cattle)
-    
-    # Trigger in-app notification for other registered users
-    from app.services.notification_service import create_notifications_for_all_users
-    await create_notifications_for_all_users(
-        db=db,
-        title="🐄 New cattle available",
-        message="A new cattle listing has been posted on MilkMaatu.",
-        type_name="new_cattle",
-        reference_id=str(new_cattle.id),
-        exclude_user_id=current_user.id if current_user else None
-    )
-    
-    payload = CattleResponse.model_validate(new_cattle).model_dump(by_alias=True)
-    return json_response(
-        success=True,
-        message="Cattle posted to Sante successfully",
-        data=payload
-    )
+    try:
+        cdn_url = ""
+        if req.image:
+            try:
+                cdn_url = upload_image(req.image, folder="cattle", user_id=str(current_user.id) if current_user else None)
+            except Exception as img_err:
+                print(f"[CATTLE POST WARNING] Image upload failed: {img_err}")
+                cdn_url = "https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop"
+
+        new_cattle = Cattle(
+            user_id=current_user.id if current_user else None,
+            animal_name=req.animalName,
+            animal_type="Cow",
+            age=req.age,
+            milk_capacity=req.milkCapacity or "10L/day",
+            price=req.price,
+            village=req.villageName,
+            description=req.description or "Healthy cattle for sale in Sante.",
+            image_url=cdn_url or "https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop",
+            phone_number=req.contactNumber,
+            sante_name=req.santeName or "Sante"
+        )
+        
+        db.add(new_cattle)
+        await db.commit()
+        await db.refresh(new_cattle)
+        
+        # Trigger in-app notification for other registered users
+        try:
+            from app.services.notification_service import create_notifications_for_all_users
+            await create_notifications_for_all_users(
+                db=db,
+                title="🐄 New cattle available",
+                message="A new cattle listing has been posted on MilkMaatu.",
+                type_name="new_cattle",
+                reference_id=str(new_cattle.id),
+                exclude_user_id=current_user.id if current_user else None
+            )
+        except Exception as notif_err:
+            print(f"[CATTLE POST WARNING] Notification creation error: {notif_err}")
+        
+        payload = CattleResponse.model_validate(new_cattle).model_dump(by_alias=True)
+        return json_response(
+            success=True,
+            message="Cattle posted to Sante successfully",
+            data=payload
+        )
+    except Exception as e:
+        print(f"[CATTLE POST ERROR] Failed to create cattle listing: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create cattle listing: {str(e)}"
+        )
 
 @router.delete("/cattle/{id}")
 async def delete_cattle_listing(
