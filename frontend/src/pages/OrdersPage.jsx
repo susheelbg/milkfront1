@@ -117,9 +117,15 @@ export const OrdersPage = () => {
                         Placed on {(() => {
                           const rawDate = order.created_at || order.createdAt || order.date || order.placed_at;
                           if (!rawDate) return 'Recently';
-                          const d = new Date(rawDate);
+                          // Backend stores UTC without timezone suffix — append 'Z' so JS knows it's UTC
+                          const dateStr = String(rawDate);
+                          const utcDate = dateStr.endsWith('Z') || dateStr.includes('+') || dateStr.includes('-', 10)
+                            ? dateStr
+                            : dateStr + 'Z';
+                          const d = new Date(utcDate);
                           if (isNaN(d.getTime())) return 'Recently';
-                          return d.toLocaleDateString('en-IN', {
+                          return d.toLocaleString('en-IN', {
+                            timeZone: 'Asia/Kolkata',
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
