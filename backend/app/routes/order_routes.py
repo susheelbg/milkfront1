@@ -1,10 +1,12 @@
 import time
+import re
+import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy import or_
+from sqlalchemy import or_, and_, func
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_optional, get_current_admin
@@ -152,20 +154,37 @@ def extract_phone_digits(phone_str: Optional[str]) -> Optional[str]:
 @router.get("/orders/my-orders")
 async def get_my_orders(
     phone: Optional[str] = Query(None),
+    email: Optional[str] = Query(None),
+    userId: Optional[str] = Query(None),
     ids: Optional[str] = Query(None),
     current_user: Optional[Profile] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Retrieve purchase history for authenticated user or by phone/order IDs.
+    Retrieve purchase history for authenticated user or by phone/email/userId/order IDs.
     Ensures strict privacy: authenticated users see all their past orders,
     while orders assigned to other users are strictly protected.
     """
     id_list = [i.strip() for i in ids.split(",") if i.strip()] if ids else []
     clean_req_phone = phone.strip() if phone and phone.strip() else None
+    clean_req_email = email.strip().lower() if email and email.strip() else None
+    clean_req_user_id = userId.strip() if userId and userId.strip() else None
 
-    # Resolve target user profile (either from JWT auth or matching registered profile by phone)
+    # Multi-tier profile resolution: JWT -> userId -> email -> phone
     target_profile = current_user
+
+    if not target_profile and clean_req_user_id:
+        try:
+            target_uuid = uuid.UUID(clean_req_user_id)
+            prof_res = await db.execute(select(Profile).where(Profile.id == target_uuid))
+            target_profile = prof_res.scalars().first()
+        except ValueError:
+            pass
+
+    if not target_profile and clean_req_email:
+        prof_res = await db.execute(select(Profile).where(func.lower(Profile.email) == clean_req_email))
+        target_profile = prof_res.scalars().first()
+
     if not target_profile and clean_req_phone:
         req_digits = extract_phone_digits(clean_req_phone)
         if req_digits:

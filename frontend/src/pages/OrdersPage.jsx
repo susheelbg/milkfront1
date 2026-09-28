@@ -21,6 +21,8 @@ export const OrdersPage = () => {
         const savedOrderIds = JSON.parse(localStorage.getItem('my_orders') || '[]');
         
         const data = await orderApi.getMyOrders({
+          userId: user?.id || '',
+          email: user?.email || '',
           phone: user?.phone || '',
           ids: savedOrderIds,
         });
@@ -33,7 +35,7 @@ export const OrdersPage = () => {
     };
 
     fetchOrders();
-  }, [user]);
+  }, [user?.id, user?.email, user?.phone]);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm(t('common.confirmCancelOrder') || 'Are you sure you want to cancel this order?')) {

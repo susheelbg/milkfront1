@@ -13,10 +13,12 @@ export const orderApi = {
     return res && res.success ? res.data : res;
   },
 
-  // Retrieve purchase history for farmer by phone or order IDs without login
+  // Retrieve purchase history for farmer by phone, email, userId, or order IDs
   getMyOrders: async (params = {}) => {
     const query = new URLSearchParams();
     if (params.phone) query.append('phone', params.phone);
+    if (params.email) query.append('email', params.email);
+    if (params.userId) query.append('userId', params.userId);
     if (params.ids && params.ids.length > 0) {
       query.append('ids', Array.isArray(params.ids) ? params.ids.join(',') : params.ids);
     }
