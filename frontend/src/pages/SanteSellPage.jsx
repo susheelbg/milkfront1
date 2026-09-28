@@ -117,20 +117,21 @@ export const SanteSellPage = () => {
     try {
       const res = await cattleApi.createCattleListing({
         animalName: formData.animalName,
-        price: parseInt(formData.price),
-        age: parseInt(formData.age),
-        milkCapacity: formData.milkCapacity,
+        price: parseInt(formData.price) || 0,
+        age: parseInt(formData.age) || 1,
+        milkCapacity: formData.milkCapacity || '10L/day',
         contactNumber: formData.contactNumber,
         villageName: formData.villageName,
-        santeName: santeName,
-        description: formData.description,
+        santeName: santeName || 'Sante',
+        description: formData.description || 'Healthy cattle for sale in Sante.',
         image: formData.imagePreview || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop',
       });
 
-      if (res?.id) {
+      const cattleId = res?.id || res?.data?.id;
+      if (cattleId) {
         try {
           const myCattle = JSON.parse(localStorage.getItem('my_cattle_listings') || '[]');
-          localStorage.setItem('my_cattle_listings', JSON.stringify([res.id, ...myCattle]));
+          localStorage.setItem('my_cattle_listings', JSON.stringify([cattleId, ...myCattle]));
         } catch {}
       }
 
@@ -141,13 +142,14 @@ export const SanteSellPage = () => {
         }).catch(() => {});
       }
 
-      toastService.success(t('sante.deleteSuccess') ? t('common.success') : 'Cattle posted successfully!');
+      toastService.success('Cattle posted to Sante successfully!');
       
       setTimeout(() => {
         navigate('/sante-buy', { state: { santeName } });
-      }, 1500);
+      }, 1200);
     } catch (error) {
-      toastService.error('Failed to post cattle. Please try again.');
+      console.error('Cattle post error:', error);
+      toastService.error(error?.message || 'Failed to post cattle. Please try again.');
     } finally {
       setLoading(false);
     }

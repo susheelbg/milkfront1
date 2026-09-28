@@ -85,7 +85,8 @@ async def create_cattle_listing(
         cdn_url = ""
         if req.image:
             try:
-                cdn_url = upload_image(req.image, folder="cattle", user_id=str(current_user.id) if current_user else None)
+                from app.services.storage_service import upload_image_async
+                cdn_url = await upload_image_async(req.image, folder="cattle", user_id=str(current_user.id) if current_user else None)
             except Exception as img_err:
                 print(f"[CATTLE POST WARNING] Image upload failed: {img_err}")
                 cdn_url = "https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop"
