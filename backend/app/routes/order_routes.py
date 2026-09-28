@@ -149,7 +149,10 @@ async def get_my_orders(
     stmt = (
         select(Order)
         .where(or_(*conditions) if len(conditions) > 1 else conditions[0])
-        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+        .options(
+            selectinload(Order.profile),
+            selectinload(Order.items).selectinload(OrderItem.feed)
+        )
         .order_by(Order.created_at.desc())
     )
     result = await db.execute(stmt)
