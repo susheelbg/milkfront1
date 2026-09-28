@@ -2,6 +2,15 @@
 device_service.py — Business logic for FCM device token registration.
 
 Stage 1: Token registration only.  No push-message sending here.
+
+Lifecycle:
+  register_device()   → INSERT … ON CONFLICT (device_token) DO UPDATE
+                        Sets is_active=True, updates last_seen_at/updated_at.
+                        Row is NEVER deleted by this function.
+
+  deactivate_device() → UPDATE SET is_active=False, updated_at=now
+                        Row is NEVER deleted. Token is retained in the table
+                        so that re-login can reactivate the same row cleanly.
 """
 import logging
 from datetime import datetime, timezone
@@ -23,18 +32,18 @@ async def register_device(
     platform: str = "android",
 ) -> UserDevice:
     """
-    Register (or update) an FCM device token for the authenticated user.
+    Register (or reactivate) an FCM device token for the authenticated user.
 
-    Logic:
-    - If this device_token already exists in the table → take ownership for the
-      current user, set is_active=True and update timestamps.
-    - This handles the case where a user logged out and another user logs in on
-      the same device: the token is reassigned to the new user.
-    - Avoids duplicate rows: device_token has a UNIQUE constraint.
+    Uses PostgreSQL INSERT … ON CONFLICT (device_token) DO UPDATE so that:
+    - First login with this token  → inserts a new row (is_active=True).
+    - Re-login with same token     → updates is_active=True, last_seen_at, updated_at.
+                                     The existing row is reused — no duplicate created.
+    - New user, same device token  → reassigns user_id to the new user.
+
+    The row is NEVER deleted by this function.
     """
     now = datetime.now(timezone.utc)
 
-    # Use PostgreSQL upsert (INSERT … ON CONFLICT DO UPDATE)
     stmt = (
         pg_insert(UserDevice)
         .values(
@@ -53,7 +62,7 @@ async def register_device(
                 "platform": platform,
                 "updated_at": now,
                 "last_seen_at": now,
-                "is_active": True,
+                "is_active": True,     # Re-activate if was previously deactivated
             },
         )
         .returning(UserDevice)
@@ -63,7 +72,7 @@ async def register_device(
     await db.commit()
     device = result.scalars().first()
     logger.info(
-        "Device token registered/updated: user_id=%s platform=%s",
+        "Device token registered/reactivated: user_id=%s platform=%s is_active=True",
         user_id,
         platform,
     )
@@ -76,12 +85,17 @@ async def deactivate_device(
     device_token: str,
 ) -> bool:
     """
-    Deactivate a device token on logout.
+    Deactivate a device token on logout by setting is_active=False.
 
-    Only deactivates the token if it currently belongs to the requesting user
-    (prevents a user from deactivating another user's token).
+    IMPORTANT: This function UPDATES the row — it does NOT delete it.
+    The row is kept in user_devices so that:
+    - The login/logout history is preserved.
+    - Re-login with the same token reactivates the SAME row (no duplicate).
 
-    Returns True if a row was found and deactivated, False otherwise.
+    Only deactivates if the token currently belongs to the requesting user
+    (prevents cross-user interference).
+
+    Returns True if a row was found and updated, False if not found.
     """
     now = datetime.now(timezone.utc)
 
@@ -95,13 +109,20 @@ async def deactivate_device(
 
     if not device:
         logger.debug(
-            "Deactivate: token not found for user_id=%s — already gone or different owner",
+            "Deactivate: token not found for user_id=%s (already inactive or different owner)",
             user_id,
         )
         return False
 
+    # UPDATE only — row is never deleted
     device.is_active = False
     device.updated_at = now
+    # last_seen_at is intentionally NOT updated here —
+    # it should only reflect the last successful active registration.
     await db.commit()
-    logger.info("Device token deactivated: user_id=%s", user_id)
+    logger.info(
+        "Device token deactivated (is_active=False, row retained): user_id=%s",
+        user_id,
+    )
     return True
+

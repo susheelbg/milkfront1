@@ -257,7 +257,14 @@ export const initFCM = async () => {
  * Must be called BEFORE Supabase signOut — the backend needs a valid JWT
  * to authenticate the deactivation request.
  *
- * On success: sets is_active = false in public.user_devices.
+ * On success:
+ *   - Sets is_active = false in public.user_devices (row is KEPT, not deleted).
+ *   - Resets _fcmInitialized so next login calls PushNotifications.register() again.
+ *   - The FCM token is intentionally kept in localStorage so that:
+ *       (a) on re-login, the same token is found and the existing row is
+ *           re-activated (is_active = true) via the upsert — no duplicate row.
+ *       (b) if Firebase returns a refreshed token, the upsert handles it cleanly.
+ *
  * On failure: silently continues — logout always proceeds regardless.
  */
 export const deregisterFCM = async () => {
@@ -273,10 +280,23 @@ export const deregisterFCM = async () => {
 
   try {
     await deviceApi.deactivateDevice(token);
-    persistToken(null);
-    _fcmInitialized = false; // Allow re-registration on next login
+
+    // ─── IMPORTANT ───────────────────────────────────────────────────────────
+    // Do NOT clear localStorage here.
+    // The token is retained so that on the next login, initFCM will call
+    // PushNotifications.register() → Firebase returns the same token →
+    // the backend upsert sets is_active = true on the EXISTING row.
+    // This ensures the same user_devices row is reused across login/logout
+    // cycles with no duplicate rows.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Reset in-memory init flag so register() is called on next login
+    _fcmInitialized = false;
+    // Clear in-memory token (it remains in localStorage)
+    _currentToken = null;
+
     if (import.meta.env.DEV) {
-      console.log('[FCM] Token deregistered successfully on logout');
+      console.log('[FCM] Token deactivated (is_active=false). Row kept in user_devices. Token retained in localStorage for re-login.');
     }
   } catch (err) {
     // Non-fatal — logout must always succeed
