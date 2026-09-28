@@ -108,6 +108,16 @@ async def create_feed(
     await db.commit()
     await db.refresh(new_feed)
     
+    # Trigger in-app notification for registered users
+    from app.services.notification_service import create_notifications_for_all_users
+    await create_notifications_for_all_users(
+        db=db,
+        title="🌾 New feed available",
+        message="A new cattle feed product has been added to MilkMaatu.",
+        type_name="new_feed",
+        reference_id=str(new_feed.id)
+    )
+    
     payload = FeedResponse.model_validate(new_feed).model_dump(by_alias=True)
     return json_response(
         success=True,

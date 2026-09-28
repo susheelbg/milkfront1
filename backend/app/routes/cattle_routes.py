@@ -101,6 +101,17 @@ async def create_cattle_listing(
     await db.commit()
     await db.refresh(new_cattle)
     
+    # Trigger in-app notification for other registered users
+    from app.services.notification_service import create_notifications_for_all_users
+    await create_notifications_for_all_users(
+        db=db,
+        title="🐄 New cattle available",
+        message="A new cattle listing has been posted on MilkMaatu.",
+        type_name="new_cattle",
+        reference_id=str(new_cattle.id),
+        exclude_user_id=current_user.id if current_user else None
+    )
+    
     payload = CattleResponse.model_validate(new_cattle).model_dump(by_alias=True)
     return json_response(
         success=True,

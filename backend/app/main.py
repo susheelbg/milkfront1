@@ -21,6 +21,7 @@ from app.routes.admin_routes import router as admin_router
 from app.routes.ai_routes import router as ai_router
 from app.routes.report_routes import router as report_router
 from app.routes.news_routes import router as news_router
+from app.routes.notification_routes import router as notification_router
 
 # Background loop for Sante listing sweeps
 async def clean_expired_listings_worker():
@@ -68,6 +69,25 @@ async def news_refresh_worker():
         # Wait 3 hours before next refresh (8 times a day = always fresh)
         await asyncio.sleep(3 * 3600)
 
+
+async def notification_cleanup_worker():
+    """Background worker: purges notifications read >12 hours ago & unread >7 days ago."""
+    from app.services.notification_service import cleanup_expired_notifications
+    print("[NOTIFICATION CLEANUP WORKER] Notification purge daemon started.")
+    while True:
+        try:
+            async with SessionLocal() as db:
+                res = await cleanup_expired_notifications(db)
+                if res.get("read_deleted") or res.get("unread_deleted"):
+                    print(f"[NOTIFICATION CLEANUP WORKER] Purged {res['read_deleted']} read and {res['unread_deleted']} unread expired notifications.")
+        except asyncio.CancelledError:
+            print("[NOTIFICATION CLEANUP WORKER] Cancelled.")
+            break
+        except Exception as e:
+            print(f"[NOTIFICATION CLEANUP WORKER ERROR] {e}")
+        # Run cleanup every 1800 seconds (30 minutes)
+        await asyncio.sleep(1800)
+
 # Lifespan Context Manager (replaces startup/shutdown events)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -83,6 +103,7 @@ async def lifespan(app: FastAPI):
     # 2. Start background worker tasks
     worker_task = asyncio.create_task(clean_expired_listings_worker())
     news_task = asyncio.create_task(news_refresh_worker())
+    notif_task = asyncio.create_task(notification_cleanup_worker())
     
     yield
     
@@ -90,7 +111,8 @@ async def lifespan(app: FastAPI):
     print("[SERVER SHUTDOWN] Terminating background tasks...")
     worker_task.cancel()
     news_task.cancel()
-    await asyncio.gather(worker_task, news_task, return_exceptions=True)
+    notif_task.cancel()
+    await asyncio.gather(worker_task, news_task, notif_task, return_exceptions=True)
     print("[SERVER SHUTDOWN] Cleanup complete. Goodbye!")
 
 # Initialize FastAPI App
@@ -120,6 +142,7 @@ app.include_router(admin_router, prefix=settings.API_PREFIX)
 app.include_router(ai_router, prefix=settings.API_PREFIX)
 app.include_router(report_router, prefix=settings.API_PREFIX)
 app.include_router(news_router, prefix=settings.API_PREFIX)
+app.include_router(notification_router, prefix=settings.API_PREFIX)
 
 @app.get("/", tags=["Health Check"])
 async def root():

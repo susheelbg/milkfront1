@@ -313,5 +313,20 @@
     "website": "Website",
     "appVersion": "App Version",
     "agreeRequired": "You must agree to the Terms and Privacy Policy to continue"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllAsRead": "Mark all as read",
+    "noNotifications": "No notifications yet",
+    "newCattleTitle": "🐄 New cattle available",
+    "newCattleMsg": "A new cattle listing has been posted on MilkMaatu.",
+    "newFeedTitle": "🌾 New feed available",
+    "newFeedMsg": "A new cattle feed product has been added to MilkMaatu.",
+    "justNow": "Just now",
+    "minsAgo": "mins ago",
+    "hoursAgo": "hours ago",
+    "yesterday": "Yesterday",
+    "daysAgo": "days ago",
+    "itemUnavailable": "Referenced item is no longer available."
   }
 }
