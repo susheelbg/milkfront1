@@ -41,13 +41,12 @@ def fetch_all_supabase_users() -> List[dict]:
 async def sync_profiles_from_supabase_auth(db: AsyncSession) -> set:
     """
     Ensure all registered Supabase Auth users exist in public.profiles.
-    Returns the set of all user UUIDs.
+    Returns the set of all verified profile user UUIDs.
     """
     res = await db.execute(select(Profile.id))
     existing_ids = set(res.scalars().all())
 
     auth_users = fetch_all_supabase_users()
-    added_new = False
     for u in auth_users:
         raw_id = u.get("id")
         if not raw_id:
@@ -58,26 +57,23 @@ async def sync_profiles_from_supabase_auth(db: AsyncSession) -> set:
             continue
 
         if u_id not in existing_ids:
-            new_prof = Profile(
-                id=u_id,
-                email=u.get("email"),
-                name=u.get("user_metadata", {}).get("name"),
-                phone=u.get("user_metadata", {}).get("phone"),
-                role=u.get("app_metadata", {}).get("role") or "user"
-            )
-            db.add(new_prof)
-            existing_ids.add(u_id)
-            added_new = True
-
-    if added_new:
-        try:
-            await db.commit()
-        except Exception as e:
-            logger.warning(f"Failed committing sync_profiles_from_supabase_auth: {e}")
             try:
-                await db.rollback()
-            except Exception:
-                pass
+                new_prof = Profile(
+                    id=u_id,
+                    email=u.get("email"),
+                    name=u.get("user_metadata", {}).get("name"),
+                    phone=u.get("user_metadata", {}).get("phone"),
+                    role=u.get("app_metadata", {}).get("role") or "user"
+                )
+                db.add(new_prof)
+                await db.commit()
+                existing_ids.add(u_id)
+            except Exception as e:
+                logger.warning(f"Could not auto-insert profile for auth user {u_id}: {e}")
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass
 
     return existing_ids
 
