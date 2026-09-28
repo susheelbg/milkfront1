@@ -79,6 +79,7 @@ class OrderResponse(BaseModel):
     status: str = "pending"
     paymentStatus: str = "pending"
     createdAt: Optional[datetime] = None
+    created_at: Optional[datetime] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -116,8 +117,15 @@ class OrderResponse(BaseModel):
             d["status"] = values.order_status or "pending"
             d["paymentStatus"] = getattr(values, "payment_status", "pending") or "pending"
             d["createdAt"] = values.created_at
+            d["created_at"] = values.created_at
             d["items"] = values.items if values.items else []
             return d
+        elif isinstance(values, dict):
+            if "created_at" in values and "createdAt" not in values:
+                values["createdAt"] = values["created_at"]
+            elif "createdAt" in values and "created_at" not in values:
+                values["created_at"] = values["createdAt"]
+            return values
         return values
 
     class Config:

@@ -114,13 +114,20 @@ export const OrdersPage = () => {
                         Order: {order.id}
                       </p>
                       <p className="text-[10px] text-text-light font-medium mt-1">
-                        Placed on {new Date(order.created_at || Date.now()).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        Placed on {(() => {
+                          const rawDate = order.created_at || order.createdAt || order.date || order.placed_at;
+                          if (!rawDate) return 'Recently';
+                          const d = new Date(rawDate);
+                          if (isNaN(d.getTime())) return 'Recently';
+                          return d.toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          });
+                        })()}
                       </p>
                     </div>
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm border ${

@@ -27,7 +27,9 @@ export const RouteLoader = () => (
   <div className="min-h-screen bg-[#0A2E1F] flex items-center justify-center">
     <div className="text-center space-y-3">
       <div className="w-10 h-10 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
-      <p className="text-xs font-bold text-emerald-200">Loading MilkMaatu...</p>
+      <p className="text-xs font-bold text-emerald-200">
+        Loading Milk<span className="text-amber-400 font-extrabold">ಮಾತು</span>...
+      </p>
     </div>
   </div>
 );
