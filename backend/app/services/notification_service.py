@@ -23,32 +23,12 @@ async def create_notifications_for_all_users(
 ) -> int:
     """
     Creates an in-app notification record for all registered users (excluding exclude_user_id if provided).
-    Ensures users registered in Supabase Auth (auth.users) receive notifications even if their profile row
-    was not yet fetched by backend endpoints.
+    Uses safe, robust SQLAlchemy queries on public.profiles to guarantee transaction stability.
     """
     try:
         # 1. Fetch user IDs from public.profiles
         res_profiles = await db.execute(select(Profile.id))
         target_user_ids = set(res_profiles.scalars().all())
-
-        # 2. Also query auth.users (Supabase Auth table) to include any newly registered users
-        try:
-            auth_res = await db.execute(text("SELECT id, email FROM auth.users"))
-            auth_rows = auth_res.fetchall()
-            for row in auth_rows:
-                u_id = row[0]
-                u_email = row[1]
-                if isinstance(u_id, str):
-                    u_id = uuid.UUID(u_id)
-                
-                # Auto-ensure profile row exists for any user in auth.users
-                if u_id not in target_user_ids:
-                    new_profile = Profile(id=u_id, email=u_email, role="user")
-                    db.add(new_profile)
-                    target_user_ids.add(u_id)
-            await db.commit()
-        except Exception as auth_err:
-            logger.debug(f"[NOTIFICATION SERVICE] auth.users direct query fallback: {auth_err}")
 
         # Exclude listing owner/creator if requested
         if exclude_user_id:
@@ -80,7 +60,10 @@ async def create_notifications_for_all_users(
         return len(notifications_to_create)
     except Exception as e:
         logger.error(f"[NOTIFICATION SERVICE ERROR] Failed to create notifications: {e}")
-        await db.rollback()
+        try:
+            await db.rollback()
+        except Exception:
+            pass
         return 0
 
 async def get_user_notifications(
