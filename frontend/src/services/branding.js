@@ -5,7 +5,7 @@
  */
 
 // Official MilkMaatu logo — Supabase Storage
-export const LOGO_URL = 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/other/logo.jpg';
+export const LOGO_URL = 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/other/logo.jpeg';
 
 // Navbar logo
 export const LOGO_URL_NAV = LOGO_URL;
