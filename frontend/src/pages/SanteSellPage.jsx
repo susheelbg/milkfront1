@@ -127,6 +127,7 @@ export const SanteSellPage = () => {
         image: formData.imagePreview || 'https://images.unsplash.com/photo-1546521858-7ce4593f159b?w=640&h=360&fit=crop',
       });
 
+      // Cache cattle listing ID locally
       const cattleId = res?.id || res?.data?.id;
       if (cattleId) {
         try {
@@ -135,18 +136,23 @@ export const SanteSellPage = () => {
         } catch {}
       }
 
+      // Non-blocking profile update for contact and village
       if (updateProfile && (formData.contactNumber || formData.villageName)) {
-        updateProfile({
-          phone: formData.contactNumber,
-          address: formData.villageName,
-        }).catch(() => {});
+        try {
+          await updateProfile({
+            phone: formData.contactNumber,
+            address: formData.villageName,
+          });
+        } catch (profileErr) {
+          console.warn('Profile sync non-critical error:', profileErr);
+        }
       }
 
-      toastService.success('Cattle posted to Sante successfully!');
+      toastService.success(t('sante.postSuccess') || 'Cattle posted successfully!');
       
       setTimeout(() => {
-        navigate('/sante-buy', { state: { santeName } });
-      }, 1200);
+        navigate('/home');
+      }, 1000);
     } catch (error) {
       console.error('Cattle post error:', error);
       toastService.error(error?.message || 'Failed to post cattle. Please try again.');
