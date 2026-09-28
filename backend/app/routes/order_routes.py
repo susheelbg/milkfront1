@@ -69,15 +69,45 @@ async def place_order(
             )
         )
 
-    # 2. Create Order Header linked to user UUID if authenticated
+    # 2. Determine target user ID and create Order Header
     order_id = f"ORD-{int(time.time() * 1000)}"
     cust_name = (req.customerName or "").strip() or (current_user.name if current_user else None) or "Farmer"
     cust_phone = (req.phoneNumber or "").strip() or (current_user.phone if current_user else None) or "-"
     cust_addr = (req.address or "").strip() or (current_user.address if current_user else None) or ""
 
+    user_id_to_assign = current_user.id if current_user else None
+
+    # Self-heal current_user profile metadata
+    if current_user:
+        profile_updated = False
+        if not current_user.phone and cust_phone and cust_phone != "-":
+            current_user.phone = cust_phone
+            profile_updated = True
+        if not current_user.address and cust_addr:
+            current_user.address = cust_addr
+            profile_updated = True
+        if not current_user.name and cust_name and cust_name != "Farmer":
+            current_user.name = cust_name
+            profile_updated = True
+        if profile_updated:
+            await db.commit()
+    elif cust_phone and cust_phone != "-":
+        # Check if phone belongs to an existing registered profile
+        digits = extract_phone_digits(cust_phone)
+        if digits:
+            prof_res = await db.execute(
+                select(Profile).where(
+                    (Profile.phone == cust_phone) |
+                    (Profile.phone.like(f"%{digits}"))
+                )
+            )
+            matching_prof = prof_res.scalars().first()
+            if matching_prof:
+                user_id_to_assign = matching_prof.id
+
     new_order = Order(
         id=order_id,
-        user_id=current_user.id if current_user else None,
+        user_id=user_id_to_assign,
         total_amount=calculated_total,
         order_status="pending",
         delivery_address=cust_addr,
@@ -134,12 +164,24 @@ async def get_my_orders(
     id_list = [i.strip() for i in ids.split(",") if i.strip()] if ids else []
     clean_req_phone = phone.strip() if phone and phone.strip() else None
 
-    if current_user:
-        # Authenticated user:
-        # 1. All orders already assigned to current_user.id
+    # Resolve target user profile (either from JWT auth or matching registered profile by phone)
+    target_profile = current_user
+    if not target_profile and clean_req_phone:
+        req_digits = extract_phone_digits(clean_req_phone)
+        if req_digits:
+            prof_stmt = select(Profile).where(
+                (Profile.phone == clean_req_phone) |
+                (Profile.phone.like(f"%{req_digits}"))
+            )
+            prof_res = await db.execute(prof_stmt)
+            target_profile = prof_res.scalars().first()
+
+    if target_profile:
+        # Authenticated or matched registered user:
+        # 1. All orders already assigned to target_profile.id
         # 2. Unclaimed guest orders (user_id is None) matching user's phone, name, or saved order IDs
-        user_phone = (current_user.phone or "").strip()
-        user_name = (current_user.name or "").strip()
+        user_phone = (target_profile.phone or "").strip()
+        user_name = (target_profile.name or "").strip()
         phones_to_check = [p for p in set([user_phone, clean_req_phone]) if p]
 
         unclaimed_conditions = []
@@ -150,21 +192,21 @@ async def get_my_orders(
             digits = extract_phone_digits(p)
             if digits:
                 unclaimed_conditions.append(Order.phone_number.like(f"%{digits}"))
-        if user_name and len(user_name) >= 3:
+        if user_name and len(user_name) >= 3 and user_name.lower() != "farmer":
             unclaimed_conditions.append(func.lower(Order.customer_name) == user_name.lower())
 
         if unclaimed_conditions:
             cond = or_(
-                Order.user_id == current_user.id,
+                Order.user_id == target_profile.id,
                 and_(
                     Order.user_id.is_(None),
                     or_(*unclaimed_conditions)
                 )
             )
         else:
-            cond = (Order.user_id == current_user.id)
+            cond = (Order.user_id == target_profile.id)
     else:
-        # Unauthenticated guest user: ONLY query orders where user_id IS NULL.
+        # Unauthenticated guest user with no registered profile: ONLY query orders where user_id IS NULL.
         guest_conditions = []
         if id_list:
             guest_conditions.append(Order.id.in_(id_list))
@@ -198,12 +240,12 @@ async def get_my_orders(
     result = await db.execute(stmt)
     orders = result.scalars().all()
 
-    # Self-heal: claim any unclaimed guest orders for current_user
-    if current_user and orders:
+    # Self-heal: claim any unclaimed guest orders for target_profile
+    if target_profile and orders:
         claimed_any = False
         for o in orders:
             if o.user_id is None:
-                o.user_id = current_user.id
+                o.user_id = target_profile.id
                 claimed_any = True
         if claimed_any:
             await db.commit()
