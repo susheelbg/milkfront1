@@ -22,6 +22,7 @@ from app.routes.ai_routes import router as ai_router
 from app.routes.report_routes import router as report_router
 from app.routes.news_routes import router as news_router
 from app.routes.notification_routes import router as notification_router
+from app.routes.device_routes import router as device_router
 
 # Background loop for Sante listing sweeps
 async def clean_expired_listings_worker():
@@ -143,6 +144,7 @@ app.include_router(ai_router, prefix=settings.API_PREFIX)
 app.include_router(report_router, prefix=settings.API_PREFIX)
 app.include_router(news_router, prefix=settings.API_PREFIX)
 app.include_router(notification_router, prefix=settings.API_PREFIX)
+app.include_router(device_router, prefix=settings.API_PREFIX)
 
 @app.get("/", tags=["Health Check"])
 async def root():

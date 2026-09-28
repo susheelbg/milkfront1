@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { authApi } from '../services/api/authApi';
+import { initFCM, deregisterFCM } from '../services/fcmService';
 
 const AuthContext = createContext(null);
 
@@ -48,6 +49,8 @@ export const AuthProvider = ({ children }) => {
         setSession(initialSession);
         if (initialSession) {
           await fetchProfile();
+          // Initialise FCM after session is confirmed (non-blocking)
+          initFCM().catch((e) => console.warn('[AuthContext] FCM init error:', e));
         } else {
           setUser(null);
           localStorage.removeItem('milkmaatu_auth_user');
@@ -71,6 +74,8 @@ export const AuthProvider = ({ children }) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (currentSession) {
           await fetchProfile();
+          // Re-init FCM in case the user changed or token was cleared
+          initFCM().catch((e) => console.warn('[AuthContext] FCM init error:', e));
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -119,6 +124,8 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     setLoading(true);
     try {
+      // Deregister FCM token before signing out so the backend still has auth
+      await deregisterFCM();
       await authApi.signOut();
       setUser(null);
       setSession(null);

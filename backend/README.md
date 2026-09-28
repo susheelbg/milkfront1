@@ -121,3 +121,52 @@ To configure it:
 Administrative endpoints (`/api/admin/*`, `/api/feeds/admin`, etc.) are secured via **Supabase Auth Bearer Tokens** and **JWKS Key Verification**:
 - **Role Verification**: FastAPI dependencies (`get_current_admin` / `get_current_super_admin`) validate Supabase JWT tokens and verify `public.profiles` for `admin` or `super_admin` roles.
 - **Idempotent Super Admin Bootstrap**: Automatically verifies or creates the Super Admin account on server startup.
+
+---
+
+## 📱 FCM Push Notifications — Stage 1 (Device Token Registration)
+
+MilkMaatu supports Firebase Cloud Messaging (FCM) push notifications via the Capacitor Android app.
+
+### Architecture
+
+```
+Android App  (@capacitor/push-notifications@8.1.2)
+    ↓  FCM Token from Firebase
+FastAPI  POST /api/devices/register
+    ↓  PostgreSQL upsert
+public.user_devices (Supabase, RLS-protected)
+```
+
+### Database Table: public.user_devices
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | Auto-generated |
+| user_id | UUID FK | References profiles(id) CASCADE |
+| device_token | TEXT UNIQUE | FCM registration token |
+| platform | TEXT | android / ios / web |
+| created_at | TIMESTAMPTZ | Row creation time |
+| updated_at | TIMESTAMPTZ | Auto-maintained by trigger |
+| last_seen_at | TIMESTAMPTZ | Updated on every register call |
+| is_active | BOOLEAN | false after logout |
+
+One user can have many devices. One device_token maps to one row (UNIQUE constraint). RLS prevents cross-user access.
+
+### API Endpoints
+
+- `POST /api/devices/register` — Register or refresh FCM token (upsert, user_id from JWT only)
+- `DELETE /api/devices/{token}` — Deactivate token on logout (owner only, idempotent)
+
+### Migration
+
+Run `backend/migrations/003_user_devices_table.sql` in Supabase SQL editor.
+
+### Frontend Integration
+
+- `initFCM()` called in `AuthContext` after session restore and on SIGNED_IN/TOKEN_REFRESHED.
+- `deregisterFCM()` called before Supabase signOut so JWT is still valid for the deactivation request.
+- FCM failures are non-fatal — app loads normally on permission denied or network error.
+
+### Stage 2 (not yet implemented)
+Firebase Admin SDK + FastAPI sending push messages when new cattle/feed events occur.
