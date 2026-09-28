@@ -10,6 +10,12 @@ class DeviceRegisterRequest(BaseModel):
     platform: str = Field(default="android", description="Device platform: android | ios | web")
 
 
+class DeviceDeactivateRequest(BaseModel):
+    """Request body for POST /devices/deactivate."""
+    device_token: str = Field(..., min_length=1, description="FCM device token to deactivate")
+
+
+
 class DeviceResponse(BaseModel):
     """Response body for device registration/deactivation."""
     id: UUID

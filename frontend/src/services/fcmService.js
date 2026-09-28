@@ -1,121 +1,177 @@
 /**
  * fcmService.js
  *
- * Capacitor-based FCM device token registration for Android.
+ * Capacitor-based FCM device token registration for Android/iOS.
  *
  * Stage 1 responsibilities:
- *   - Check if running on a native Capacitor/Android platform
- *   - Request notification permission (Android 13+ POST_NOTIFICATIONS)
- *   - Register with Firebase via Capacitor PushNotifications plugin
+ *   - Detect if running on native Capacitor (Android/iOS) vs. web
+ *   - Request notification permission (Android 13+ POST_NOTIFICATIONS compatible)
+ *   - Register with Firebase via the Capacitor PushNotifications plugin
  *   - Retrieve the FCM device token
- *   - Send the token to the FastAPI backend (/api/devices/register)
- *   - Handle token refresh events
+ *   - Report the correct platform ('android' | 'ios' | 'web')
+ *   - Send the token to the FastAPI backend (POST /api/devices/register)
+ *   - Handle token refresh events automatically
+ *   - Deregister token cleanly on logout
  *
  * This module does NOT:
- *   - Send push messages (Stage 2)
- *   - Use any Firebase server credentials
- *   - Touch web-push / VAPID / browser notifications
+ *   - Send push messages (that is Stage 2)
+ *   - Use any Firebase server credentials or service-account keys
+ *   - Touch Web Push / VAPID / browser-based push notifications
+ *
+ * Environment variables required:
+ *   VITE_API_URL  — FastAPI base URL, e.g. https://milkfront1.onrender.com/api
+ *
+ * No Firebase client-side env variables are needed — FCM initialises
+ * automatically on Android via google-services.json which is embedded in the
+ * compiled APK at build time.
  */
 
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { deviceApi } from './api/deviceApi';
 
+// ─── Platform detection ────────────────────────────────────────────────────────
+
 const IS_NATIVE = Capacitor.isNativePlatform();
 
-// Store the current token in memory so we can deactivate it on logout
+/**
+ * Returns 'android', 'ios', or 'web' based on the current runtime environment.
+ * Used to store the correct platform value in public.user_devices.
+ */
+const getPlatform = () => {
+  if (!IS_NATIVE) return 'web';
+  const p = Capacitor.getPlatform(); // 'android' | 'ios'
+  return p === 'ios' ? 'ios' : 'android';
+};
+
+// ─── In-memory / persisted token state ────────────────────────────────────────
+
+/** In-memory token — set as soon as Firebase fires the registration event. */
 let _currentToken = null;
 
-// Avoid adding duplicate listeners across hot-reloads
-let _listenersRegistered = false;
+/**
+ * Guard to prevent calling PushNotifications.register() multiple times in the
+ * same app session. Firebase/Capacitor handles token refresh internally via the
+ * 'registration' listener; we only need to call register() once per session.
+ */
+let _fcmInitialized = false;
 
 /**
- * Read the persisted FCM token from localStorage (survives app restarts).
+ * Guard to prevent adding duplicate Capacitor event listeners.
+ * Listeners are module-level singletons.
  */
+let _listenersRegistered = false;
+
+// ─── localStorage helpers ──────────────────────────────────────────────────────
+
+const TOKEN_STORAGE_KEY = 'milkmaatu_fcm_token';
+
 const getPersistedToken = () => {
   try {
-    return localStorage.getItem('milkmaatu_fcm_token') || null;
+    return localStorage.getItem(TOKEN_STORAGE_KEY) || null;
   } catch {
     return null;
   }
 };
 
-/**
- * Persist the FCM token locally so we can deactivate it on logout
- * even if the token hasn't changed.
- */
 const persistToken = (token) => {
   _currentToken = token;
   try {
     if (token) {
-      localStorage.setItem('milkmaatu_fcm_token', token);
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
     } else {
-      localStorage.removeItem('milkmaatu_fcm_token');
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
     }
   } catch {
-    // localStorage quota — non-fatal
+    // localStorage quota error — non-fatal
   }
 };
 
+// ─── Capacitor listener registration ──────────────────────────────────────────
+
 /**
- * Register a single set of Capacitor PushNotification listeners.
- * Called once during initialization; idempotent via _listenersRegistered flag.
+ * Register Capacitor PushNotification event listeners.
+ * This is called once per module lifetime — idempotent via _listenersRegistered.
  */
 const registerListeners = async () => {
   if (_listenersRegistered) return;
   _listenersRegistered = true;
 
-  // Token received (initial registration AND token refresh)
+  /**
+   * 'registration' fires:
+   *   (a) after the first PushNotifications.register() call, and
+   *   (b) automatically whenever Firebase rotates/refreshes the token.
+   * Both cases are handled identically — upsert into user_devices.
+   */
   await PushNotifications.addListener('registration', async (token) => {
     const fcmToken = token.value;
-    if (!fcmToken) return;
+    if (!fcmToken) {
+      console.warn('[FCM] Received empty token — skipping registration');
+      return;
+    }
 
     if (import.meta.env.DEV) {
-      console.log('[FCM] Token received (length):', fcmToken.length);
+      // Log only token length — never log the full token to the console in dev
+      console.log('[FCM] Token received, length:', fcmToken.length, '| platform:', getPlatform());
     }
 
     persistToken(fcmToken);
 
+    // POST to FastAPI → Supabase upsert (ON CONFLICT DO UPDATE)
     try {
-      await deviceApi.registerDevice(fcmToken, 'android');
+      await deviceApi.registerDevice(fcmToken, getPlatform());
       if (import.meta.env.DEV) {
-        console.log('[FCM] Token registered with backend successfully');
+        console.log('[FCM] Token successfully registered with backend (user_devices upserted)');
       }
     } catch (err) {
+      // Non-fatal: the app continues to work without push notifications
       console.warn('[FCM] Backend token registration failed (non-fatal):', err?.message);
     }
   });
 
-  // Registration error
+  /** Firebase registration error — log and continue; never crash the app. */
   await PushNotifications.addListener('registrationError', (err) => {
-    console.warn('[FCM] Registration error (non-fatal):', err);
+    console.warn('[FCM] Firebase registration error (non-fatal):', err);
   });
 
-  // Foreground notification received (Stage 2 will handle routing)
+  /**
+   * Foreground notification received.
+   * Stage 2 will update the in-app notification bell count here.
+   */
   await PushNotifications.addListener('pushNotificationReceived', (notification) => {
     if (import.meta.env.DEV) {
       console.log('[FCM] Foreground notification received:', notification.title);
     }
-    // Stage 2: refresh in-app notification bell count here
+    // Stage 2: dispatch event or call notificationApi.getUnreadCount() here
   });
 
-  // Notification tapped by user (Stage 2 will handle deep-linking)
+  /**
+   * User tapped a notification.
+   * Stage 2 will implement deep-link routing here.
+   */
   await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     if (import.meta.env.DEV) {
-      console.log('[FCM] Notification action performed:', action.actionId);
+      console.log('[FCM] Notification tapped:', action.actionId, action.notification?.data);
     }
-    // Stage 2: deep-link routing here
+    // Stage 2: navigate to relevant screen based on action.notification.data
   });
 };
 
+// ─── Public API ────────────────────────────────────────────────────────────────
+
 /**
- * Request notification permission from the OS.
+ * Request OS notification permission.
+ *
+ * On Android 13+ this presents the POST_NOTIFICATIONS system dialog.
+ * On older Android, permission is granted implicitly.
+ * On iOS, this presents the standard notification permission dialog.
  *
  * Returns:
- *   'granted'  — user allowed notifications
- *   'denied'   — user denied (we should NOT repeatedly prompt)
- *   'prompt'   — will be asked (first time)
- *   'web'      — not on native; skip
+ *   'granted'                — permission allowed
+ *   'denied'                 — user denied; do NOT prompt again
+ *   'prompt'                 — not yet asked (first time)
+ *   'prompt-with-rationale'  — Android rationale case
+ *   'web'                    — not on native; FCM skipped silently
  */
 export const requestNotificationPermission = async () => {
   if (!IS_NATIVE) return 'web';
@@ -123,27 +179,40 @@ export const requestNotificationPermission = async () => {
   try {
     let permStatus = await PushNotifications.checkPermissions();
 
-    if (permStatus.receive === 'prompt') {
-      permStatus = await PushNotifications.requestPermissions();
+    if (permStatus.receive === 'granted') {
+      // Already granted — no dialog needed
+      return 'granted';
     }
 
-    return permStatus.receive; // 'granted' | 'denied' | 'prompt-with-rationale'
+    if (permStatus.receive === 'denied') {
+      // User explicitly denied — respect it, do not re-prompt
+      return 'denied';
+    }
+
+    // 'prompt' or 'prompt-with-rationale' — ask the user
+    permStatus = await PushNotifications.requestPermissions();
+    return permStatus.receive;
   } catch (err) {
-    console.warn('[FCM] Permission check failed (non-fatal):', err?.message);
+    console.warn('[FCM] Permission check error (non-fatal):', err?.message);
     return 'denied';
   }
 };
 
 /**
- * Initialize FCM: request permission, register listeners, and trigger registration.
+ * Initialise FCM token registration for the current authenticated session.
  *
- * Call this after a successful Supabase login or session restore.
- * Safe to call multiple times — internally idempotent.
+ * Safe to call multiple times (idempotent):
+ *   - Listeners are only registered once per module lifetime.
+ *   - PushNotifications.register() is only called once per app session.
+ *   - Subsequent calls are no-ops (token refresh is handled by the listener).
+ *
+ * Call this after a confirmed Supabase session (login, session restore, or
+ * TOKEN_REFRESHED event).
  */
 export const initFCM = async () => {
   if (!IS_NATIVE) {
     if (import.meta.env.DEV) {
-      console.log('[FCM] Not a native platform — skipping FCM init');
+      console.log('[FCM] Web platform — FCM registration skipped (Android/iOS only)');
     }
     return;
   }
@@ -152,31 +221,44 @@ export const initFCM = async () => {
     const permission = await requestNotificationPermission();
 
     if (permission !== 'granted') {
-      console.info('[FCM] Notification permission not granted:', permission);
-      // App continues working normally — don't block
+      if (import.meta.env.DEV) {
+        console.info('[FCM] Notification permission not granted:', permission, '— app continues normally');
+      }
+      return; // App works normally without push notifications
+    }
+
+    // Register listeners (idempotent — only runs once)
+    await registerListeners();
+
+    if (_fcmInitialized) {
+      if (import.meta.env.DEV) {
+        console.log('[FCM] Already initialized this session — token refresh handled by listener');
+      }
       return;
     }
 
-    // Register listeners once
-    await registerListeners();
-
-    // Trigger Firebase registration (fires 'registration' event asynchronously)
+    // First call: trigger Firebase SDK registration
+    // This fires the 'registration' listener asynchronously with the token
     await PushNotifications.register();
+    _fcmInitialized = true;
 
     if (import.meta.env.DEV) {
-      console.log('[FCM] PushNotifications.register() called — awaiting token...');
+      console.log('[FCM] PushNotifications.register() called — awaiting token from Firebase...');
     }
   } catch (err) {
-    // FCM failure must NEVER crash the app
-    console.warn('[FCM] initFCM error (non-fatal):', err?.message);
+    // FCM init failure must NEVER crash or block the app
+    console.warn('[FCM] initFCM error (non-fatal, app continues):', err?.message);
   }
 };
 
 /**
- * Deactivate the current device token on logout.
+ * Deactivate the current device's FCM token on logout.
  *
- * Call this BEFORE calling Supabase signOut so the backend can still
- * authenticate the request.
+ * Must be called BEFORE Supabase signOut — the backend needs a valid JWT
+ * to authenticate the deactivation request.
+ *
+ * On success: sets is_active = false in public.user_devices.
+ * On failure: silently continues — logout always proceeds regardless.
  */
 export const deregisterFCM = async () => {
   if (!IS_NATIVE) return;
@@ -184,7 +266,7 @@ export const deregisterFCM = async () => {
   const token = _currentToken || getPersistedToken();
   if (!token) {
     if (import.meta.env.DEV) {
-      console.log('[FCM] No token to deregister');
+      console.log('[FCM] No active token to deregister');
     }
     return;
   }
@@ -192,16 +274,18 @@ export const deregisterFCM = async () => {
   try {
     await deviceApi.deactivateDevice(token);
     persistToken(null);
+    _fcmInitialized = false; // Allow re-registration on next login
     if (import.meta.env.DEV) {
-      console.log('[FCM] Token deregistered on logout');
+      console.log('[FCM] Token deregistered successfully on logout');
     }
   } catch (err) {
-    // Non-fatal — logout should proceed regardless
-    console.warn('[FCM] Deregistration failed (non-fatal):', err?.message);
+    // Non-fatal — logout must always succeed
+    console.warn('[FCM] Deregistration error (non-fatal, logout continues):', err?.message);
   }
 };
 
 /**
- * Returns the current in-memory FCM token (or null if not yet registered).
+ * Returns the current FCM token (in-memory or persisted), or null.
+ * Useful for debugging or if you need the token elsewhere.
  */
 export const getCurrentFCMToken = () => _currentToken || getPersistedToken();

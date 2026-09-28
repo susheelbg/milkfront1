@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import Profile
-from app.schemas.device import DeviceRegisterRequest, DeviceResponse
+from app.schemas.device import DeviceRegisterRequest, DeviceDeactivateRequest, DeviceResponse
 from app.services import device_service
 from app.utils.response import json_response
 
@@ -56,27 +56,27 @@ async def register_device(
     )
 
 
-@router.delete("/{device_token}")
+@router.post("/deactivate")
 async def deactivate_device(
-    device_token: str,
+    req: DeviceDeactivateRequest,
     current_user: Profile = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Deactivate a device token on user logout.
 
+    - Accepts the token in the request body (avoids URL-encoding issues).
     - Only the token's current owner can deactivate it.
-    - A 404 is returned if the token doesn't belong to this user (or doesn't exist).
-    - The app should call this before calling Supabase signOut.
+    - Returns 200 even if the token is not found (idempotent — safe for logout).
+    - The app must call this BEFORE calling Supabase signOut.
     """
     deactivated = await device_service.deactivate_device(
         db=db,
         user_id=current_user.id,
-        device_token=device_token,
+        device_token=req.device_token,
     )
 
     if not deactivated:
-        # Return 200 even when not found — idempotent logout is fine
         return json_response(
             success=True,
             message="Device token was not active (already removed or not owned by this user)",
