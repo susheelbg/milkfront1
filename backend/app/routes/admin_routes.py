@@ -204,12 +204,79 @@ async def update_user_role(
         }
     )
 
+@router.delete("/users/{user_id}")
+async def delete_user_admin(
+    user_id: str,
+    super_admin: Profile = Depends(get_current_super_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a user account, completely removing their profile, all orders placed by them,
+    and all cattle listings posted by them (Super Admin only).
+    """
+    try:
+        target_uuid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user UUID format."
+        )
+
+    result = await db.execute(select(Profile).where(Profile.id == target_uuid))
+    target_user = result.scalars().first()
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User profile not found."
+        )
+
+    # Protect Super Admin accounts from deletion
+    if target_user.role == "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Super Admin accounts cannot be deleted."
+        )
+
+    # 1. Delete all orders placed by this user
+    await db.execute(text("DELETE FROM orders WHERE user_id = :uid"), {"uid": target_uuid})
+
+    # 2. Delete all cattle listings posted by this user
+    await db.execute(text("DELETE FROM cattle WHERE user_id = :uid"), {"uid": target_uuid})
+
+    # 3. Delete user profile
+    await db.delete(target_user)
+
+    # 4. Attempt to delete from Supabase auth.users if accessible
+    try:
+        await db.execute(text("DELETE FROM auth.users WHERE id = :uid"), {"uid": str(target_uuid)})
+    except Exception:
+        pass
+
+    await db.commit()
+
+    return json_response(
+        success=True,
+        message="User account and all associated orders and listings deleted successfully."
+    )
+
 @router.get("/orders")
 async def get_all_orders_admin(
     admin_user: Profile = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve all orders placed across the system, including legacy orders (Admin only)."""
+    """Retrieve all active system orders. Automatically purges orders of deleted accounts (Admin only)."""
+    # Auto-purge orders belonging to deleted accounts
+    try:
+        purge_stmt = text("""
+            DELETE FROM orders 
+            WHERE user_id IS NOT NULL 
+            AND user_id NOT IN (SELECT id FROM public.profiles);
+        """)
+        await db.execute(purge_stmt)
+        await db.commit()
+    except Exception:
+        pass
+
     stmt = (
         select(Order)
         .options(

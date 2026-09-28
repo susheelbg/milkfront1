@@ -9,7 +9,7 @@ class Order(Base):
 
     id = Column(String, primary_key=True, index=True) # e.g. ORD-17800293021
     legacy_user_id = Column(Integer, nullable=True) # Historical user ID preserved for all 27 legacy orders
-    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), nullable=True)
     total_amount = Column(Float, nullable=False)
     order_status = Column(String, default="pending") # pending, confirmed, shipped, delivered, cancelled
     delivery_address = Column(String, nullable=False)

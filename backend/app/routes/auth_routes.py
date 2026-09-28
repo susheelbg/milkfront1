@@ -105,3 +105,45 @@ async def sync_profile(
             "role": current_user.role,
         }
     )
+
+@router.delete("/account")
+async def delete_account(
+    current_user: Profile = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Deletes the current user's account and completely purges all orders placed by them
+    and all cattle listings created by them.
+    """
+    from sqlalchemy import text
+
+    # Protect Super Admin from self-deletion
+    if current_user.role == "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Super Admin accounts cannot be deleted."
+        )
+
+    user_id = current_user.id
+
+    # 1. Delete all orders placed by this user
+    await db.execute(text("DELETE FROM orders WHERE user_id = :uid"), {"uid": user_id})
+
+    # 2. Delete all cattle listings created by this user
+    await db.execute(text("DELETE FROM cattle WHERE user_id = :uid"), {"uid": user_id})
+
+    # 3. Delete user profile
+    await db.delete(current_user)
+
+    # 4. Attempt to delete from Supabase auth.users if accessible
+    try:
+        await db.execute(text("DELETE FROM auth.users WHERE id = :uid"), {"uid": str(user_id)})
+    except Exception:
+        pass
+
+    await db.commit()
+
+    return json_response(
+        success=True,
+        message="Account and all associated orders and listings deleted successfully."
+    )

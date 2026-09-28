@@ -285,7 +285,10 @@ async def cancel_order(
     stmt = (
         select(Order)
         .where(Order.id == id)
-        .options(selectinload(Order.items).selectinload(OrderItem.feed))
+        .options(
+            selectinload(Order.profile),
+            selectinload(Order.items).selectinload(OrderItem.feed)
+        )
     )
     result = await db.execute(stmt)
     order = result.scalars().first()
@@ -309,9 +312,19 @@ async def cancel_order(
             
     order.order_status = "cancelled"
     await db.commit()
-    await db.refresh(order)
+
+    reload_stmt = (
+        select(Order)
+        .where(Order.id == id)
+        .options(
+            selectinload(Order.profile),
+            selectinload(Order.items).selectinload(OrderItem.feed)
+        )
+    )
+    reload_res = await db.execute(reload_stmt)
+    updated_order = reload_res.scalars().first()
     
-    payload = OrderResponse.model_validate(order).model_dump()
+    payload = OrderResponse.model_validate(updated_order).model_dump()
     return json_response(
         success=True,
         message="Order cancelled successfully and stock restored.",
