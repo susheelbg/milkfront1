@@ -122,18 +122,32 @@ async def get_my_orders(
 ):
     """
     Retrieve purchase history for authenticated user or by phone/order IDs.
-    Ensures strict privacy: authenticated users only see their own orders.
+    Ensures strict privacy: authenticated users see all their past orders,
+    while orders assigned to other users are strictly protected.
     """
     id_list = [i.strip() for i in ids.split(",") if i.strip()] if ids else []
-    clean_phone = phone.strip() if phone and phone.strip() else None
+    clean_req_phone = phone.strip() if phone and phone.strip() else None
 
     if current_user:
-        # Authenticated user: fetch orders assigned to current_user.id.
-        # Also allow claiming guest orders (user_id is None) if explicitly present in device's id_list.
+        # Authenticated user:
+        # 1. All orders already assigned to current_user.id
+        # 2. Unclaimed guest orders (user_id is None) matching user's phone or saved order IDs
+        user_phone = (current_user.phone or "").strip()
+        phones_to_check = [p for p in set([user_phone, clean_req_phone]) if p]
+
+        unclaimed_conditions = []
         if id_list:
+            unclaimed_conditions.append(Order.id.in_(id_list))
+        for p in phones_to_check:
+            unclaimed_conditions.append(Order.phone_number == p)
+
+        if unclaimed_conditions:
             cond = or_(
                 Order.user_id == current_user.id,
-                and_(Order.user_id.is_(None), Order.id.in_(id_list))
+                and_(
+                    Order.user_id.is_(None),
+                    or_(*unclaimed_conditions)
+                )
             )
         else:
             cond = (Order.user_id == current_user.id)
@@ -142,8 +156,8 @@ async def get_my_orders(
         guest_conditions = []
         if id_list:
             guest_conditions.append(Order.id.in_(id_list))
-        if clean_phone:
-            guest_conditions.append(Order.phone_number == clean_phone)
+        if clean_req_phone:
+            guest_conditions.append(Order.phone_number == clean_req_phone)
 
         if not guest_conditions:
             return json_response(
@@ -169,7 +183,7 @@ async def get_my_orders(
     result = await db.execute(stmt)
     orders = result.scalars().all()
 
-    # Self-heal: link unclaimed guest orders in id_list to current_user if authenticated
+    # Self-heal: claim any unclaimed guest orders for current_user
     if current_user and orders:
         claimed_any = False
         for o in orders:
