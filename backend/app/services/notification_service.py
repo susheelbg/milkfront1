@@ -11,6 +11,7 @@ from app.models.user import Profile
 from app.models.notification import Notification
 from app.models.feed import Feed
 from app.models.cattle import Cattle
+from app.core.database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,27 @@ async def create_notifications_for_all_users(
         except Exception:
             pass
         return 0
+
+async def dispatch_notifications_background(
+    title: str,
+    message: str,
+    type_name: str,
+    reference_id: Optional[str] = None,
+    exclude_user_id: Optional[uuid.UUID] = None
+):
+    """Background task wrapper that creates its own DB session for notifications."""
+    async with SessionLocal() as db:
+        try:
+            await create_notifications_for_all_users(
+                db=db,
+                title=title,
+                message=message,
+                type_name=type_name,
+                reference_id=reference_id,
+                exclude_user_id=exclude_user_id
+            )
+        except Exception as e:
+            logger.error(f"Error in background notification task: {e}")
 
 
 async def ensure_user_recent_notifications(db: AsyncSession, user_id: uuid.UUID):

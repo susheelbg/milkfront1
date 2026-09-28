@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -77,6 +77,7 @@ async def get_cattle_detail(
 @router.post("/cattle")
 async def create_cattle_listing(
     req: CattleCreate,
+    background_tasks: BackgroundTasks,
     current_user: Optional[Profile] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
@@ -109,19 +110,16 @@ async def create_cattle_listing(
         await db.commit()
         await db.refresh(new_cattle)
         
-        # Trigger in-app notification for other registered users
-        try:
-            from app.services.notification_service import create_notifications_for_all_users
-            await create_notifications_for_all_users(
-                db=db,
-                title="🐄 New cattle available",
-                message="A new cattle listing has been posted on MilkMaatu.",
-                type_name="new_cattle",
-                reference_id=str(new_cattle.id),
-                exclude_user_id=current_user.id if current_user else None
-            )
-        except Exception as notif_err:
-            print(f"[CATTLE POST WARNING] Notification creation error: {notif_err}")
+        # Trigger in-app notification for other registered users via background task
+        from app.services.notification_service import dispatch_notifications_background
+        background_tasks.add_task(
+            dispatch_notifications_background,
+            title="🐄 New cattle available",
+            message="A new cattle listing has been posted on MilkMaatu.",
+            type_name="new_cattle",
+            reference_id=str(new_cattle.id),
+            exclude_user_id=current_user.id if current_user else None
+        )
         
         payload = CattleResponse.model_validate(new_cattle).model_dump(by_alias=True)
         return json_response(

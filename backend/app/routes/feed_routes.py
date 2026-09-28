@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.database import get_db
@@ -85,6 +85,7 @@ async def get_feed_by_id(id: int, db: AsyncSession = Depends(get_db)):
 @router.post("/feeds")
 async def create_feed(
     req: FeedCreate,
+    background_tasks: BackgroundTasks,
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
@@ -108,10 +109,10 @@ async def create_feed(
     await db.commit()
     await db.refresh(new_feed)
     
-    # Trigger in-app notification for registered users
-    from app.services.notification_service import create_notifications_for_all_users
-    await create_notifications_for_all_users(
-        db=db,
+    # Trigger in-app notification for registered users via background task
+    from app.services.notification_service import dispatch_notifications_background
+    background_tasks.add_task(
+        dispatch_notifications_background,
         title="🌾 New feed available",
         message="A new cattle feed product has been added to MilkMaatu.",
         type_name="new_feed",
