@@ -12,7 +12,7 @@ export const OrdersPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -24,7 +24,7 @@ export const OrdersPage = () => {
           phone: user?.phone || '',
           ids: savedOrderIds,
         });
-        setOrders(data || []);
+        setOrders(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to fetch user orders:', err);
       } finally {
@@ -149,7 +149,7 @@ export const OrdersPage = () => {
                       <div key={idx} className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-2 text-text-dark font-semibold">
                           <Tag size={14} className="text-text-light" />
-                          <span>{item.feed?.title || item.feed?.name || 'Feed Product'}</span>
+                          <span>{item.name || item.product_name || item.feed?.title || item.feed?.name || 'Feed Product'}</span>
                           <span className="text-text-light font-bold">x {item.quantity}</span>
                         </div>
                         <span className="font-extrabold text-text-dark flex items-center">
@@ -164,13 +164,13 @@ export const OrdersPage = () => {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end bg-white/70 p-3.5 rounded-lg border border-border-light border-dashed text-xs gap-3">
                     <div className="text-[10px] text-text-light leading-relaxed max-w-full sm:max-w-[70%]">
                       <p className="font-bold uppercase tracking-wide mb-1">{t('orderSummary.deliveryAddress') || 'Delivery Address'}</p>
-                      <p className="font-semibold text-text-dark leading-relaxed break-words">{order.delivery_address || order.village_name || 'Home Village'}</p>
+                      <p className="font-semibold text-text-dark leading-relaxed break-words">{order.address || order.delivery_address || order.villageName || order.village_name || 'Home Village'}</p>
                     </div>
                     <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2.5 sm:pt-0">
                       <p className="text-[10px] text-text-light font-bold uppercase tracking-wide mb-1">{t('orderSummary.grandTotal') || 'Grand Total'}</p>
                       <p className="font-black text-base text-emerald-600 flex items-center sm:justify-end">
                         <IndianRupee size={14} className="mt-[2px] stroke-[2.5px]" />
-                        {order.total_amount?.toLocaleString() || order.totalPrice?.toLocaleString()}
+                        {(order.totalPrice || order.total_amount || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
