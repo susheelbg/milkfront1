@@ -87,7 +87,11 @@ SUPABASE_JWT_SECRET=your-supabase-jwt-secret
 INITIAL_SUPER_ADMIN_EMAIL=admin@milkmaatu.com
 INITIAL_SUPER_ADMIN_PASSWORD=secure-password
 GEMINI_API_KEY=your-gemini-key
+FIREBASE_PROJECT_ID=milkfront1
+FIREBASE_SERVICE_ACCOUNT_JSON=
 ```
+
+For Firebase Admin, create a service-account key for the existing `milkfront1` Firebase project and set the complete JSON document as the backend-only `FIREBASE_SERVICE_ACCOUNT_JSON` secret in Render (or in the local backend `.env`). Set `FIREBASE_PROJECT_ID` to `milkfront1`. Do not use the Android `google-services.json` file or expose service-account credentials to the frontend. Pushes are sent for new cattle listings and new feed products; in-app notifications remain available if Firebase delivery fails.
 
 ### 3. Run Development Server
 ```bash

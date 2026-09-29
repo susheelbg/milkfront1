@@ -1,12 +1,17 @@
 import asyncio
 import uuid
 from datetime import datetime, timezone, timedelta
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
 from app.models.user import Profile
 from app.models.notification import Notification
+from app.models.user_device import UserDevice
 from app.services import notification_service
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -90,6 +95,45 @@ async def run_tests():
 
         unread_count_b = await notification_service.get_unread_count(db, user_b_id)
         assert unread_count_b == 0, f"User B unread count should be 0, got {unread_count_b}"
+
+        print("=== 6. Testing Push Failure Isolation and Invalid Token Deactivation ===")
+        invalid_token = "invalid-fcm-token"
+        db.add(UserDevice(user_id=user_b_id, device_token=invalid_token, platform="android"))
+        await db.commit()
+
+        with patch(
+            "app.services.push_notification_service._send_batch",
+            return_value=[(invalid_token, SimpleNamespace(code="UNREGISTERED"))],
+        ):
+            count_push = await notification_service.create_notifications_for_all_users(
+                db=db,
+                title="Push test",
+                message="The in-app record must survive push failure.",
+                type_name="new_feed",
+                reference_id="203",
+            )
+
+        assert count_push >= 3, "In-app notifications must be created despite an invalid FCM token"
+        device_id = (await db.execute(
+            select(UserDevice.id).where(UserDevice.device_token == invalid_token)
+        )).scalar_one()
+        device = await db.get(UserDevice, device_id)
+        assert device is not None and device.is_active is False, "Unregistered FCM tokens must be deactivated"
+
+        db.add(UserDevice(user_id=user_b_id, device_token="outage-fcm-token", platform="android"))
+        await db.commit()
+        with patch(
+            "app.services.push_notification_service._send_batch",
+            side_effect=RuntimeError("simulated Firebase outage"),
+        ):
+            count_outage = await notification_service.create_notifications_for_all_users(
+                db=db,
+                title="Push outage test",
+                message="The business event must still complete.",
+                type_name="new_cattle",
+                reference_id="102",
+            )
+        assert count_outage >= 2, "Push outages must not prevent in-app notification creation"
 
         print("=== 6. Testing 12-Hour Post-Read Deletion & Cleanup Daemon ===")
         now = datetime.now(timezone.utc).replace(tzinfo=None)

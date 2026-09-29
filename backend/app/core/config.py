@@ -36,6 +36,10 @@ class Settings(BaseSettings):
 
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY") or ""
 
+    # Firebase Admin credentials are backend-only; keep the service-account JSON in a secret.
+    FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID") or "milkfront1"
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON") or ""
+
     # CORS Settings
     CORS_ORIGINS: List[str] = ["*"]
 

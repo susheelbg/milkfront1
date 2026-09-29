@@ -122,6 +122,21 @@ async def create_notifications_for_all_users(
         db.add_all(notifications_to_create)
         await db.commit()
         logger.info(f"[NOTIFICATION SERVICE] Successfully created {len(notifications_to_create)} notifications of type '{type_name}'.")
+
+        try:
+            from app.services.push_notification_service import send_push_notifications
+
+            await send_push_notifications(
+                db=db,
+                user_ids=list(target_user_ids),
+                title=title,
+                message=message,
+                type_name=type_name,
+                reference_id=str(reference_id) if reference_id is not None else None,
+            )
+        except Exception:
+            logger.exception("Push delivery failed after in-app notifications were committed.")
+
         return len(notifications_to_create)
     except Exception as e:
         logger.error(f"[NOTIFICATION SERVICE ERROR] Failed to create notifications: {e}")
