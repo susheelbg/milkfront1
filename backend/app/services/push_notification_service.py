@@ -36,10 +36,19 @@ def _get_firebase_app():
             return firebase_admin.get_app(_FIREBASE_APP_NAME)
         except ValueError:
             try:
-                service_account_info = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
+                import os
+                raw_json = settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip()
+                if os.path.exists(raw_json):
+                    with open(raw_json, "r", encoding="utf-8") as f:
+                        service_account_info = json.load(f)
+                else:
+                    if (raw_json.startswith('"') and raw_json.endswith('"')) or (raw_json.startswith("'") and raw_json.endswith("'")):
+                        raw_json = raw_json[1:-1].strip()
+                    service_account_info = json.loads(raw_json)
+
                 credential_project_id = service_account_info.get("project_id")
                 if credential_project_id != settings.FIREBASE_PROJECT_ID:
-                    logger.error("Firebase service-account project does not match FIREBASE_PROJECT_ID.")
+                    logger.error("Firebase service-account project (%s) does not match FIREBASE_PROJECT_ID (%s).", credential_project_id, settings.FIREBASE_PROJECT_ID)
                     return None
 
                 credential = credentials.Certificate(service_account_info)
