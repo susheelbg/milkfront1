@@ -59,8 +59,10 @@ export const LoginPage = () => {
       <div className="w-full max-w-md animate-fade-in relative z-10">
         {/* Brand Header */}
         <div className="text-center mb-6 flex flex-col items-center">
-          <div className="mb-2">
-            <Logo size="full" imgClassName="h-20 w-auto object-contain mx-auto" />
+          <div className="mb-3 flex justify-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg border-2 border-amber-400/50 ring-4 ring-amber-400/20 bg-amber-50 flex items-center justify-center p-0.5">
+              <Logo size="full" imgClassName="w-full h-full rounded-full object-cover" />
+            </div>
           </div>
           <p className="text-xs font-bold text-emerald-800 mt-1">
             {t('login.tagline') || t('common.tagline') || 'For every dairy farmer, every day!'}
