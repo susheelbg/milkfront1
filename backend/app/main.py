@@ -101,6 +101,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[SERVER INITS WARNING] Super admin bootstrap issue: {e}")
 
+    # Firebase Admin startup diagnostic (safe — no credentials printed)
+    try:
+        from app.services.push_notification_service import check_firebase_status
+        fb = check_firebase_status()
+        print(f"[FIREBASE] Service account configured: {fb['firebase_configured']}")
+        print(f"[FIREBASE] Project ID: {fb['firebase_project_id']}")
+        print(f"[FIREBASE] Admin SDK initialized: {fb['firebase_initialized']}")
+        if not fb["firebase_initialized"]:
+            print("[FIREBASE] WARNING: Firebase Admin NOT initialized — push notifications will be silently skipped.")
+    except Exception as e:
+        print(f"[FIREBASE WARNING] Could not check Firebase status: {e}")
+
     # 2. Start background worker tasks
     worker_task = asyncio.create_task(clean_expired_listings_worker())
     news_task = asyncio.create_task(news_refresh_worker())

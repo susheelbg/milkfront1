@@ -48,18 +48,42 @@ def _get_firebase_app():
 
                 credential_project_id = service_account_info.get("project_id")
                 if credential_project_id != settings.FIREBASE_PROJECT_ID:
-                    logger.error("Firebase service-account project (%s) does not match FIREBASE_PROJECT_ID (%s).", credential_project_id, settings.FIREBASE_PROJECT_ID)
+                    logger.error(
+                        "Firebase service-account project (%s) does not match FIREBASE_PROJECT_ID (%s).",
+                        credential_project_id, settings.FIREBASE_PROJECT_ID,
+                    )
                     return None
 
                 credential = credentials.Certificate(service_account_info)
-                return firebase_admin.initialize_app(
+                app = firebase_admin.initialize_app(
                     credential,
                     {"projectId": settings.FIREBASE_PROJECT_ID},
                     name=_FIREBASE_APP_NAME,
                 )
+                logger.info(
+                    "[FIREBASE] Admin SDK initialized successfully — project: %s app: %s",
+                    settings.FIREBASE_PROJECT_ID, _FIREBASE_APP_NAME,
+                )
+                return app
             except Exception:
                 logger.exception("Firebase Admin initialization failed; push delivery is disabled.")
                 return None
+
+
+def check_firebase_status() -> dict:
+    """
+    Safe diagnostic: check if Firebase Admin is configured and initialized.
+    Never returns credentials, private keys, or token values.
+    """
+    has_config = bool(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
+    project_id = settings.FIREBASE_PROJECT_ID or "NOT SET"
+    app = _get_firebase_app()
+    return {
+        "firebase_configured": has_config,
+        "firebase_project_id": project_id,
+        "firebase_initialized": app is not None,
+        "firebase_app_name": app.name if app else None,
+    }
 
 
 def _send_batch(
@@ -72,6 +96,7 @@ def _send_batch(
     """Send one Firebase batch and pair each token with its response error, if any."""
     app = _get_firebase_app()
     if app is None:
+        logger.warning("[FCM] Firebase app not initialized — skipping batch send.")
         return None
 
     from firebase_admin import messaging
@@ -86,6 +111,13 @@ def _send_batch(
         tokens=tokens,
     )
     batch_response = messaging.send_each_for_multicast(multicast, app=app)
+    logger.info(
+        "[FCM] Batch sent: %d tokens | success=%d failure=%d | type=%s",
+        len(tokens),
+        batch_response.success_count,
+        batch_response.failure_count,
+        type_name,
+    )
     return [
         (token, response.exception)
         for token, response in zip(tokens, batch_response.responses)
@@ -106,7 +138,10 @@ async def send_push_notifications(
 ) -> None:
     """Send best-effort pushes to active devices; push failures never escape this function."""
     if not user_ids:
+        logger.info("[FCM] send_push_notifications called with empty user_ids — no push sent.")
         return
+
+    logger.info("[FCM] Push requested for %d recipient user(s) | type=%s", len(user_ids), type_name)
 
     try:
         result = await db.execute(
@@ -125,7 +160,13 @@ async def send_push_notifications(
         return
 
     if not tokens:
+        logger.info(
+            "[FCM] No active device tokens found for %d user(s) — push skipped (type=%s).",
+            len(user_ids), type_name,
+        )
         return
+
+    logger.info("[FCM] Found %d active device token(s) — sending FCM batch(es).", len(tokens))
 
     invalid_tokens = []
     for offset in range(0, len(tokens), 500):
@@ -141,10 +182,13 @@ async def send_push_notifications(
             )
             if responses is None:
                 return
-            invalid_tokens.extend(
+            batch_invalid = [
                 token for token, error in responses
                 if error is not None and _is_invalid_token_error(error)
-            )
+            ]
+            if batch_invalid:
+                logger.info("[FCM] %d token(s) are invalid/unregistered — will deactivate.", len(batch_invalid))
+            invalid_tokens.extend(batch_invalid)
         except Exception:
             logger.exception("Firebase push batch failed; in-app notifications remain available.")
 
