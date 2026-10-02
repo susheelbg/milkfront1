@@ -125,7 +125,11 @@ def _send_batch(
 
 
 def _is_invalid_token_error(error: Exception) -> bool:
-    return getattr(error, "code", None) in {"UNREGISTERED", "SENDER_ID_MISMATCH"}
+    # Firebase Admin Python SDK (HTTP v1 API) returns:
+    #   NOT_FOUND        — token unregistered / app uninstalled (most common)
+    #   UNREGISTERED     — alias for NOT_FOUND in some SDK versions
+    #   SENDER_ID_MISMATCH — token registered to a different Firebase project
+    return getattr(error, "code", None) in {"NOT_FOUND", "UNREGISTERED", "SENDER_ID_MISMATCH"}
 
 
 async def send_push_notifications(
