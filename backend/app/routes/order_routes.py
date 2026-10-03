@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user_optional, get_current_admin
 from app.models.order import Order, OrderItem
 from app.models.feed import Feed
+from app.models.partner import PartnerProduct
 from app.models.user import Profile
 from app.schemas.order import OrderCreate, OrderResponse, OrderUpdate
 from app.utils.response import json_response
@@ -27,6 +28,7 @@ async def place_order(
     """
     Place a new cattle feed order. Deducts stock quantity and creates lines.
     If authenticated via Supabase Auth, links order to current_user.id (UUID).
+    Supports both standard Feed products and Partner products shown in Buy Feeds.
     """
     if not req.items:
         raise HTTPException(
@@ -39,10 +41,52 @@ async def place_order(
     items_to_create = []
 
     for item in req.items:
+        # Check if item.id is a PartnerProduct ID (e.g. >= 10000)
+        if item.id >= 10000:
+            pp_id = item.id - 10000
+            pp_res = await db.execute(select(PartnerProduct).where(PartnerProduct.id == pp_id))
+            partner_prod = pp_res.scalars().first()
+            if not partner_prod:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Partner feed product with ID {item.id} not found."
+                )
+            
+            unit_price = partner_prod.buy_feeds_price if partner_prod.buy_feeds_price is not None else item.price
+            line_total = unit_price * item.quantity
+            calculated_total += line_total
+
+            items_to_create.append(
+                OrderItem(
+                    feed_id=None,
+                    product_name=partner_prod.name,
+                    quantity=item.quantity,
+                    price=unit_price
+                )
+            )
+            continue
+
         result = await db.execute(select(Feed).where(Feed.id == item.id))
         feed = result.scalars().first()
         
         if not feed:
+            # Fallback: check PartnerProduct with direct ID
+            pp_res = await db.execute(select(PartnerProduct).where(PartnerProduct.id == item.id))
+            partner_prod = pp_res.scalars().first()
+            if partner_prod:
+                unit_price = partner_prod.buy_feeds_price if partner_prod.buy_feeds_price is not None else item.price
+                line_total = unit_price * item.quantity
+                calculated_total += line_total
+                items_to_create.append(
+                    OrderItem(
+                        feed_id=None,
+                        product_name=partner_prod.name,
+                        quantity=item.quantity,
+                        price=unit_price
+                    )
+                )
+                continue
+
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Feed product with ID {item.id} not found."

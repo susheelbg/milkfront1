@@ -42,7 +42,7 @@ def _nut(value: str, limit: str) -> dict:
     return {"value": value, "unit": "%", "limit": limit}
 
 
-def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib, image_slug):
+def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib, image_slug, price):
     storage_base = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/cargill/products"
     return {
         "name": name, "brand": "Cargill", "category": "Lactating cattle feed",
@@ -61,6 +61,8 @@ def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_
         "source_url": CARGILL_SOURCE_URL, "display_order": order,
         "image_url": f"{storage_base}/{image_slug}/{image_slug}.png",
         "image_status": "approved",
+        "buy_feeds_price": price,
+        "show_in_buy_feeds": True,
     }
 
 
@@ -71,37 +73,37 @@ CARGILL_PRODUCTS = [
        "ದಿನಕ್ಕೆ 15–25 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2.5 L milk, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "21", "4", "12", "milkgen8000"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "21", "4", "12", "milkgen8000", 1650.0),
     _p(2, "Milkgen10000", "cow", "> 25 L/day", "> 25 L/day",
        "Suitable for cows giving more than 25 litres of milk/day.",
        "ದಿನಕ್ಕೆ 25 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2.5 L milk, with fodder/corn silage.",
        "ಮೇವು/ಕಾರ್ನ್ ಸೈಲೇಜ್‌ನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "24", "4", "10", "milkgen10000"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "24", "4", "10", "milkgen10000", 1850.0),
     _p(3, "Pragati", "cow_buffalo", "Cow ≤ 12 L/day · Buffalo ≤ 6 L/day", "ಹಸು ≤ 12 L/day · ಎಮ್ಮೆ ≤ 6 L/day",
        "Suitable for cows giving up to 12 litres/day and buffaloes giving up to 6 litres/day.",
        "ದಿನಕ್ಕೆ 12 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಮತ್ತು 6 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಎಮ್ಮೆಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk + 1 kg for better health, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ. + ಉತ್ತಮ ಆರೋಗ್ಯಕ್ಕಾಗಿ ಹೆಚ್ಚುವರಿ 1 ಕೆ.ಜಿ.",
-       "6mm roasted pellets", "6mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "3", "12", "pragati"),
+       "6mm roasted pellets", "6mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "3", "12", "pragati", 1450.0),
     _p(4, "Milkgen5000", "cow", "≤ 15 L/day", "≤ 15 L/day",
        "Suitable for cows giving up to 15 litres/day.",
        "ದಿನಕ್ಕೆ 15 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "2.5", "12", "milkgen5000"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "2.5", "12", "milkgen5000", 1350.0),
     _p(5, "Buffgen4000", "buffalo", "> 10 L/day", "> 10 L/day",
        "Suitable for buffaloes giving more than 10 litres/day.",
        "ದಿನಕ್ಕೆ 10 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಎಮ್ಮೆಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "22", "5", "12", "buffgen4000"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "22", "5", "12", "buffgen4000", 1550.0),
     _p(6, "Bullet", "cow_buffalo", "≤ 10 L/day", "≤ 10 L/day",
        "Suitable for cows and buffaloes giving up to 10 litres/day.",
        "ದಿನಕ್ಕೆ 10 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk + 1 kg for better health, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ. + ಉತ್ತಮ ಆರೋಗ್ಯಕ್ಕಾಗಿ ಹೆಚ್ಚುವರಿ 1 ಕೆ.ಜಿ.",
-       "Mash", "ಮ್ಯಾಶ್", "19", "2.5", "15", "bullet"),
+       "Mash", "ಮ್ಯಾಶ್", "19", "2.5", "15", "bullet", 1250.0),
 ]
 
 
@@ -119,36 +121,59 @@ async def ensure_partner_schema_and_seed() -> None:
             await conn.run_sync(
                 lambda sync_conn: PartnerProduct.__table__.create(sync_conn, checkfirst=True)
             )
+            # Add columns if missing in existing DB
+            for sql in [
+                "ALTER TABLE partner_products ADD COLUMN show_in_buy_feeds BOOLEAN DEFAULT TRUE NOT NULL;",
+                "ALTER TABLE partner_products ADD COLUMN buy_feeds_price FLOAT DEFAULT 0.0;",
+            ]:
+                try:
+                    await conn.execute(text(sql))
+                except Exception:
+                    pass
     except Exception as e:
         logger.warning(f"[PARTNERS] Table creation check failed: {e}")
-        return
 
     try:
         async with SessionLocal() as db:
             existing = (await db.execute(select(Partner).where(Partner.slug == "cargill"))).scalars().first()
-            if existing:
-                return
-            partner = Partner(
-                slug="cargill", name="Cargill",
-                tagline_en="Animal Nutrition & Dairy Feed",
-                tagline_kn="ಪಶು ಪೋಷಣೆ ಮತ್ತು ಡೈರಿ ಆಹಾರ",
-                description_en="Cargill India animal nutrition products for lactating dairy cows and buffaloes.",
-                description_kn="ಹಾಲು ನೀಡುವ ಹಸುಗಳು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗಾಗಿ ಕಾರ್ಗಿಲ್ ಇಂಡಿಯಾದ ಪಶು ಪೋಷಣೆ ಉತ್ಪನ್ನಗಳು.",
-                logo_url=CARGILL_LOGO_URL,
-                is_active=True, display_order=1,
-            )
-            db.add(partner)
-            await db.flush()
-            for item in CARGILL_PRODUCTS:
-                db.add(PartnerProduct(
-                    partner_id=partner.id, is_active=True,
-                    source_checked_at=_checked_at(),
-                    needs_review=False, review_note=None, **item,
-                ))
-            await db.commit()
-            logger.info("[PARTNERS] Seeded Cargill with %d verified products.", len(CARGILL_PRODUCTS))
+            if not existing:
+                partner = Partner(
+                    slug="cargill", name="Cargill",
+                    tagline_en="Animal Nutrition & Dairy Feed",
+                    tagline_kn="ಪಶು ಪೋಷಣೆ ಮತ್ತು ಡೈರಿ ಆಹಾರ",
+                    description_en="Cargill India animal nutrition products for lactating dairy cows and buffaloes.",
+                    description_kn="ಹಾಲು ನೀಡುವ ಹಸುಗಳು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗಾಗಿ ಕಾರ್ಗಿಲ್ ಇಂಡಿಯಾದ ಪಶು ಪೋಷಣೆ ಉತ್ಪನ್ನಗಳು.",
+                    logo_url=CARGILL_LOGO_URL,
+                    is_active=True, display_order=1,
+                )
+                db.add(partner)
+                await db.flush()
+                for item in CARGILL_PRODUCTS:
+                    db.add(PartnerProduct(
+                        partner_id=partner.id, is_active=True,
+                        source_checked_at=_checked_at(),
+                        needs_review=False, review_note=None, **item,
+                    ))
+                await db.commit()
+                logger.info("[PARTNERS] Seeded Cargill with %d verified products.", len(CARGILL_PRODUCTS))
+            else:
+                # Update existing seeded partner products to ensure default prices and visibility are set
+                prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing.id))).scalars().all()
+                price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in CARGILL_PRODUCTS}
+                updated = False
+                for p in prods:
+                    if p.name in price_map:
+                        def_price, def_show = price_map[p.name]
+                        if p.buy_feeds_price is None or p.buy_feeds_price == 0.0:
+                            p.buy_feeds_price = def_price
+                            updated = True
+                        if p.show_in_buy_feeds is None:
+                            p.show_in_buy_feeds = def_show
+                            updated = True
+                if updated:
+                    await db.commit()
     except Exception as e:
-        logger.warning(f"[PARTNERS] Seeding failed: {e}")
+        logger.warning(f"[PARTNERS] Seeding/migration failed: {e}")
 
 
 # ───────────────────────────── serialization ─────────────────────────────
@@ -179,8 +204,17 @@ def product_to_dict(p: PartnerProduct, admin: bool = False) -> dict:
         "feeding_instructions_en": p.feeding_instructions_en,
         "feeding_instructions_kn": p.feeding_instructions_kn,
         "nutrition_data": p.nutrition_data, "image_url": p.image_url,
+        "show_in_buy_feeds": p.show_in_buy_feeds, "buy_feeds_price": p.buy_feeds_price,
         "display_order": p.display_order,
     }
+    if admin:
+        data.update({
+            "is_active": p.is_active, "image_status": p.image_status,
+            "needs_review": p.needs_review, "review_note": p.review_note,
+            "source_url": p.source_url, "source_checked_at": _iso(p.source_checked_at),
+            "created_at": _iso(p.created_at), "updated_at": _iso(p.updated_at),
+        })
+    return data
     if admin:
         data.update({
             "is_active": p.is_active, "image_status": p.image_status,

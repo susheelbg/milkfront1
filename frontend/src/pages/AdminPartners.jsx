@@ -63,8 +63,10 @@ export const AdminPartners = () => {
     setImageData(null);
     setEditing(p ? {
       ...EMPTY, ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v ?? ''])),
+      show_in_buy_feeds: p.show_in_buy_feeds ?? true,
+      buy_feeds_price: p.buy_feeds_price ?? '',
       nutrition_text: p.nutrition_data ? JSON.stringify(p.nutrition_data, null, 2) : '',
-    } : { ...EMPTY, id: null });
+    } : { ...EMPTY, id: null, show_in_buy_feeds: true, buy_feeds_price: '' });
   };
 
   const onFile = (e) => {
@@ -91,6 +93,8 @@ export const AdminPartners = () => {
       recommended_use_en: nullable(editing.recommended_use_en), recommended_use_kn: nullable(editing.recommended_use_kn),
       feeding_instructions_en: nullable(editing.feeding_instructions_en), feeding_instructions_kn: nullable(editing.feeding_instructions_kn),
       nutrition_data: nutrition, source_url: nullable(editing.source_url),
+      show_in_buy_feeds: Boolean(editing.show_in_buy_feeds),
+      buy_feeds_price: editing.buy_feeds_price !== '' && editing.buy_feeds_price !== null ? parseFloat(editing.buy_feeds_price) : 0.0,
       needs_review: false, review_note: null,
     };
     if (imageData) body.image = imageData;
@@ -199,7 +203,13 @@ export const AdminPartners = () => {
             <div className="bg-white rounded-2xl border border-border-light overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-bg-light text-[11px] uppercase text-text-light">
-                  <tr><th className="p-3">Product</th><th className="p-3">Image</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr>
+                  <tr>
+                    <th className="p-3">Product</th>
+                    <th className="p-3">Image</th>
+                    <th className="p-3">Partners Status</th>
+                    <th className="p-3">Buy Feeds Status & Price</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-border-light">
                   {products.map((p, i) => (
@@ -216,18 +226,47 @@ export const AdminPartners = () => {
                       <td className="p-3 text-xs font-bold">
                         {p.is_active ? <span className="text-emerald-700 flex items-center gap-1"><CheckCircle2 size={13} /> Visible</span> : <span className="text-text-light">Hidden</span>}
                       </td>
+                      <td className="p-3 text-xs">
+                        <button
+                          onClick={() => patch(p, { show_in_buy_feeds: !p.show_in_buy_feeds }, p.show_in_buy_feeds ? 'Hidden from Buy Feeds' : 'Shown in Buy Feeds')}
+                          className={`px-2 py-0.5 rounded text-[11px] font-extrabold border transition-colors ${p.show_in_buy_feeds ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}
+                        >
+                          Show in Buy Feeds: {p.show_in_buy_feeds ? 'ON' : 'OFF'}
+                        </button>
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <span className="text-xs font-bold text-text-light">Price: ₹</span>
+                          <input
+                            type="number"
+                            step="1"
+                            className="w-20 border border-border-light rounded px-1.5 py-0.5 text-xs font-bold bg-white"
+                            defaultValue={p.buy_feeds_price ?? ''}
+                            onBlur={(e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val !== p.buy_feeds_price) {
+                                patch(p, { buy_feeds_price: val }, `Buy Feeds price updated to ₹${val}`);
+                              }
+                            }}
+                          />
+                        </div>
+                      </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-1">
                           <button title="Move up" disabled={i === 0} onClick={() => move(i, -1)} className="p-1.5 rounded hover:bg-bg-light disabled:opacity-30"><ArrowUp size={15} /></button>
                           <button title="Move down" disabled={i === products.length - 1} onClick={() => move(i, 1)} className="p-1.5 rounded hover:bg-bg-light disabled:opacity-30"><ArrowDown size={15} /></button>
-                          <button title={p.is_active ? 'Hide' : 'Restore'} onClick={() => patch(p, { is_active: !p.is_active }, p.is_active ? 'Hidden' : 'Restored')} className="p-1.5 rounded hover:bg-bg-light">{p.is_active ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                          <button
+                            title={p.is_active ? 'Hide from Partners' : 'Restore to Partners'}
+                            onClick={() => patch(p, { is_active: !p.is_active }, p.is_active ? 'Hidden from Partners' : 'Restored to Partners')}
+                            className="p-1.5 rounded hover:bg-bg-light"
+                          >
+                            {p.is_active ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
                           <button title="Edit" onClick={() => openEdit(p)} className="p-1.5 rounded hover:bg-bg-light"><Pencil size={15} /></button>
                           <button title="Delete" onClick={() => remove(p)} className="p-1.5 rounded hover:bg-red-50 text-red-600"><Trash2 size={15} /></button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {products.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-text-light">No products yet.</td></tr>}
+                  {products.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-text-light">No products yet.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -258,6 +297,13 @@ export const AdminPartners = () => {
               <Field label="Animal type (cow / buffalo / cow_buffalo)"><input className={inputCls} value={editing.animal_type} onChange={(e) => setEditing({ ...editing, animal_type: e.target.value })} /></Field>
               <Field label="Milk range (EN)"><input className={inputCls} value={editing.milk_production_range} onChange={(e) => setEditing({ ...editing, milk_production_range: e.target.value })} /></Field>
               <Field label="Milk range (ಕನ್ನಡ)"><input className={inputCls} value={editing.milk_production_range_kn} onChange={(e) => setEditing({ ...editing, milk_production_range_kn: e.target.value })} /></Field>
+              <Field label="Buy Feeds Price (₹)">
+                <input type="number" step="1" className={inputCls} value={editing.buy_feeds_price} onChange={(e) => setEditing({ ...editing, buy_feeds_price: e.target.value })} />
+              </Field>
+              <div className="flex items-center gap-2 pt-6">
+                <input type="checkbox" id="edit_show_in_buy_feeds" checked={Boolean(editing.show_in_buy_feeds)} onChange={(e) => setEditing({ ...editing, show_in_buy_feeds: e.target.checked })} />
+                <label htmlFor="edit_show_in_buy_feeds" className="text-xs font-bold text-text-dark cursor-pointer">Show in Buy Feeds</label>
+              </div>
             </div>
             {[['description', 'Description'], ['recommended_use', 'Recommended use'], ['feeding_instructions', 'Feeding instructions']].map(([k, label]) => (
               <div key={k} className="grid sm:grid-cols-2 gap-3">

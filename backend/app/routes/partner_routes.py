@@ -55,6 +55,8 @@ class ProductIn(BaseModel):
     nutrition_data: Optional[Any] = None
     source_url: Optional[str] = None
     is_active: Optional[bool] = None
+    show_in_buy_feeds: Optional[bool] = None
+    buy_feeds_price: Optional[float] = None
     display_order: Optional[int] = None
     needs_review: Optional[bool] = None
     review_note: Optional[str] = None

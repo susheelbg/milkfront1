@@ -11,6 +11,35 @@ from app.services.storage_service import upload_image
 
 router = APIRouter(tags=["Feeds Catalog"])
 
+from app.models.partner import PartnerProduct
+
+def partner_product_to_feed_dict(p: PartnerProduct) -> dict:
+    return {
+        "id": 10000 + p.id,
+        "name": p.name,
+        "title": p.name,
+        "price": float(p.buy_feeds_price) if p.buy_feeds_price is not None else 0.0,
+        "description": p.recommended_use_en or p.description_en or f"{p.brand or 'Cargill'} {p.name}",
+        "description_kn": p.recommended_use_kn or p.description_kn,
+        "brand": p.brand or "Cargill",
+        "category": p.category or "Lactating cattle feed",
+        "unit": "50 kg",
+        "image": p.image_url,
+        "image_url": p.image_url,
+        "stock_quantity": 100,
+        "is_hidden": False,
+        "is_partner_product": True,
+        "partner_product_id": p.id,
+        "recommended_use_en": p.recommended_use_en,
+        "recommended_use_kn": p.recommended_use_kn,
+        "feeding_instructions_en": p.feeding_instructions_en,
+        "feeding_instructions_kn": p.feeding_instructions_kn,
+        "milk_production_range": p.milk_production_range,
+        "milk_production_range_kn": p.milk_production_range_kn,
+        "animal_type": p.animal_type,
+        "nutrition_data": p.nutrition_data,
+    }
+
 # --- PUBLIC ENDPOINTS ---
 
 @router.get("/feeds")
@@ -19,26 +48,39 @@ async def get_feeds(
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve all available feed products with optional category and keyword filters."""
+    """Retrieve all available feed products (standard feeds + partner products with show_in_buy_feeds=True)."""
+    # 1. Fetch standard feeds
     query = select(Feed).where(Feed.is_hidden == False)
-    
     if category:
         query = query.where(Feed.category == category)
-        
     if search:
         search_filter = f"%{search}%"
         query = query.where(
             (Feed.title.ilike(search_filter)) | 
             (Feed.description.ilike(search_filter))
         )
-        
     result = await db.execute(query.order_by(Feed.id.asc()))
     feeds = result.scalars().all()
-    
-    # Parse through FeedResponse Pydantic schema to leverage alias mappings (title -> name, image_url -> image)
     payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
-    
-    return payload # Return array directly to keep it simple for frontend mapping, or envelope it
+
+    # 2. Fetch PartnerProducts enabled for Buy Feeds (show_in_buy_feeds == True and is_active == True)
+    pp_query = select(PartnerProduct).where(
+        PartnerProduct.show_in_buy_feeds.is_(True),
+        PartnerProduct.is_active.is_(True)
+    )
+    if search:
+        search_filter = f"%{search}%"
+        pp_query = pp_query.where(
+            (PartnerProduct.name.ilike(search_filter)) |
+            (PartnerProduct.description_en.ilike(search_filter)) |
+            (PartnerProduct.recommended_use_en.ilike(search_filter))
+        )
+    pp_result = await db.execute(pp_query.order_by(PartnerProduct.display_order.asc(), PartnerProduct.id.asc()))
+    partner_prods = pp_result.scalars().all()
+    for p in partner_prods:
+        payload.append(partner_product_to_feed_dict(p))
+
+    return payload
 
 @router.get("/feeds/admin")
 async def get_feeds_admin(
@@ -49,35 +91,40 @@ async def get_feeds_admin(
 ):
     """Retrieve all feed products including hidden ones (Admin only)."""
     query = select(Feed)
-    
     if category:
         query = query.where(Feed.category == category)
-        
     if search:
         search_filter = f"%{search}%"
         query = query.where(
             (Feed.title.ilike(search_filter)) | 
             (Feed.description.ilike(search_filter))
         )
-        
     result = await db.execute(query.order_by(Feed.id.asc()))
     feeds = result.scalars().all()
-    
     payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
     return payload
 
 @router.get("/feeds/{id}")
 async def get_feed_by_id(id: int, db: AsyncSession = Depends(get_db)):
     """Retrieve details for a specific feed product."""
+    if id >= 10000:
+        pp_id = id - 10000
+        res = await db.execute(select(PartnerProduct).where(PartnerProduct.id == pp_id))
+        p = res.scalars().first()
+        if not p or not p.is_active or not p.show_in_buy_feeds:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Partner feed product with ID {id} not found."
+            )
+        return partner_product_to_feed_dict(p)
+
     result = await db.execute(select(Feed).where(Feed.id == id))
     feed = result.scalars().first()
-    
     if not feed:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Feed product with ID {id} not found in database catalog."
         )
-        
     return FeedResponse.model_validate(feed).model_dump(by_alias=True)
 
 # --- ADMIN WRITE ENDPOINTS (Protected by Admin Role check) ---

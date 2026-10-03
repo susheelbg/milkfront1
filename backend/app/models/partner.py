@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -65,6 +65,9 @@ class PartnerProduct(Base):
     source_checked_at = Column(DateTime, nullable=True)
 
     is_active = Column(Boolean, default=True, nullable=False)
+    show_in_buy_feeds = Column(Boolean, default=True, nullable=False)
+    buy_feeds_price = Column(Float, default=0.0, nullable=True)
+
     display_order = Column(Integer, default=0, nullable=False)
     # Set by importer when a product changed/disappeared at source, or kn is missing
     needs_review = Column(Boolean, default=False, nullable=False)

@@ -104,11 +104,22 @@ public.user_devices (Supabase, RLS-protected)
 
 **Stage 2 (Live):** Firebase Admin SDK initialized on backend. `send_push_notifications()` sends FCM multicast messages for new cattle/feed events. Invalid tokens (`NOT_FOUND` / `UNREGISTERED`) are automatically deactivated on failed delivery.
 
-### 10. 🛡️ Admin Dashboard (`/admin`)
+### 10. 🤝 Our Partners & Partner Products in Buy Feeds
+- **Official Cargill India Catalog:** Complete internal catalog featuring 6 verified Cargill products (*Milkgen8000, Milkgen10000, Pragati, Milkgen5000, Buffgen4000, Bullet*).
+- **Supabase Storage Image Hosting:** All product packaging images are hosted directly in Supabase Storage (`milkmaatu-image` bucket under `partners/cargill/products/`). Zero external hotlinking.
+- **Unified Buy Feeds Catalog Integration:** Partner products appear alongside standard feed products in **Buy Feeds**, rendered using native Buy Feeds product cards, 1-tap cart additions, and instant checkout.
+- **Independent Dual Visibility & Price Controls:**
+  - `is_active`: Controls visibility under **Our Partners → Cargill**.
+  - `show_in_buy_feeds`: Controls independent visibility in **Buy Feeds** (turning OFF hides product from Buy Feeds while keeping it fully visible in Our Partners).
+  - `buy_feeds_price`: Admin-controlled selling price for Buy Feeds.
+  - **Historical Order Snapshot:** Order line items record the exact purchase price at order time. Updating the selling price later never affects previously placed orders.
+
+### 11. 🛡️ Admin Dashboard (`/admin`)
 | Section | Capabilities |
 |---------|-------------|
 | **Overview** | Platform metrics: users, orders, revenue, listings |
-| **Feeds** | Add / edit feed products (up to 2 image uploads) / toggle visibility / delete |
+| **Partners** | Manage partners (Cargill), toggle partner visibility, set Buy Feeds selling prices (`buy_feeds_price`), toggle Buy Feeds visibility (`show_in_buy_feeds`), edit product specs |
+| **Feeds** | Add / edit standard feed products (up to 2 image uploads) / toggle visibility / delete |
 | **Orders** | Audit all orders, update status |
 | **Users** | View directory, promote/demote roles (Super Admin) |
 | **Cattle** | Audit & moderate Sante listings |

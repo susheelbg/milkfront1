@@ -164,7 +164,11 @@ export const BuyFeedsPage = () => {
                     aria-label={`View ${feed.name} details`}
                   >
                     <div className="aspect-[4/5] w-full bg-gray-100 overflow-hidden relative">
-                      <img src={feed.image || feed.image_url} alt={feed.name} className="w-full h-full object-cover" />
+                      <img
+                        src={feed.image || feed.image_url}
+                        alt={feed.name}
+                        className={`w-full h-full ${feed.is_partner_product ? 'object-contain p-2 bg-white' : 'object-cover'}`}
+                      />
                       {feed.category && (
                         <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-text-dark text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-border-light shadow-xs">
                           {feed.category}
