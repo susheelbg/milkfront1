@@ -112,3 +112,16 @@ async def bootstrap_super_admin():
             logger.info(f"[SUPER ADMIN BOOTSTRAP] Confirmed Super Admin role in public.profiles (ID: {auth_user_id}).")
     except Exception as e:
         logger.error(f"[SUPER ADMIN BOOTSTRAP] Failed to upsert public.profiles row: {e}")
+
+    # Ensure schema has preferred_language column on public.profiles
+    try:
+        async with SessionLocal() as db:
+            await db.execute(text("""
+                ALTER TABLE public.profiles 
+                ADD COLUMN IF NOT EXISTS preferred_language VARCHAR DEFAULT 'kn';
+            """))
+            await db.commit()
+            logger.info("[DB MIGRATION] Confirmed preferred_language column in public.profiles.")
+    except Exception as e_mig:
+        logger.warning(f"[DB MIGRATION WARNING] Column check for preferred_language: {e_mig}")
+

@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect } from 'react';
 import knTranslations from './kn.json';
 import enTranslations from './en.json';
+import { authApi } from '../services/api/authApi';
+
 export const LanguageContext = createContext();
 
 const translations = {
@@ -23,6 +25,11 @@ export const LanguageProvider = ({ children }) => {
     
     setLanguageState(newLang);
     localStorage.setItem('appLanguage', newLang);
+
+    // Asynchronously sync preferred language to backend profile
+    authApi.updateProfile({ preferred_language: newLang }).catch(() => {
+      // Non-blocking background sync fallback
+    });
   };
 
   // Helper function to resolve dot-notation translation keys

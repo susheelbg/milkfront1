@@ -24,6 +24,12 @@ export const AuthProvider = ({ children }) => {
       const profile = await authApi.getProfile();
       if (profile) {
         setUser(profile);
+        const currentLocalLang = localStorage.getItem('appLanguage') || 'kn';
+        if (profile.preferred_language && profile.preferred_language !== currentLocalLang) {
+          localStorage.setItem('appLanguage', profile.preferred_language);
+        } else if (!profile.preferred_language || profile.preferred_language !== currentLocalLang) {
+          authApi.updateProfile({ preferred_language: currentLocalLang }).catch(() => {});
+        }
         try {
           localStorage.setItem('milkmaatu_auth_user', JSON.stringify(profile));
         } catch (e) {

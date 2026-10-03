@@ -19,6 +19,7 @@ async def get_profile(current_user: Profile = Depends(get_current_user)):
         "name": current_user.name or "",
         "phone": current_user.phone or "",
         "address": current_user.address or "",
+        "preferred_language": getattr(current_user, "preferred_language", "kn") or "kn",
         "role": current_user.role,
         "created_at": current_user.created_at.isoformat() if current_user.created_at else "",
         "updated_at": current_user.updated_at.isoformat() if current_user.updated_at else "",
@@ -42,6 +43,8 @@ async def update_profile(
         current_user.phone = req.phone.strip()
     if req.address is not None:
         current_user.address = req.address.strip()
+    if req.preferred_language is not None and req.preferred_language in ("kn", "en"):
+        current_user.preferred_language = req.preferred_language
         
     current_user.updated_at = datetime.now(timezone.utc)
     await db.commit()
@@ -53,6 +56,7 @@ async def update_profile(
         "name": current_user.name or "",
         "phone": current_user.phone or "",
         "address": current_user.address or "",
+        "preferred_language": getattr(current_user, "preferred_language", "kn") or "kn",
         "role": current_user.role,
         "created_at": current_user.created_at.isoformat() if current_user.created_at else "",
         "updated_at": current_user.updated_at.isoformat() if current_user.updated_at else "",

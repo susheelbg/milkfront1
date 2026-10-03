@@ -118,7 +118,11 @@ async def create_cattle_listing(
             message="A new cattle listing has been posted on MilkMaatu.",
             type_name="new_cattle",
             reference_id=str(new_cattle.id),
-            exclude_user_id=current_user.id if current_user else None
+            exclude_user_id=current_user.id if current_user else None,
+            title_kn="🐄 ಹೊಸ ರಾಸುಗಳು ಲಭ್ಯವಿದೆ",
+            message_kn="MilkMaatu ಸಂತೆಯಲ್ಲಿ ಹೊಸ ರಾಸುವಿನ ಮಾರಾಟದ ವಿವರಗಳನ್ನು ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ.",
+            title_en="🐄 New cattle available",
+            message_en="A new cattle listing has been posted on MilkMaatu Sante."
         )
         
         payload = CattleResponse.model_validate(new_cattle).model_dump(by_alias=True)

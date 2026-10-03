@@ -118,7 +118,11 @@ async def create_feed(
         title="🌾 New feed available",
         message="A new cattle feed product has been added to MilkMaatu.",
         type_name="new_feed",
-        reference_id=str(new_feed.id)
+        reference_id=str(new_feed.id),
+        title_kn="🌾 ಹೊಸ ಮೇವು ಲಭ್ಯವಿದೆ",
+        message_kn="MilkMaatu ದಲ್ಲಿ ಹೊಸ ದನದ ಮೇವಿನ ಉತ್ಪನ್ನವನ್ನು ಸೇರಿಸಲಾಗಿದೆ.",
+        title_en="🌾 New feed available",
+        message_en="A new cattle feed product has been added to MilkMaatu."
     )
     
     payload = FeedResponse.model_validate(new_feed).model_dump(by_alias=True)

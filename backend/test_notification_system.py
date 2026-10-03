@@ -29,14 +29,14 @@ async def run_tests():
         user_b_id = uuid.uuid4()
         user_c_id = uuid.uuid4()
 
-        user_a = Profile(id=user_a_id, email="farmer_a@milkmaatu.com", name="Farmer A", role="user")
-        user_b = Profile(id=user_b_id, email="farmer_b@milkmaatu.com", name="Farmer B", role="user")
-        user_c = Profile(id=user_c_id, email="admin@milkmaatu.com", name="Admin C", role="admin")
+        user_a = Profile(id=user_a_id, email="farmer_a@milkmaatu.com", name="Farmer A", role="user", preferred_language="kn")
+        user_b = Profile(id=user_b_id, email="farmer_b@milkmaatu.com", name="Farmer B", role="user", preferred_language="en")
+        user_c = Profile(id=user_c_id, email="admin@milkmaatu.com", name="Admin C", role="admin", preferred_language="kn")
 
         db.add_all([user_a, user_b, user_c])
         await db.commit()
 
-        print("=== 2. Testing Cattle Listing Notifications (Excluding Owner) ===")
+        print("=== 2. Testing Cattle Listing Notifications (Excluding Owner & Localized) ===")
         # User A posts cattle
         count = await notification_service.create_notifications_for_all_users(
             db=db,
@@ -52,12 +52,17 @@ async def run_tests():
         notifs_a = await notification_service.get_user_notifications(db, user_a_id)
         assert len(notifs_a) == 0, f"User A should have 0 notifications, got {len(notifs_a)}"
 
-        # Verify User B has 1 notification
+        # Verify User B (English preference) has English notification
         notifs_b = await notification_service.get_user_notifications(db, user_b_id)
         assert len(notifs_b) == 1, f"User B should have 1 notification, got {len(notifs_b)}"
         assert notifs_b[0].title == "🐄 New cattle available"
         assert notifs_b[0].reference_id == "101"
         assert notifs_b[0].is_read == False
+
+        # Verify User C (Kannada preference) has Kannada notification
+        notifs_c = await notification_service.get_user_notifications(db, user_c_id)
+        assert len(notifs_c) == 1, f"User C should have 1 notification, got {len(notifs_c)}"
+        assert notifs_c[0].title == "🐄 ಹೊಸ ರಾಸುಗಳು ಲಭ್ಯವಿದೆ"
 
         unread_count_b = await notification_service.get_unread_count(db, user_b_id)
         assert unread_count_b == 1, f"User B unread count should be 1, got {unread_count_b}"
