@@ -7,6 +7,29 @@ import { newsApi } from '../services/api/newsApi';
 import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
+const CowIcon = ({ className = "w-8 h-8 text-emerald-800" }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M4 7C4 4.5 2.5 3 2.5 3S6 4 7 7" />
+    <path d="M20 7C20 4.5 21.5 3 21.5 3S18 4 17 7" />
+    <path d="M3 10.5C2 10 1 8.5 2.5 8C4 7.5 6 9 6 9.5" />
+    <path d="M21 10.5C22 10 23 8.5 21.5 8C20 7.5 18 9 18 9.5" />
+    <path d="M6 7.5h12v5.5c0 2.5-2 4-4 4.5v1.5h-4v-1.5c-2-.5-4-2-4-4.5V7.5z" />
+    <path d="M7 13h10a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2z" />
+    <circle cx="9.5" cy="15" r="0.8" fill="currentColor" />
+    <circle cx="14.5" cy="15" r="0.8" fill="currentColor" />
+    <circle cx="8.5" cy="10.5" r="0.9" fill="currentColor" />
+    <circle cx="15.5" cy="10.5" r="0.9" fill="currentColor" />
+  </svg>
+);
+
 export const HomePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -55,8 +78,8 @@ export const HomePage = () => {
     {
       id: 'sante',
       label: t('home.sante'),
-      imageUrl: 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/others/cowicon.jpg',
-      emoji: '🐄',
+      icon: CowIcon,
+      iconColor: 'text-emerald-800',
       bg: 'bg-emerald-100',
       border: 'border-emerald-200',
       action: () => navigate('/sante'),
@@ -121,7 +144,7 @@ export const HomePage = () => {
               {tickerFeeds.map((feed, idx) => (
                 <button
                   key={`${feed.id}-${idx}`}
-                  onClick={() => navigate('/feeds')}
+                  onClick={() => navigate('/feeds', { state: { selectedFeedId: feed.id } })}
                   aria-label={feed.name}
                   className="flex-shrink-0 flex items-center gap-3 bg-white rounded-xl border border-amber-200/70 shadow-sm px-4 py-3 hover:shadow-md hover:border-primary-dark/40 active:scale-95 transition-all duration-200 w-52 text-left"
                 >

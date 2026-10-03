@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { feedsApi } from '../services/api/feedsApi';
 import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight, X, Zap } from 'lucide-react';
@@ -8,6 +8,7 @@ import { useTranslation } from '../i18n/useTranslation';
 
 export const BuyFeedsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,13 @@ export const BuyFeedsPage = () => {
       } catch (e) {}
     }
   }, []);
+
+  useEffect(() => {
+    if (feeds.length > 0 && location.state?.selectedFeedId) {
+      const target = feeds.find(f => f.id === parseInt(location.state.selectedFeedId));
+      if (target) setSelectedFeed(target);
+    }
+  }, [feeds, location.state]);
 
   useEffect(() => {
     setCurrentImageIndex(0);
