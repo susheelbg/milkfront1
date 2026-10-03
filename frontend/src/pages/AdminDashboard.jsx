@@ -66,6 +66,7 @@ export const AdminDashboard = () => {
     category: 'Dairy',
     stock_quantity: 100,
     image: '',
+    image2: '',
     is_hidden: false,
   });
 
@@ -194,6 +195,7 @@ export const AdminDashboard = () => {
       category: 'Dairy',
       stock_quantity: 100,
       image: '',
+      image2: '',
       is_hidden: false,
     });
     setIsFeedModalOpen(true);
@@ -209,6 +211,7 @@ export const AdminDashboard = () => {
       category: feed.category || 'Dairy',
       stock_quantity: feed.stock_quantity ?? 100,
       image: feed.image || feed.image_url || '',
+      image2: feed.image2 || feed.image_url_2 || '',
       is_hidden: feed.is_hidden || false,
     });
     setIsFeedModalOpen(true);
@@ -222,6 +225,20 @@ export const AdminDashboard = () => {
         setFeedFormData(prev => ({
           ...prev,
           image: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImage2Change = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFeedFormData(prev => ({
+          ...prev,
+          image2: reader.result,
         }));
       };
       reader.readAsDataURL(file);
@@ -1121,12 +1138,44 @@ export const AdminDashboard = () => {
                 ) : (
                   <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-primary hover:bg-primary-light/20 rounded-lg cursor-pointer transition-colors bg-bg-light text-center mt-1">
                     <Plus className="w-6 h-6 text-primary-dark mb-1" />
-                    <span className="text-xs text-text-dark font-bold">Upload Product Image</span>
+                    <span className="text-xs text-text-dark font-bold">Upload Product Image 1</span>
                     <span className="text-[10px] text-text-light mt-0.5">JPEG, PNG allowed</span>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs text-text-light font-bold uppercase mb-1">Product Image 2 <span className="normal-case text-text-light font-normal">(optional — max 2 pictures)</span></label>
+                {feedFormData.image2 ? (
+                  <div className="relative w-full max-w-[200px] aspect-[4/5] overflow-hidden rounded-lg mt-1 border-2 border-border-light">
+                    <img
+                      src={feedFormData.image2}
+                      alt="Preview 2"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFeedFormData({ ...feedFormData, image2: '' })}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-primary/50 hover:bg-primary-light/20 rounded-lg cursor-pointer transition-colors bg-bg-light text-center mt-1">
+                    <Plus className="w-6 h-6 text-primary-dark/60 mb-1" />
+                    <span className="text-xs text-text-dark font-bold">Upload Product Image 2</span>
+                    <span className="text-[10px] text-text-light mt-0.5">Optional second image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImage2Change}
                       className="hidden"
                     />
                   </label>

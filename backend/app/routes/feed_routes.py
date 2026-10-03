@@ -90,7 +90,8 @@ async def create_feed(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new feed product item (Admin only)."""
-    cdn_url = upload_image(req.image, folder="feeds")
+    cdn_url = upload_image(req.image, folder="feeds") if req.image else None
+    cdn_url_2 = upload_image(req.image2, folder="feeds") if req.image2 else None
     
     # Create the SQLAlchemy model
     new_feed = Feed(
@@ -100,6 +101,7 @@ async def create_feed(
         brand=req.brand,
         stock_quantity=req.stock_quantity,
         image_url=cdn_url,
+        image_url_2=cdn_url_2,
         category=req.category,
         unit=req.unit or "50 kg",
         is_hidden=req.is_hidden
@@ -157,7 +159,9 @@ async def update_feed(
     if "unit" in update_data:
         feed.unit = update_data["unit"]
     if "image" in update_data:
-        feed.image_url = upload_image(update_data["image"], folder="feeds")
+        feed.image_url = upload_image(update_data["image"], folder="feeds") if update_data["image"] else None
+    if "image2" in update_data:
+        feed.image_url_2 = upload_image(update_data["image2"], folder="feeds") if update_data["image2"] else None
     if "brand" in update_data:
         feed.brand = update_data["brand"]
     if "stock_quantity" in update_data:

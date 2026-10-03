@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { feedsApi } from '../services/api/feedsApi';
-import { Plus, Minus, ShoppingCart, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -13,6 +13,8 @@ export const BuyFeedsPage = () => {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState({});
   const [selectedFeed, setSelectedFeed] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
 
   useEffect(() => {
     const loadFeeds = async () => {
@@ -36,6 +38,11 @@ export const BuyFeedsPage = () => {
       } catch (e) {}
     }
   }, []);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setTouchStart(null);
+  }, [selectedFeed?.id]);
 
   const saveCartToStorage = (newCart) => {
     localStorage.setItem('active_cart', JSON.stringify(newCart));
@@ -84,6 +91,13 @@ export const BuyFeedsPage = () => {
     navigate('/order-summary', { state: { cart } });
   };
 
+  const selectedImages = selectedFeed
+    ? [
+        selectedFeed.image || selectedFeed.image_url,
+        selectedFeed.image2 || selectedFeed.image_url_2,
+      ].filter(Boolean)
+    : [];
+
   return (
     <div className="min-h-screen bg-bg-light pb-24">
       <Header showBack onBack={() => navigate('/home')} />
@@ -119,6 +133,7 @@ export const BuyFeedsPage = () => {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {feeds.map(feed => {
               const qty = cart[feed.id] || 0;
+              const hasMultipleImages = Boolean(feed.image2 || feed.image_url_2);
               return (
                 <Card key={feed.id} className="flex flex-col overflow-hidden border border-border-light" padding="0">
                   {/* Tappable image area → opens detail sheet */}
@@ -128,10 +143,15 @@ export const BuyFeedsPage = () => {
                     aria-label={`View ${feed.name} details`}
                   >
                     <div className="aspect-[4/5] w-full bg-gray-100 overflow-hidden relative">
-                      <img src={feed.image} alt={feed.name} className="w-full h-full object-cover" />
+                      <img src={feed.image || feed.image_url} alt={feed.name} className="w-full h-full object-cover" />
                       {feed.category && (
                         <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-text-dark text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-border-light shadow-xs">
                           {feed.category}
+                        </span>
+                      )}
+                      {hasMultipleImages && (
+                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] font-bold py-0.5 px-1.5 rounded-md backdrop-blur-xs flex items-center gap-1">
+                          📷 2 photos
                         </span>
                       )}
                     </div>
@@ -192,12 +212,83 @@ export const BuyFeedsPage = () => {
             </div>
 
             <div className="flex gap-4 p-5">
-              {/* Image */}
-              <img
-                src={selectedFeed.image}
-                alt={selectedFeed.name}
-                className="w-28 h-36 object-cover rounded-2xl flex-shrink-0 shadow-md"
-              />
+              {/* Product Image / Swipeable Image Carousel */}
+              {selectedImages.length > 1 ? (
+                <div className="relative w-32 h-40 rounded-2xl overflow-hidden shadow-md flex-shrink-0 bg-gray-100 group">
+                  <div
+                    className="flex w-full h-full transition-transform duration-300 ease-out"
+                    style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                    onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
+                    onTouchEnd={(e) => {
+                      if (touchStart === null) return;
+                      const touchEnd = e.changedTouches[0].clientX;
+                      const diff = touchStart - touchEnd;
+                      if (diff > 30 && currentImageIndex < selectedImages.length - 1) {
+                        setCurrentImageIndex(prev => prev + 1);
+                      } else if (diff < -30 && currentImageIndex > 0) {
+                        setCurrentImageIndex(prev => prev - 1);
+                      }
+                      setTouchStart(null);
+                    }}
+                  >
+                    {selectedImages.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`${selectedFeed.name} ${idx + 1}`}
+                        className="w-full h-full object-cover flex-shrink-0"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Left Chevron */}
+                  {currentImageIndex > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => prev - 1);
+                      }}
+                      className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors z-10"
+                      aria-label="Previous Image"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                  )}
+
+                  {/* Right Chevron */}
+                  {currentImageIndex < selectedImages.length - 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => prev + 1);
+                      }}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors z-10"
+                      aria-label="Next Image"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
+
+                  {/* Swipe indicator dots */}
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-1.5 z-10 pointer-events-none">
+                    {selectedImages.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          idx === currentImageIndex ? 'w-4 bg-white shadow-md' : 'w-1.5 bg-white/60'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={selectedImages[0] || selectedFeed.image || selectedFeed.image_url}
+                  alt={selectedFeed.name}
+                  className="w-28 h-36 object-cover rounded-2xl flex-shrink-0 shadow-md"
+                />
+              )}
+
               {/* Info */}
               <div className="flex-1 min-w-0">
                 {selectedFeed.category && (
@@ -212,6 +303,11 @@ export const BuyFeedsPage = () => {
                     <span className="text-xs text-text-light font-bold"> / {selectedFeed.unit}</span>
                   )}
                 </p>
+                {selectedImages.length > 1 && (
+                  <p className="text-[11px] font-semibold text-primary-dark mt-2 flex items-center gap-1">
+                    Swipe left/right to view all photos ({currentImageIndex + 1}/{selectedImages.length})
+                  </p>
+                )}
               </div>
             </div>
 

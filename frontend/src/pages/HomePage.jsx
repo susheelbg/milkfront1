@@ -4,7 +4,7 @@ import { Header, Button, Card } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { feedsApi } from '../services/api/feedsApi';
 import { newsApi } from '../services/api/newsApi';
-import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell } from 'lucide-react';
+import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const HomePage = () => {
@@ -73,7 +73,8 @@ export const HomePage = () => {
     {
       id: 'ai',
       label: t('home.nandiniAi'),
-      imageUrl: 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/others/aiicon.jpg',
+      icon: Brain,
+      iconColor: 'text-indigo-600',
       bg: 'bg-indigo-100',
       border: 'border-indigo-200',
       action: () => {
@@ -164,7 +165,9 @@ export const HomePage = () => {
             >
               {/* Circle */}
               <div className={`w-16 h-16 ${act.bg} rounded-full flex items-center justify-center text-3xl shadow-md border-2 border-white overflow-hidden group-hover:scale-105 group-active:scale-95 transition-transform duration-200`}>
-                {act.imageUrl ? (
+                {act.icon ? (
+                  <act.icon className={`w-8 h-8 ${act.iconColor || 'text-text-dark'}`} />
+                ) : act.imageUrl ? (
                   <img src={act.imageUrl} alt={act.label} className="w-full h-full object-cover" />
                 ) : (
                   act.emoji

@@ -12,6 +12,7 @@ class Feed(Base):
     price = Column(Float, nullable=False)
     stock_quantity = Column(Integer, default=100)
     image_url = Column(String, nullable=True)
+    image_url_2 = Column(String, nullable=True)
     category = Column(String, default="Dairy") # Dairy, Fodder, Supplement, Hay, Mineral, Protein
     unit = Column(String, default="50 kg") # e.g. 50 kg, 25 kg, 1 bag, 1 liter
     is_hidden = Column(Boolean, default=False, nullable=False)

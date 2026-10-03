@@ -9,6 +9,7 @@ class FeedBase(BaseModel):
     category: str = "Dairy"
     unit: Optional[str] = "50 kg"
     image: Optional[str] = Field(None, validation_alias=AliasChoices("image", "image_url"), serialization_alias="image")
+    image2: Optional[str] = Field(None, validation_alias=AliasChoices("image2", "image_url_2"), serialization_alias="image2")
     brand: Optional[str] = None
     stock_quantity: int = 100
     is_hidden: bool = False
@@ -23,6 +24,7 @@ class FeedUpdate(BaseModel):
     category: Optional[str] = None
     unit: Optional[str] = None
     image: Optional[str] = Field(None, validation_alias=AliasChoices("image", "image_url"))
+    image2: Optional[str] = Field(None, validation_alias=AliasChoices("image2", "image_url_2"))
     brand: Optional[str] = None
     stock_quantity: Optional[int] = None
     is_hidden: Optional[bool] = None
