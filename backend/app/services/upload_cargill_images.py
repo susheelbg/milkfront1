@@ -9,7 +9,7 @@ from app.models.partner import PartnerProduct
 BRAIN_DIR = "/Users/susheel/.gemini/antigravity-ide/brain/26a04922-a60c-4b15-85a4-5477152bf359"
 
 PRODUCT_IMAGE_MAPPING = [
-    ("Milkgen8000", os.path.join(BRAIN_DIR, "media__1791058990887.png"), "partners/cargill/products/milkgen8000/milkgen8000.png"),
+    ("Milkgen8000", os.path.join(BRAIN_DIR, "media__1791062826536.png"), "partners/cargill/products/milkgen8000/milkgen8000.png"),
     ("Milkgen10000", os.path.join(BRAIN_DIR, "media__1791059022898.png"), "partners/cargill/products/milkgen10000/milkgen10000.png"),
     ("Pragati", os.path.join(BRAIN_DIR, "pragati_cargill.png"), "partners/cargill/products/pragati/pragati.png"),
     ("Milkgen5000", os.path.join(BRAIN_DIR, "media__1791058973997.png"), "partners/cargill/products/milkgen5000/milkgen5000.png"),
