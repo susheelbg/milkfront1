@@ -6,12 +6,19 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useLocalized } from '../components/PartnerProductCard';
 import { Building2, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
 
-export const PartnerLogo = ({ partner, size = 'w-12 h-12' }) =>
-  partner.logo_url ? (
-    <img src={partner.logo_url} alt={partner.name} className={`${size} rounded-xl object-contain bg-white border border-border-light`} />
+export const PartnerLogo = ({ partner, size = 'w-12 h-12', className = '' }) =>
+  partner?.logo_url ? (
+    <div className={`${size} rounded-xl bg-white border border-border-light flex items-center justify-center p-1 shadow-xs shrink-0 overflow-hidden ${className}`}>
+      <img
+        src={partner.logo_url}
+        alt={partner.name || 'Partner Logo'}
+        className="w-full h-full object-contain object-center"
+        loading="lazy"
+      />
+    </div>
   ) : (
-    <div className={`${size} rounded-xl bg-gradient-to-br from-[#0A2E1F] to-[#14532D] text-amber-300 flex items-center justify-center font-black text-lg shadow-sm`}>
-      {partner.name?.charAt(0)?.toUpperCase()}
+    <div className={`${size} rounded-xl bg-gradient-to-br from-[#0A2E1F] to-[#14532D] text-amber-300 flex items-center justify-center font-black text-lg shadow-xs shrink-0 ${className}`}>
+      {partner?.name?.charAt(0)?.toUpperCase() || 'P'}
     </div>
   );
 

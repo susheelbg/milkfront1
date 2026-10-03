@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 CARGILL_SOURCE_URL = "https://www.cargill.co.in/en/lactating"
 CARGILL_VERIFIED_ON = "2026-10-04"
+CARGILL_LOGO_URL = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/cargill/logo/cargill-logo.jpg"
 
 # Fields an import/update may touch (image is handled separately, never auto-overwritten)
 IMPORTABLE_FIELDS = [
@@ -130,6 +131,7 @@ async def ensure_partner_schema_and_seed() -> None:
                 tagline_kn="ಪಶು ಪೋಷಣೆ ಮತ್ತು ಡೈರಿ ಆಹಾರ",
                 description_en="Cargill India animal nutrition products for lactating dairy cows and buffaloes.",
                 description_kn="ಹಾಲು ನೀಡುವ ಹಸುಗಳು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗಾಗಿ ಕಾರ್ಗಿಲ್ ಇಂಡಿಯಾದ ಪಶು ಪೋಷಣೆ ಉತ್ಪನ್ನಗಳು.",
+                logo_url=CARGILL_LOGO_URL,
                 is_active=True, display_order=1,
             )
             db.add(partner)

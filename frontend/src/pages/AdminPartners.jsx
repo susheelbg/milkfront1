@@ -3,6 +3,7 @@ import { partnersApi } from '../services/api/partnersApi';
 import { toastService } from '../services/toastService';
 import { Button } from '../components';
 import { ProductImage } from '../components/PartnerProductCard';
+import { PartnerLogo } from './PartnersPage';
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, ArrowUp, ArrowDown, Upload, RefreshCw, X, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
@@ -170,12 +171,15 @@ export const AdminPartners = () => {
 
       {partner && (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-black text-text-dark">{partner.name} — Products</h2>
-              {reviewCount > 0 && (
-                <p className="text-xs font-bold text-amber-700 flex items-center gap-1"><AlertTriangle size={13} /> {reviewCount} need review</p>
-              )}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-border-light rounded-2xl p-4 shadow-xs">
+            <div className="flex items-center gap-3">
+              <PartnerLogo partner={partner} size="w-12 h-12" />
+              <div>
+                <h2 className="text-lg font-black text-text-dark">{partner.name} — Products</h2>
+                {reviewCount > 0 && (
+                  <p className="text-xs font-bold text-amber-700 flex items-center gap-1"><AlertTriangle size={13} /> {reviewCount} need review</p>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={() => { setImportResult(null); setShowImport(true); }}>
