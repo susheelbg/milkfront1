@@ -343,9 +343,14 @@ export const BuyFeedsPage = () => {
               </div>
 
               {/* Description */}
-              <div>
-                <h4 className="text-xs font-black text-text-dark uppercase tracking-wider mb-1">About this product</h4>
-                <p className="text-sm text-text-light leading-relaxed">{selectedFeed.description || 'High quality cattle feed for maximum milk yield and health.'}</p>
+              <div className="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 space-y-1.5">
+                <h4 className="text-xs font-black text-text-dark uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📋</span>
+                  <span>About this product</span>
+                </h4>
+                <p className="text-xs sm:text-sm text-text-dark/90 leading-relaxed break-words whitespace-pre-line font-medium">
+                  {selectedFeed.description || 'High quality cattle feed for maximum milk yield and health.'}
+                </p>
               </div>
 
               {/* ── Other Products Section (Scroll down to see other products) ────── */}
