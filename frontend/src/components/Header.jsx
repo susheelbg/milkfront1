@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Shield, Bell } from 'lucide-react';
+import { User, Shield, Bell, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n/useTranslation';
 import { notificationApi } from '../services/api/notificationApi';
 import { NotificationPanel } from './NotificationPanel';
+import { CartPanel } from './CartPanel';
 
 export const Header = ({ showBack = false, onBack = null }) => {
   const navigate = useNavigate();
@@ -15,6 +16,37 @@ export const Header = ({ showBack = false, onBack = null }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  const [showCart, setShowCart] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
+
+  const updateCartCount = () => {
+    const savedCart = localStorage.getItem('active_cart');
+    if (savedCart) {
+      try {
+        const parsed = JSON.parse(savedCart);
+        const count = Object.values(parsed).reduce((sum, qty) => sum + qty, 0);
+        setCartItemCount(count);
+      } catch (e) {
+        setCartItemCount(0);
+      }
+    } else {
+      setCartItemCount(0);
+    }
+  };
+
+  useEffect(() => {
+    updateCartCount();
+
+    const handleSync = () => updateCartCount();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('cart_updated', handleSync);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('cart_updated', handleSync);
+    };
+  }, []);
 
   const fetchUnreadCount = async () => {
     if (!isAuthenticated) return;
@@ -58,6 +90,12 @@ export const Header = ({ showBack = false, onBack = null }) => {
       fetchFullNotifications();
     }
     setShowNotifications(!showNotifications);
+    setShowCart(false);
+  };
+
+  const handleCartClick = () => {
+    setShowCart(!showCart);
+    setShowNotifications(false);
   };
 
   const handleNotificationReadLocal = (id) => {
@@ -114,11 +152,26 @@ export const Header = ({ showBack = false, onBack = null }) => {
               </button>
             )}
 
+            {/* Shopping Cart Button 🛒 (LEFT of Notifications) */}
+            <button
+              onClick={handleCartClick}
+              className="relative w-9 h-9 rounded-full bg-white/30 hover:bg-white/50 text-text-dark font-bold flex items-center justify-center transition-all cursor-pointer border border-black/10 active:scale-95"
+              title={t('cart.title')}
+              aria-label={t('cart.title')}
+            >
+              <ShoppingCart size={18} className="text-text-dark" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-[10px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center shadow-xs border-2 border-primary">
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              )}
+            </button>
+
             {/* In-App Notification Bell 🔔 */}
             {isAuthenticated && (
               <button
                 onClick={handleBellClick}
-                className="relative w-9 h-9 rounded-full bg-white/30 hover:bg-white/50 text-text-dark font-bold flex items-center justify-center transition-all cursor-pointer border border-black/10"
+                className="relative w-9 h-9 rounded-full bg-white/30 hover:bg-white/50 text-text-dark font-bold flex items-center justify-center transition-all cursor-pointer border border-black/10 active:scale-95"
                 title={t('notifications.title') || 'Notifications'}
                 aria-label={t('notifications.title') || 'Notifications'}
               >
@@ -143,6 +196,11 @@ export const Header = ({ showBack = false, onBack = null }) => {
           </div>
         </div>
       </header>
+
+      {/* Cart Panel Drawer */}
+      {showCart && (
+        <CartPanel onClose={() => setShowCart(false)} />
+      )}
 
       {/* Notification Slide-Over / Panel */}
       {showNotifications && (

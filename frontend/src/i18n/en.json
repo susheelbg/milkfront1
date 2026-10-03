@@ -61,6 +61,16 @@
     "loadingNews": "Loading news...",
     "viewAll": "View All →"
   },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyDesc": "Browse cattle feeds and add them to your cart.",
+    "total": "Total Amount",
+    "checkout": "Proceed to Checkout →",
+    "clear": "Clear Cart",
+    "items": "items",
+    "browseFeeds": "Browse Cattle Feeds"
+  },
   "login": {
     "title": "Welcome Back",
     "subtitle": "Sign in to access feeds, cattle sante, and your orders",

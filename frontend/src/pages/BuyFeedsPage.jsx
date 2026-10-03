@@ -54,6 +54,7 @@ export const BuyFeedsPage = () => {
 
   const saveCartToStorage = (newCart) => {
     localStorage.setItem('active_cart', JSON.stringify(newCart));
+    window.dispatchEvent(new Event('cart_updated'));
   };
 
   const addToCart = (feedId) => {
