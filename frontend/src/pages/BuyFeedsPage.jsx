@@ -342,6 +342,45 @@ export const BuyFeedsPage = () => {
                 </div>
               </div>
 
+              {/* ── Purchase Action Buttons (Above Description) ──────────── */}
+              <div className="pt-1">
+                <div className="flex items-center gap-2">
+                  {/* Quantity selector or Add to Cart */}
+                  {(cart[selectedFeed.id] || 0) > 0 ? (
+                    <div className="flex items-center justify-between gap-3 bg-primary-light rounded-2xl border border-primary-dark/30 p-1.5 px-3 flex-1">
+                      <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                        <Minus size={16} />
+                      </button>
+                      <span className="text-base font-extrabold text-text-dark min-w-[24px] text-center">{cart[selectedFeed.id]}</span>
+                      <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => addToCart(selectedFeed.id)}
+                      className="flex-1 font-extrabold shadow-xs active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 border-2 border-primary-dark text-primary-dark bg-primary-light/40 hover:bg-primary-light"
+                    >
+                      <ShoppingCart size={16} />
+                      <span>+ Add to Cart</span>
+                    </Button>
+                  )}
+
+                  {/* Instant Buy Now Button */}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => handleBuyNow(selectedFeed.id)}
+                    className="flex-1 font-extrabold shadow-md active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-primary-dark text-text-dark hover:bg-primary-dark/90"
+                  >
+                    <Zap size={16} className="fill-current text-text-dark" />
+                    <span>Buy Now — ₹{selectedFeed.price}</span>
+                  </Button>
+                </div>
+              </div>
+
               {/* Description */}
               <div className="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 space-y-1.5">
                 <h4 className="text-xs font-black text-text-dark uppercase tracking-wider flex items-center gap-1.5">

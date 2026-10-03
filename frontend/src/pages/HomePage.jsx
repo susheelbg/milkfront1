@@ -7,26 +7,45 @@ import { newsApi } from '../services/api/newsApi';
 import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
-const CowIcon = ({ className = "w-8 h-8 text-emerald-800" }) => (
+const CowIcon = ({ className = "w-11 h-11" }) => (
   <svg
-    viewBox="0 0 24 24"
+    viewBox="0 0 64 64"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    xmlns="http://www.w3.org/2000/svg"
     className={className}
   >
-    <path d="M4 7C4 4.5 2.5 3 2.5 3S6 4 7 7" />
-    <path d="M20 7C20 4.5 21.5 3 21.5 3S18 4 17 7" />
-    <path d="M3 10.5C2 10 1 8.5 2.5 8C4 7.5 6 9 6 9.5" />
-    <path d="M21 10.5C22 10 23 8.5 21.5 8C20 7.5 18 9 18 9.5" />
-    <path d="M6 7.5h12v5.5c0 2.5-2 4-4 4.5v1.5h-4v-1.5c-2-.5-4-2-4-4.5V7.5z" />
-    <path d="M7 13h10a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2z" />
-    <circle cx="9.5" cy="15" r="0.8" fill="currentColor" />
-    <circle cx="14.5" cy="15" r="0.8" fill="currentColor" />
-    <circle cx="8.5" cy="10.5" r="0.9" fill="currentColor" />
-    <circle cx="15.5" cy="10.5" r="0.9" fill="currentColor" />
+    {/* Horns */}
+    <path d="M18 20C14 14 8 10 5 11C3.5 11.5 4 14 7 17C10 20 15 22 18 20Z" fill="#D97706" stroke="#78350F" strokeWidth="1.5" />
+    <path d="M46 20C50 14 56 10 59 11C60.5 11.5 60 14 57 17C54 20 49 22 46 20Z" fill="#D97706" stroke="#78350F" strokeWidth="1.5" />
+
+    {/* Ears */}
+    <path d="M16 26C8 26 2 29 4 33C6 37 14 34 17 30Z" fill="#FDE68A" stroke="#92400E" strokeWidth="1.5" />
+    <path d="M14 27.5C9 28 5 30 6.5 32.5C8 35 13 33 15 30.5Z" fill="#F43F5E" opacity="0.6" />
+    <path d="M48 26C56 26 62 29 60 33C58 37 50 34 47 30Z" fill="#FDE68A" stroke="#92400E" strokeWidth="1.5" />
+    <path d="M50 27.5C55 28 59 30 57.5 32.5C56 35 51 33 49 30.5Z" fill="#F43F5E" opacity="0.6" />
+
+    {/* Head Main Shape */}
+    <path d="M17 22C17 18 22 15 32 15C42 15 47 18 47 22V38C47 43 41 46 32 46C23 46 17 43 17 38V22Z" fill="#FFFFFF" stroke="#1E293B" strokeWidth="2" />
+
+    {/* Cow Black Patches on Head */}
+    <path d="M17 22C17 18 22 15 29 15C27 21 31 25 26 28C22 30 18 27 17 25V22Z" fill="#1E293B" />
+    <path d="M47 30C43 28 41 33 39 31C37 29 43 23 47 24V30Z" fill="#1E293B" />
+
+    {/* Eyes */}
+    <ellipse cx="24" cy="27" rx="2.5" ry="3.5" fill="#0F172A" />
+    <circle cx="25" cy="25.5" r="1" fill="#FFFFFF" />
+    <ellipse cx="40" cy="27" rx="2.5" ry="3.5" fill="#0F172A" />
+    <circle cx="41" cy="25.5" r="1" fill="#FFFFFF" />
+
+    {/* Big Snout / Muzzle */}
+    <path d="M20 37C20 34 25 33 32 33C39 33 44 34 44 37V44C44 49 39 52 32 52C25 52 20 49 20 44V37Z" fill="#FDA4AF" stroke="#E11D48" strokeWidth="1.8" />
+
+    {/* Nostrils */}
+    <ellipse cx="26" cy="42" rx="2.2" ry="3" fill="#9F1239" />
+    <ellipse cx="38" cy="42" rx="2.2" ry="3" fill="#9F1239" />
+
+    {/* Smile */}
+    <path d="M28 47C30 49 34 49 36 47" stroke="#9F1239" strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
 
