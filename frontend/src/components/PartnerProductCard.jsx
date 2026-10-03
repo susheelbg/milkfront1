@@ -33,8 +33,8 @@ export const ProductImage = ({ src, alt, className = '', iconSize = 40 }) => {
   const { t } = useTranslation();
   if (src) {
     return (
-      <div className={`bg-white flex items-center justify-center overflow-hidden ${className}`}>
-        <img src={src} alt={alt} loading="lazy" className="w-full h-full object-contain" />
+      <div className={`bg-white flex items-center justify-center overflow-hidden p-3 ${className}`}>
+        <img src={src} alt={alt} loading="lazy" className="w-full h-full object-contain object-center" />
       </div>
     );
   }

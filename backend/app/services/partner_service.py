@@ -42,7 +42,8 @@ def _nut(value: str, limit: str) -> dict:
     return {"value": value, "unit": "%", "limit": limit}
 
 
-def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib):
+def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib, image_slug):
+    storage_base = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/cargill/products"
     return {
         "name": name, "brand": "Cargill", "category": "Lactating cattle feed",
         "animal_type": animal,
@@ -58,6 +59,8 @@ def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_
             "moisture": _nut("11", "max"),
         },
         "source_url": CARGILL_SOURCE_URL, "display_order": order,
+        "image_url": f"{storage_base}/{image_slug}/{image_slug}.png",
+        "image_status": "approved",
     }
 
 
@@ -68,37 +71,37 @@ CARGILL_PRODUCTS = [
        "ದಿನಕ್ಕೆ 15–25 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2.5 L milk, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "21", "4", "12"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "21", "4", "12", "milkgen8000"),
     _p(2, "Milkgen10000", "cow", "> 25 L/day", "> 25 L/day",
        "Suitable for cows giving more than 25 litres of milk/day.",
        "ದಿನಕ್ಕೆ 25 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2.5 L milk, with fodder/corn silage.",
        "ಮೇವು/ಕಾರ್ನ್ ಸೈಲೇಜ್‌ನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "24", "4", "10"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "24", "4", "10", "milkgen10000"),
     _p(3, "Pragati", "cow_buffalo", "Cow ≤ 12 L/day · Buffalo ≤ 6 L/day", "ಹಸು ≤ 12 L/day · ಎಮ್ಮೆ ≤ 6 L/day",
        "Suitable for cows giving up to 12 litres/day and buffaloes giving up to 6 litres/day.",
        "ದಿನಕ್ಕೆ 12 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಮತ್ತು 6 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಎಮ್ಮೆಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk + 1 kg for better health, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ. + ಉತ್ತಮ ಆರೋಗ್ಯಕ್ಕಾಗಿ ಹೆಚ್ಚುವರಿ 1 ಕೆ.ಜಿ.",
-       "6mm roasted pellets", "6mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "3", "12"),
+       "6mm roasted pellets", "6mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "3", "12", "pragati"),
     _p(4, "Milkgen5000", "cow", "≤ 15 L/day", "≤ 15 L/day",
        "Suitable for cows giving up to 15 litres/day.",
        "ದಿನಕ್ಕೆ 15 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "2.5", "12"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "20", "2.5", "12", "milkgen5000"),
     _p(5, "Buffgen4000", "buffalo", "> 10 L/day", "> 10 L/day",
        "Suitable for buffaloes giving more than 10 litres/day.",
        "ದಿನಕ್ಕೆ 10 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಎಮ್ಮೆಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ.",
-       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "22", "5", "12"),
+       "3mm roasted pellets", "3mm ಹುರಿದ ಪೆಲೆಟ್‌ಗಳು", "22", "5", "12", "buffgen4000"),
     _p(6, "Bullet", "cow_buffalo", "≤ 10 L/day", "≤ 10 L/day",
        "Suitable for cows and buffaloes giving up to 10 litres/day.",
        "ದಿನಕ್ಕೆ 10 ಲೀಟರ್‌ವರೆಗೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗೆ ಸೂಕ್ತ.",
        "1 kg/day for every 2 L milk + 1 kg for better health, with fodder.",
        "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ ದಿನಕ್ಕೆ 1 ಕೆ.ಜಿ. + ಉತ್ತಮ ಆರೋಗ್ಯಕ್ಕಾಗಿ ಹೆಚ್ಚುವರಿ 1 ಕೆ.ಜಿ.",
-       "Mash", "ಮ್ಯಾಶ್", "19", "2.5", "15"),
+       "Mash", "ಮ್ಯಾಶ್", "19", "2.5", "15", "bullet"),
 ]
 
 
@@ -139,7 +142,6 @@ async def ensure_partner_schema_and_seed() -> None:
             for item in CARGILL_PRODUCTS:
                 db.add(PartnerProduct(
                     partner_id=partner.id, is_active=True,
-                    image_url=None, image_status="pending_approval",  # image reuse not yet cleared
                     source_checked_at=_checked_at(),
                     needs_review=False, review_note=None, **item,
                 ))

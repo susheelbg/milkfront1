@@ -27,9 +27,9 @@ async def run_tests():
         assert by["Milkgen10000"].nutrition_data["crude_fibre"]["value"] == "10"
         assert by["Bullet"].nutrition_data["form"]["en"] == "Mash"
         assert by["Buffgen4000"].nutrition_data["crude_fat"]["value"] == "5"
-        # No hotlinked / unverified images, all have Kannada, source tracked
+        # Verified Supabase Storage images, all have Kannada, source tracked
         for p in prods:
-            assert p.image_url is None and p.image_status == "pending_approval"
+            assert p.image_url and "supabase.co/storage" in p.image_url and p.image_status == "approved"
             assert p.recommended_use_kn and p.feeding_instructions_kn
             assert p.source_url == svc.CARGILL_SOURCE_URL and p.source_checked_at
             assert p.is_active
