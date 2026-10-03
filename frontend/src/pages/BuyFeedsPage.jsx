@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { feedsApi } from '../services/api/feedsApi';
-import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight, X, Zap } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -70,6 +70,18 @@ export const BuyFeedsPage = () => {
       saveCartToStorage(newCart);
       return newCart;
     });
+  };
+
+  const handleBuyNow = (feedId) => {
+    const currentQty = cart[feedId] || 0;
+    const updatedCart = {
+      ...cart,
+      [feedId]: currentQty > 0 ? currentQty : 1,
+    };
+    setCart(updatedCart);
+    saveCartToStorage(updatedCart);
+    setSelectedFeed(null);
+    navigate('/order-summary', { state: { cart: updatedCart } });
   };
 
   const getTotalItems = () => {
@@ -167,8 +179,8 @@ export const BuyFeedsPage = () => {
                     </div>
                   </button>
 
-                  {/* Add button row */}
-                  <div className="px-2.5 pb-2.5">
+                  {/* Add & Buy action row */}
+                  <div className="px-2.5 pb-2.5 flex flex-col gap-1.5">
                     {qty > 0 ? (
                       <div className="flex items-center justify-between bg-primary-light rounded-xl border border-primary-dark/30 overflow-hidden">
                         <button onClick={() => removeFromCart(feed.id)} className="p-2 hover:bg-primary-dark/20 active:scale-95 transition-all" title="Remove">
@@ -180,9 +192,14 @@ export const BuyFeedsPage = () => {
                         </button>
                       </div>
                     ) : (
-                      <Button variant="primary" size="sm" onClick={() => addToCart(feed.id)} className="w-full font-bold shadow-xs active:scale-95 text-xs">
-                        + {t('feeds.addToCart')}
-                      </Button>
+                      <div className="flex gap-1.5">
+                        <Button variant="primary" size="sm" onClick={() => addToCart(feed.id)} className="flex-1 font-bold shadow-xs active:scale-95 text-xs">
+                          + {t('feeds.addToCart')}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleBuyNow(feed.id)} className="font-bold shadow-xs active:scale-95 text-xs border-primary-dark text-primary-dark px-2 bg-primary-light/40">
+                          ⚡ Buy
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -359,32 +376,43 @@ export const BuyFeedsPage = () => {
               )}
             </div>
 
-            {/* ── Sticky Add To Cart Footer (Always visible on mobile) ── */}
+            {/* ── Sticky Add To Cart & Buy Now Footer (Always 100% visible on mobile) ── */}
             <div className="p-4 bg-white border-t border-border-light shadow-lg flex-shrink-0 z-20">
-              {(cart[selectedFeed.id] || 0) > 0 ? (
-                <div className="flex items-center justify-between gap-4 bg-primary-light rounded-2xl border border-primary-dark/30 p-2 px-4">
-                  <span className="text-xs font-extrabold text-text-dark">In Cart:</span>
-                  <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {/* Quantity selector or Add to Cart */}
+                {(cart[selectedFeed.id] || 0) > 0 ? (
+                  <div className="flex items-center justify-between gap-3 bg-primary-light rounded-2xl border border-primary-dark/30 p-1.5 px-3 flex-1">
                     <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
-                      <Minus size={18} />
+                      <Minus size={16} />
                     </button>
-                    <span className="text-lg font-extrabold text-text-dark min-w-[28px] text-center">{cart[selectedFeed.id]}</span>
+                    <span className="text-base font-extrabold text-text-dark min-w-[24px] text-center">{cart[selectedFeed.id]}</span>
                     <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
-                      <Plus size={18} />
+                      <Plus size={16} />
                     </button>
                   </div>
-                </div>
-              ) : (
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => addToCart(selectedFeed.id)}
+                    className="flex-1 font-extrabold shadow-xs active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 border-2 border-primary-dark text-primary-dark bg-primary-light/40 hover:bg-primary-light"
+                  >
+                    <ShoppingCart size={16} />
+                    <span>+ Add to Cart</span>
+                  </Button>
+                )}
+
+                {/* Instant Buy Now Button */}
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={() => addToCart(selectedFeed.id)}
-                  className="w-full font-bold shadow-md active:scale-95 py-3 text-sm sm:text-base flex items-center justify-center gap-2"
+                  onClick={() => handleBuyNow(selectedFeed.id)}
+                  className="flex-1 font-extrabold shadow-md active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-primary-dark text-text-dark hover:bg-primary-dark/90"
                 >
-                  <ShoppingCart size={18} />
-                  <span>+ {t('feeds.addToCart')} — ₹{selectedFeed.price}</span>
+                  <Zap size={16} className="fill-current text-text-dark" />
+                  <span>Buy Now — ₹{selectedFeed.price}</span>
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { Header, Button, Card } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { feedsApi } from '../services/api/feedsApi';
 import { newsApi } from '../services/api/newsApi';
-import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain } from 'lucide-react';
+import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const HomePage = () => {
@@ -56,6 +56,7 @@ export const HomePage = () => {
       id: 'sante',
       label: t('home.sante'),
       imageUrl: 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/others/cowicon.jpg',
+      emoji: '🐄',
       bg: 'bg-emerald-100',
       border: 'border-emerald-200',
       action: () => navigate('/sante'),
