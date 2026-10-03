@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Card } from '../components';
 import { feedsApi } from '../services/api/feedsApi';
-import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
 
@@ -199,139 +199,190 @@ export const BuyFeedsPage = () => {
           onClick={() => setSelectedFeed(null)}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-          {/* Sheet */}
+          {/* Sheet container */}
           <div
-            className="relative w-full bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto animate-slide-up"
+            className="relative w-full bg-white rounded-t-3xl shadow-2xl max-h-[88vh] flex flex-col animate-slide-up overflow-hidden md:max-w-2xl md:mx-auto"
             onClick={e => e.stopPropagation()}
           >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
+            {/* Top header handle + Close button */}
+            <div className="relative flex items-center justify-center px-5 pt-3 pb-2 border-b border-border-light/60 flex-shrink-0 bg-white">
               <div className="w-10 h-1 bg-gray-300 rounded-full" />
+              <button
+                onClick={() => setSelectedFeed(null)}
+                className="absolute right-4 top-2 text-text-light hover:text-text-dark bg-gray-100 hover:bg-gray-200 rounded-full p-1.5 transition-colors"
+                aria-label="Close detail view"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="flex gap-4 p-5">
-              {/* Product Image / Swipeable Image Carousel */}
-              {selectedImages.length > 1 ? (
-                <div className="relative w-32 h-40 rounded-2xl overflow-hidden shadow-md flex-shrink-0 bg-gray-100 group">
-                  <div
-                    className="flex w-full h-full transition-transform duration-300 ease-out"
-                    style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
-                    onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
-                    onTouchEnd={(e) => {
-                      if (touchStart === null) return;
-                      const touchEnd = e.changedTouches[0].clientX;
-                      const diff = touchStart - touchEnd;
-                      if (diff > 30 && currentImageIndex < selectedImages.length - 1) {
-                        setCurrentImageIndex(prev => prev + 1);
-                      } else if (diff < -30 && currentImageIndex > 0) {
-                        setCurrentImageIndex(prev => prev - 1);
-                      }
-                      setTouchStart(null);
-                    }}
-                  >
-                    {selectedImages.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={img}
-                        alt={`${selectedFeed.name} ${idx + 1}`}
-                        className="w-full h-full object-cover flex-shrink-0"
-                      />
-                    ))}
-                  </div>
-
-                  {/* Left Chevron */}
-                  {currentImageIndex > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentImageIndex(prev => prev - 1);
+            {/* Scrollable Body (Image + Details + Other Products) */}
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-5">
+              {/* Product Info Row */}
+              <div className="flex gap-4">
+                {/* Product Image / Swipeable Carousel */}
+                {selectedImages.length > 1 ? (
+                  <div className="relative w-32 h-40 rounded-2xl overflow-hidden shadow-md flex-shrink-0 bg-gray-100 group">
+                    <div
+                      className="flex w-full h-full transition-transform duration-300 ease-out"
+                      style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                      onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
+                      onTouchEnd={(e) => {
+                        if (touchStart === null) return;
+                        const touchEnd = e.changedTouches[0].clientX;
+                        const diff = touchStart - touchEnd;
+                        if (diff > 30 && currentImageIndex < selectedImages.length - 1) {
+                          setCurrentImageIndex(prev => prev + 1);
+                        } else if (diff < -30 && currentImageIndex > 0) {
+                          setCurrentImageIndex(prev => prev - 1);
+                        }
+                        setTouchStart(null);
                       }}
-                      className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors z-10"
-                      aria-label="Previous Image"
                     >
-                      <ChevronLeft size={16} />
-                    </button>
-                  )}
+                      {selectedImages.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img}
+                          alt={`${selectedFeed.name} ${idx + 1}`}
+                          className="w-full h-full object-cover flex-shrink-0"
+                        />
+                      ))}
+                    </div>
 
-                  {/* Right Chevron */}
-                  {currentImageIndex < selectedImages.length - 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentImageIndex(prev => prev + 1);
-                      }}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors z-10"
-                      aria-label="Next Image"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  )}
+                    {currentImageIndex > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex(prev => prev - 1);
+                        }}
+                        className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors z-10"
+                        aria-label="Previous Image"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                    )}
+                    {currentImageIndex < selectedImages.length - 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex(prev => prev + 1);
+                        }}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors z-10"
+                        aria-label="Next Image"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    )}
 
-                  {/* Swipe indicator dots */}
-                  <div className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-1.5 z-10 pointer-events-none">
-                    {selectedImages.map((_, idx) => (
-                      <span
-                        key={idx}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          idx === currentImageIndex ? 'w-4 bg-white shadow-md' : 'w-1.5 bg-white/60'
-                        }`}
-                      />
-                    ))}
+                    <div className="absolute bottom-2 left-0 right-0 flex justify-center items-center gap-1.5 z-10 pointer-events-none">
+                      {selectedImages.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            idx === currentImageIndex ? 'w-4 bg-white shadow-md' : 'w-1.5 bg-white/60'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <img
-                  src={selectedImages[0] || selectedFeed.image || selectedFeed.image_url}
-                  alt={selectedFeed.name}
-                  className="w-28 h-36 object-cover rounded-2xl flex-shrink-0 shadow-md"
-                />
-              )}
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                {selectedFeed.category && (
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
-                    {selectedFeed.category}
-                  </span>
+                ) : (
+                  <img
+                    src={selectedImages[0] || selectedFeed.image || selectedFeed.image_url}
+                    alt={selectedFeed.name}
+                    className="w-28 h-36 object-cover rounded-2xl flex-shrink-0 shadow-md border border-border-light"
+                  />
                 )}
-                <h2 className="text-lg font-extrabold text-text-dark mt-2 leading-snug">{selectedFeed.name}</h2>
-                <p className="text-2xl font-black text-primary-dark mt-1">
-                  ₹{selectedFeed.price}
-                  {selectedFeed.unit && (
-                    <span className="text-xs text-text-light font-bold"> / {selectedFeed.unit}</span>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  {selectedFeed.category && (
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                      {selectedFeed.category}
+                    </span>
                   )}
-                </p>
-                {selectedImages.length > 1 && (
-                  <p className="text-[11px] font-semibold text-primary-dark mt-2 flex items-center gap-1">
-                    Swipe left/right to view all photos ({currentImageIndex + 1}/{selectedImages.length})
+                  <h2 className="text-lg font-extrabold text-text-dark mt-2 leading-snug">{selectedFeed.name}</h2>
+                  <p className="text-2xl font-black text-primary-dark mt-1">
+                    ₹{selectedFeed.price}
+                    {selectedFeed.unit && (
+                      <span className="text-xs text-text-light font-bold"> / {selectedFeed.unit}</span>
+                    )}
                   </p>
-                )}
+                  {selectedImages.length > 1 && (
+                    <p className="text-[11px] font-semibold text-primary-dark mt-2 flex items-center gap-1">
+                      Swipe left/right to view photos ({currentImageIndex + 1}/{selectedImages.length})
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {/* Description */}
+              <div>
+                <h4 className="text-xs font-black text-text-dark uppercase tracking-wider mb-1">About this product</h4>
+                <p className="text-sm text-text-light leading-relaxed">{selectedFeed.description || 'High quality cattle feed for maximum milk yield and health.'}</p>
+              </div>
+
+              {/* ── Other Products Section (Scroll down to see other products) ────── */}
+              {feeds.filter(f => f.id !== selectedFeed.id).length > 0 && (
+                <div className="pt-3 border-t border-border-light">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-black text-text-dark uppercase tracking-wider">
+                      Other Products You Might Like
+                    </h4>
+                    <span className="text-[10px] font-semibold text-text-light uppercase tracking-wider">
+                      {feeds.filter(f => f.id !== selectedFeed.id).length} available
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                    {feeds.filter(f => f.id !== selectedFeed.id).map(otherFeed => (
+                      <div
+                        key={otherFeed.id}
+                        onClick={() => setSelectedFeed(otherFeed)}
+                        className="bg-gray-50/80 border border-border-light rounded-xl p-2.5 cursor-pointer hover:border-primary-dark/40 active:scale-95 transition-all flex flex-col justify-between"
+                      >
+                        <div className="aspect-[4/5] w-full bg-white rounded-lg overflow-hidden mb-2 border border-border-light/60">
+                          <img
+                            src={otherFeed.image || otherFeed.image_url}
+                            alt={otherFeed.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-text-dark line-clamp-2 leading-tight">{otherFeed.name}</p>
+                          <p className="text-xs font-black text-primary-dark mt-1">₹{otherFeed.price}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Description */}
-            <div className="px-5 pb-2">
-              <h4 className="text-xs font-black text-text-dark uppercase tracking-wider mb-1.5">About this product</h4>
-              <p className="text-sm text-text-light leading-relaxed">{selectedFeed.description}</p>
-            </div>
-
-            {/* Add to cart */}
-            <div className="px-5 pt-3 pb-8 border-t border-border-light mt-3">
+            {/* ── Sticky Add To Cart Footer (Always visible on mobile) ── */}
+            <div className="p-4 bg-white border-t border-border-light shadow-lg flex-shrink-0 z-20">
               {(cart[selectedFeed.id] || 0) > 0 ? (
-                <div className="flex items-center justify-center gap-6 bg-primary-light rounded-2xl border border-primary-dark/30 py-3">
-                  <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all">
-                    <Minus size={20} />
-                  </button>
-                  <span className="text-xl font-extrabold text-text-dark min-w-[32px] text-center">{cart[selectedFeed.id]}</span>
-                  <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all">
-                    <Plus size={20} />
-                  </button>
+                <div className="flex items-center justify-between gap-4 bg-primary-light rounded-2xl border border-primary-dark/30 p-2 px-4">
+                  <span className="text-xs font-extrabold text-text-dark">In Cart:</span>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                      <Minus size={18} />
+                    </button>
+                    <span className="text-lg font-extrabold text-text-dark min-w-[28px] text-center">{cart[selectedFeed.id]}</span>
+                    <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                      <Plus size={18} />
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <Button variant="primary" size="lg" onClick={() => addToCart(selectedFeed.id)} className="w-full font-bold shadow-md active:scale-95">
-                  + {t('feeds.addToCart')}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => addToCart(selectedFeed.id)}
+                  className="w-full font-bold shadow-md active:scale-95 py-3 text-sm sm:text-base flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart size={18} />
+                  <span>+ {t('feeds.addToCart')} — ₹{selectedFeed.price}</span>
                 </Button>
               )}
             </div>
