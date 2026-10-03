@@ -89,7 +89,8 @@ async def get_feeds_admin(
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve all feed products including hidden ones (Admin only)."""
+    """Retrieve all feed products including hidden ones and partner products (Admin only)."""
+    # 1. Standard feeds
     query = select(Feed)
     if category:
         query = query.where(Feed.category == category)
@@ -102,6 +103,21 @@ async def get_feeds_admin(
     result = await db.execute(query.order_by(Feed.id.asc()))
     feeds = result.scalars().all()
     payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
+
+    # 2. Partner products
+    pp_query = select(PartnerProduct)
+    if search:
+        search_filter = f"%{search}%"
+        pp_query = pp_query.where(
+            (PartnerProduct.name.ilike(search_filter)) |
+            (PartnerProduct.description_en.ilike(search_filter))
+        )
+    pp_result = await db.execute(pp_query.order_by(PartnerProduct.display_order.asc(), PartnerProduct.id.asc()))
+    for p in pp_result.scalars().all():
+        d = partner_product_to_feed_dict(p)
+        d["is_hidden"] = not (p.show_in_buy_feeds and p.is_active)
+        payload.append(d)
+
     return payload
 
 @router.get("/feeds/{id}")
@@ -186,7 +202,37 @@ async def update_feed(
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Update details of an existing feed product (Admin only)."""
+    """Update details of an existing feed product (Admin only). Supports partner feeds (id >= 10000)."""
+    if id >= 10000:
+        pp_id = id - 10000
+        res = await db.execute(select(PartnerProduct).where(PartnerProduct.id == pp_id))
+        partner_prod = res.scalars().first()
+        if not partner_prod:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Partner feed product with ID {id} not found."
+            )
+
+        update_data = req.model_dump(exclude_unset=True)
+        if "price" in update_data and update_data["price"] is not None:
+            partner_prod.buy_feeds_price = float(update_data["price"])
+        if "is_hidden" in update_data and update_data["is_hidden"] is not None:
+            partner_prod.show_in_buy_feeds = not update_data["is_hidden"]
+        if "name" in update_data and update_data["name"]:
+            partner_prod.name = update_data["name"]
+        if "description" in update_data and update_data["description"]:
+            partner_prod.recommended_use_en = update_data["description"]
+
+        await db.commit()
+        await db.refresh(partner_prod)
+        d = partner_product_to_feed_dict(partner_prod)
+        d["is_hidden"] = not (partner_prod.show_in_buy_feeds and partner_prod.is_active)
+        return json_response(
+            success=True,
+            message="Partner feed product updated successfully",
+            data=d
+        )
+
     result = await db.execute(select(Feed).where(Feed.id == id))
     feed = result.scalars().first()
     
@@ -236,7 +282,16 @@ async def delete_feed(
     admin_user = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Delete a feed product item from the catalog (Admin only). Preserves order history snapshots."""
+    """Delete a feed product item from the catalog (Admin only). For partner feeds, hides from Buy Feeds."""
+    if id >= 10000:
+        pp_id = id - 10000
+        res = await db.execute(select(PartnerProduct).where(PartnerProduct.id == pp_id))
+        partner_prod = res.scalars().first()
+        if partner_prod:
+            partner_prod.show_in_buy_feeds = False
+            await db.commit()
+        return json_response(success=True, message="Partner feed product hidden from Buy Feeds catalog.")
+
     result = await db.execute(select(Feed).where(Feed.id == id))
     feed = result.scalars().first()
     
