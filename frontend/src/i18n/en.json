@@ -338,5 +338,43 @@
     "yesterday": "Yesterday",
     "daysAgo": "days ago",
     "itemUnavailable": "Referenced item is no longer available."
+  },
+  "partners": {
+    "title": "Our Partners",
+    "viewAll": "View All Partners",
+    "products": "Products",
+    "productsCount": "products",
+    "viewDetails": "View Details",
+    "back": "Back",
+    "loading": "Loading...",
+    "loadError": "Could not load. Please try again.",
+    "retry": "Retry",
+    "noPartners": "No partners available yet.",
+    "noProducts": "No products available yet.",
+    "manufacturer": "Manufacturer",
+    "manufacturedBy": "Manufactured by",
+    "disclaimer": "Product information is provided by the manufacturer. MilkMaatu does not manufacture these products.",
+    "suitableFor": "Suitable for",
+    "milkProduction": "Milk production",
+    "recommendedUse": "Recommended use",
+    "feeding": "Feeding instructions",
+    "nutrition": "Nutritional information",
+    "form": "Form",
+    "notProvided": "Information not provided by manufacturer.",
+    "imagePending": "Image coming soon",
+    "min": "min",
+    "max": "max",
+    "animal": {
+      "cow": "Dairy Cow",
+      "buffalo": "Buffalo",
+      "cow_buffalo": "Cow & Buffalo"
+    },
+    "nutrient": {
+      "crude_protein": "Crude Protein",
+      "crude_fat": "Crude Fat",
+      "crude_fibre": "Crude Fibre",
+      "moisture": "Moisture"
+    },
+    "about": "About this product"
   }
 }

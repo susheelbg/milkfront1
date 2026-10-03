@@ -23,6 +23,7 @@ from app.routes.report_routes import router as report_router
 from app.routes.news_routes import router as news_router
 from app.routes.notification_routes import router as notification_router
 from app.routes.device_routes import router as device_router
+from app.routes.partner_routes import router as partner_router
 
 # Background loop for Sante listing sweeps
 async def clean_expired_listings_worker():
@@ -113,6 +114,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[FIREBASE WARNING] Could not check Firebase status: {e}")
 
+    # Partner catalog tables + Cargill seed (idempotent, non-fatal)
+    try:
+        from app.services.partner_service import ensure_partner_schema_and_seed
+        await ensure_partner_schema_and_seed()
+    except Exception as e:
+        print(f"[PARTNERS WARNING] Partner catalog init issue: {e}")
+
     # 2. Start background worker tasks
     worker_task = asyncio.create_task(clean_expired_listings_worker())
     news_task = asyncio.create_task(news_refresh_worker())
@@ -157,6 +165,7 @@ app.include_router(report_router, prefix=settings.API_PREFIX)
 app.include_router(news_router, prefix=settings.API_PREFIX)
 app.include_router(notification_router, prefix=settings.API_PREFIX)
 app.include_router(device_router, prefix=settings.API_PREFIX)
+app.include_router(partner_router, prefix=settings.API_PREFIX)
 
 @app.get("/", tags=["Health Check"])
 async def root():

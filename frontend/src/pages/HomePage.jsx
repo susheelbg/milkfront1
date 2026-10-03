@@ -4,7 +4,9 @@ import { Header, Button, Card } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { feedsApi } from '../services/api/feedsApi';
 import { newsApi } from '../services/api/newsApi';
-import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store } from 'lucide-react';
+import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store, Building2 } from 'lucide-react';
+import { partnersApi } from '../services/api/partnersApi';
+import { PartnerLogo } from './PartnersPage';
 import { useTranslation } from '../i18n/useTranslation';
 
 const CowIcon = ({ className = "w-11 h-11" }) => (
@@ -59,6 +61,10 @@ export const HomePage = () => {
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState(false);
   const newsScrollRef = useRef(null);
+  const [partners, setPartners] = useState([]);
+  useEffect(() => {
+    partnersApi.list().then(setPartners).catch(() => setPartners([]));
+  }, []);
 
   useEffect(() => {
     // Load feeds for the recommendation ticker
@@ -325,6 +331,40 @@ export const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* ── 🤝 ನಮ್ಮ ಪಾಲುದಾರರು / Our Partners — below Farmers News ── */}
+      {partners.length > 0 && (
+        <section id="home-our-partners" className="max-w-4xl mx-auto px-4 pb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-base font-bold text-text-dark flex items-center gap-2">
+              <Building2 size={18} className="text-amber-600" />
+              {t('partners.title')}
+            </h3>
+            <button
+              onClick={() => navigate('/partners')}
+              className="text-[11px] font-bold text-primary-dark hover:underline cursor-pointer"
+            >
+              {t('partners.viewAll')} →
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {partners.map((p) => (
+              <button
+                key={p.id}
+                id={`home-partner-${p.slug}`}
+                onClick={() => navigate(`/partners/${p.id}`)}
+                className="min-w-[200px] flex items-center gap-3 bg-white border border-border-light rounded-2xl shadow-sm px-3.5 py-3 text-left hover:shadow-md hover:border-amber-300 transition-all"
+              >
+                <PartnerLogo partner={p} size="w-11 h-11" />
+                <div className="min-w-0">
+                  <p className="font-black text-sm text-text-dark">{p.name}</p>
+                  <p className="text-[11px] font-bold text-primary-dark">{p.product_count} {t('partners.productsCount')}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="max-w-4xl mx-auto px-4 py-4">
         {/* Collapsible heading */}

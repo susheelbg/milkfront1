@@ -27,7 +27,9 @@ import {
   MapPin,
   Clock,
   CheckCircle,
+  Building2,
 } from 'lucide-react';
+import { AdminPartners } from './AdminPartners';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const AdminDashboard = () => {
@@ -358,6 +360,7 @@ export const AdminDashboard = () => {
     { id: 'users', label: 'Registered Users', icon: Users },
     { id: 'cattle', label: 'Cattle Listings', icon: Tag },
     { id: 'moderation', label: 'Moderation', icon: ShieldAlert },
+    { id: 'partners', label: 'Our Partners', icon: Building2 },
   ];
 
   if (authLoading) {
@@ -1043,6 +1046,13 @@ export const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* 7. OUR PARTNERS TAB */}
+                {activeTab === 'partners' && (
+                  <div className="animate-slide-up">
+                    <AdminPartners />
                   </div>
                 )}
               </div>

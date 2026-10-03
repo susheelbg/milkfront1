@@ -13,6 +13,9 @@ import {
   AdminDashboard,
   NandiniAIPage,
   DairyNewsPage,
+  PartnersPage,
+  PartnerProductsPage,
+  PartnerProductDetailPage,
   PrivacyPolicy,
   TermsAndConditions,
   Support,
@@ -172,6 +175,30 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <DairyNewsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/partners',
+    element: (
+      <ProtectedRoute>
+        <PartnersPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/partners/:partnerId',
+    element: (
+      <ProtectedRoute>
+        <PartnerProductsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/partners/:partnerId/products/:productId',
+    element: (
+      <ProtectedRoute>
+        <PartnerProductDetailPage />
       </ProtectedRoute>
     ),
   },

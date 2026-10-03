@@ -38,6 +38,7 @@ function AppContent() {
     '/orders',
     '/profile',
     '/nandini-ai',
+    '/partners',
     '/order-summary'
   ];
 

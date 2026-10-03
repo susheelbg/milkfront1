@@ -90,6 +90,8 @@ def upload_image(image_data: str, folder: str = "other", user_id: Optional[str] 
         path = f"feeds/{unique_filename}"
     elif folder == "profiles":
         path = f"profiles/{clean_user_id}/{unique_filename}"
+    elif folder.startswith("partners/") and ".." not in folder:
+        path = f"{folder.strip('/')}/{unique_filename}"
     else:
         path = f"other/{unique_filename}"
 
@@ -179,6 +181,8 @@ async def upload_image_async(image_data: str, folder: str = "other", user_id: Op
         path = f"feeds/{unique_filename}"
     elif folder == "profiles":
         path = f"profiles/{clean_user_id}/{unique_filename}"
+    elif folder.startswith("partners/") and ".." not in folder:
+        path = f"{folder.strip('/')}/{unique_filename}"
     else:
         path = f"other/{unique_filename}"
 
