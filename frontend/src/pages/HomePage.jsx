@@ -55,7 +55,7 @@ export const HomePage = () => {
     {
       id: 'sante',
       label: t('home.sante'),
-      emoji: '🐄',
+      imageUrl: 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/others/cowicon.jpg',
       bg: 'bg-emerald-100',
       border: 'border-emerald-200',
       action: () => navigate('/sante'),
@@ -73,7 +73,7 @@ export const HomePage = () => {
     {
       id: 'ai',
       label: t('home.nandiniAi'),
-      emoji: '🧠✨',
+      imageUrl: 'https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/others/aiicon.jpg',
       bg: 'bg-indigo-100',
       border: 'border-indigo-200',
       action: () => {
@@ -163,8 +163,12 @@ export const HomePage = () => {
               className="flex flex-col items-center gap-2 flex-1 min-w-0 group"
             >
               {/* Circle */}
-              <div className={`w-16 h-16 ${act.bg} rounded-full flex items-center justify-center text-3xl shadow-md border-2 border-white group-hover:scale-105 group-active:scale-95 transition-transform duration-200`}>
-                {act.emoji}
+              <div className={`w-16 h-16 ${act.bg} rounded-full flex items-center justify-center text-3xl shadow-md border-2 border-white overflow-hidden group-hover:scale-105 group-active:scale-95 transition-transform duration-200`}>
+                {act.imageUrl ? (
+                  <img src={act.imageUrl} alt={act.label} className="w-full h-full object-cover" />
+                ) : (
+                  act.emoji
+                )}
               </div>
               {/* Label */}
               <span className="text-xs font-bold text-text-dark text-center leading-tight w-full truncate px-1">
