@@ -18,7 +18,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f9fafb;
+  background-color: #faf8f4;
   touch-action: manipulation;
 }
 
@@ -124,4 +124,106 @@ body {
 }
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MilkMaatu soft surfaces (visual only)
+   "Clean white + soft natural colors": warm page → tinted
+   section → white cards. Kept intentionally subtle.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --mm-page: #faf8f4;
+  --mm-border: #ece7dc;
+  --mm-shadow-soft: 0 1px 2px rgba(41, 37, 36, 0.04),
+    0 6px 18px -10px rgba(41, 37, 36, 0.16);
+  --mm-shadow-hover: 0 2px 4px rgba(41, 37, 36, 0.05),
+    0 12px 26px -12px rgba(41, 37, 36, 0.24);
+}
+
+/* Home page: warm off-white with a faint golden glow at the top */
+.mm-home-bg {
+  background:
+    radial-gradient(1100px 360px at 50% -140px, rgba(252, 211, 77, 0.12), transparent 70%),
+    var(--mm-page);
+}
+
+/* Section containers */
+.mm-section {
+  --mm-pad: 14px;
+  padding: var(--mm-pad);
+  border-radius: 1.25rem;
+  border: 1px solid var(--mm-border);
+  box-shadow: var(--mm-shadow-soft);
+}
+@media (min-width: 640px) {
+  .mm-section {
+    --mm-pad: 18px;
+  }
+}
+.mm-section--plain {
+  background: #ffffff;
+}
+.mm-section--feeds {
+  background: linear-gradient(160deg, #eff8f2 0%, #f5faf3 55%, #fbfaf2 100%);
+  border-color: #d9ede0;
+}
+.mm-section--news {
+  background: linear-gradient(160deg, #fff6e6 0%, #fffaf0 60%, #fffdf8 100%);
+  border-color: #f2e3c6;
+}
+.mm-section--partners {
+  background: linear-gradient(160deg, #ffffff 0%, #faf7f1 100%);
+  border-color: var(--mm-border);
+}
+
+/* Let horizontal tracks run edge-to-edge inside a section */
+.mm-bleed {
+  margin-left: calc(var(--mm-pad, 0px) * -1);
+  margin-right: calc(var(--mm-pad, 0px) * -1);
+  padding-left: var(--mm-pad, 0px);
+  padding-right: var(--mm-pad, 0px);
+  scroll-padding-left: var(--mm-pad, 0px);
+}
+.mm-bleed-x {
+  margin-left: calc(var(--mm-pad, 0px) * -1);
+  margin-right: calc(var(--mm-pad, 0px) * -1);
+}
+.mm-fade-edges {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+}
+
+/* Cards */
+.mm-card {
+  background: #ffffff;
+  border: 1px solid var(--mm-border);
+  box-shadow: var(--mm-shadow-soft);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.mm-card:hover {
+  box-shadow: var(--mm-shadow-hover);
+}
+
+/* Section headings */
+.mm-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #1f2937;
+}
+.mm-section-title--accent::before {
+  content: '';
+  width: 4px;
+  height: 1.1em;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #10b981 0%, #f59e0b 100%);
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-tile:hover {
+    transform: none;
+  }
 }

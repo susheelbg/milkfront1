@@ -156,7 +156,7 @@ export const BuyFeedsPage = () => {
               const qty = cart[feed.id] || 0;
               const hasMultipleImages = Boolean(feed.image2 || feed.image_url_2);
               return (
-                <Card key={feed.id} className="flex flex-col overflow-hidden border border-border-light" padding="0">
+                <Card key={feed.id} className="flex flex-col overflow-hidden mm-card" shadow="sm" padding="0">
                   {/* Tappable image area → opens detail sheet */}
                   <button
                     onClick={() => setSelectedFeed(feed)}
@@ -183,7 +183,7 @@ export const BuyFeedsPage = () => {
                     {/* Name */}
                     <div className="px-2.5 pt-2.5 pb-1">
                       <h3 className="text-xs font-extrabold text-text-dark leading-snug line-clamp-2">{feed.name}</h3>
-                      <p className="text-primary-dark font-black text-sm mt-0.5">
+                      <p className="text-amber-700 font-black text-sm mt-0.5">
                         ₹{feed.price}
                         {feed.unit && (
                           <span className="text-[10px] text-text-light font-bold"> / {feed.unit}</span>

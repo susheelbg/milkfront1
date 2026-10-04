@@ -56,7 +56,7 @@ export const PartnerProductCard = ({ product, onOpen }) => {
       type="button"
       id={`partner-product-card-${product.id}`}
       onClick={() => onOpen(product)}
-      className="w-full text-left bg-white rounded-2xl border border-border-light shadow-sm hover:shadow-md hover:border-amber-300 active:scale-[0.99] transition-all overflow-hidden group"
+      className="w-full text-left mm-card rounded-2xl hover:border-amber-300 active:scale-[0.99] overflow-hidden group"
     >
       <ProductImage src={product.image_url} alt={product.name} className="h-36 w-full border-b border-border-light" />
       <div className="p-3.5 space-y-2">
@@ -76,7 +76,7 @@ export const PartnerProductCard = ({ product, onOpen }) => {
             </p>
           )}
         </div>
-        <div className="pt-1 flex items-center justify-between text-xs font-extrabold text-primary-dark group-hover:text-amber-700 transition-colors">
+        <div className="pt-1 flex items-center justify-between text-xs font-extrabold text-amber-700 group-hover:text-amber-800 transition-colors">
           <span>{t('partners.viewDetails')}</span>
           <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
         </div>

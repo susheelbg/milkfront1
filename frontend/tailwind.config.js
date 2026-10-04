@@ -13,7 +13,7 @@ export default {
         secondary: '#FFFFFF',
         'text-dark': '#1F2937',
         'text-light': '#6B7280',
-        'bg-light': '#F9FAFB',
+        'bg-light': '#FAF8F4',
         'border-light': '#E5E7EB',
       },
       animation: {

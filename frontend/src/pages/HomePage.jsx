@@ -96,8 +96,8 @@ export const HomePage = () => {
       id: 'feeds',
       label: t('home.buyFeeds'),
       emoji: '🌾',
-      bg: 'bg-amber-100',
-      border: 'border-amber-200',
+      bg: 'bg-emerald-100',
+      border: 'border-emerald-200',
       action: () => navigate('/feeds'),
     },
     {
@@ -105,8 +105,8 @@ export const HomePage = () => {
       label: t('home.sante'),
       icon: CowIcon,
       iconColor: 'text-emerald-800',
-      bg: 'bg-emerald-100',
-      border: 'border-emerald-200',
+      bg: 'bg-amber-100',
+      border: 'border-amber-200',
       action: () => navigate('/sante'),
     },
     {
@@ -136,14 +136,14 @@ export const HomePage = () => {
   const tickerFeeds = feeds.length > 0 ? [...feeds, ...feeds] : [];
 
   return (
-    <div className="min-h-screen bg-bg-light pb-12">
+    <div className="min-h-screen mm-home-bg pb-12">
       <Header />
 
       {/* Welcome Title */}
-      <section className="bg-white border-b border-border-light py-5 px-4 shadow-sm">
+      <section className="bg-gradient-to-b from-white to-[#fffdf8] border-b border-[#efeae0] py-5 px-4">
         <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-text-light font-bold uppercase tracking-wider">{t('common.namaste')}</p>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-text-dark">
+          <p className="text-xs text-emerald-700 font-bold uppercase tracking-wider">{t('common.namaste')}</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-text-dark tracking-tight">
             {t('common.welcome')}, {currentUser?.name ? `${currentUser.name} 👋` : `${t('common.farmer')} 👋`}
           </h2>
         </div>
@@ -151,30 +151,31 @@ export const HomePage = () => {
 
       {/* ── Recommended Feeds Ticker (above Quick Services) ─────────── */}
       {feeds.length > 0 && (
-        <section className="max-w-4xl mx-auto px-4 pt-6 pb-2">
+        <section className="max-w-4xl mx-auto px-4 pt-5 pb-2">
+          <div className="mm-section mm-section--feeds">
           {/* Header row */}
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-lg font-bold text-text-dark">{t('home.recommendedFeeds')}</h3>
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <h3 className="mm-section-title mm-section-title--accent text-lg">{t('home.recommendedFeeds')}</h3>
             <button
               onClick={() => navigate('/feeds')}
-              className="text-xs font-bold text-primary-dark hover:underline flex items-center gap-1 transition-colors"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 transition-colors"
             >
               {t('home.viewAll')}
             </button>
           </div>
 
           {/* Ticker container — overflow-hidden prevents horizontal scroll */}
-          <div className="overflow-hidden rounded-2xl border border-border-light bg-gradient-to-r from-amber-50 via-white to-amber-50 shadow-sm py-3">
+          <div className="overflow-hidden mm-bleed-x mm-fade-edges py-1.5">
             <div className="flex animate-marquee gap-4 px-4" style={{ width: 'max-content' }}>
               {tickerFeeds.map((feed, idx) => (
                 <button
                   key={`${feed.id}-${idx}`}
                   onClick={() => navigate('/feeds', { state: { selectedFeedId: feed.id } })}
                   aria-label={feed.name}
-                  className="flex-shrink-0 flex items-center gap-3 bg-white rounded-xl border border-amber-200/70 shadow-sm px-4 py-3 hover:shadow-md hover:border-primary-dark/40 active:scale-95 transition-all duration-200 w-52 text-left"
+                  className="flex-shrink-0 flex items-center gap-3 mm-card rounded-xl px-4 py-3 hover:border-emerald-200 active:scale-95 w-52 text-left"
                 >
                   {/* Feed image or emoji fallback */}
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-amber-100 border border-amber-200 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-emerald-50 border border-emerald-100 flex-shrink-0">
                     {feed.image ? (
                       <img
                         src={feed.image}
@@ -193,18 +194,19 @@ export const HomePage = () => {
                     {feed.category && (
                       <p className="text-[10px] text-text-light font-semibold uppercase tracking-wider mt-0.5 truncate">{feed.category}</p>
                     )}
-                    <p className="text-sm font-black text-primary-dark mt-1">₹{feed.price}</p>
+                    <p className="text-sm font-black text-amber-700 mt-1">₹{feed.price}</p>
                   </div>
                 </button>
               ))}
             </div>
           </div>
+          </div>
         </section>
       )}
 
       {/* Quick Services — 4 circles in one row */}
-      <section className="max-w-4xl mx-auto px-4 py-6">
-        <h3 className="text-lg font-bold text-text-dark mb-5 px-1">{t('home.quickServices')}</h3>
+      <section className="max-w-4xl mx-auto px-4 py-5">
+        <h3 className="mm-section-title mm-section-title--accent text-lg mb-4 px-0.5">{t('home.quickServices')}</h3>
         <div className="flex items-start justify-around gap-2">
           {mainActions.map((act) => (
             <button
@@ -223,7 +225,7 @@ export const HomePage = () => {
                 )}
               </div>
               {/* Label */}
-              <span className="text-xs font-bold text-text-dark text-center leading-tight w-full truncate px-1">
+              <span className="text-xs font-bold text-text-dark text-center leading-tight w-full line-clamp-2 break-words px-0.5">
                 {act.label}
               </span>
             </button>
@@ -232,19 +234,20 @@ export const HomePage = () => {
       </section>
 
       {/* ── 📰 ರೈತರ ಸುದ್ದಿ / Farmers News — below Quick Services ── */}
-      <section className="max-w-4xl mx-auto px-4 pb-6">
+      <section className="max-w-4xl mx-auto px-4 pt-5 pb-2">
+        <div className="mm-section mm-section--news">
         {/* Section header */}
-        <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center justify-between mb-3 px-0.5">
           <div
             onClick={() => navigate('/news')}
             className="flex items-center gap-2 cursor-pointer group"
           >
             <Newspaper size={18} className="text-amber-600 group-hover:scale-110 transition-transform" />
-            <h3 className="text-lg font-bold text-text-dark group-hover:text-amber-700 transition-colors">{t('home.farmersNews')}</h3>
+            <h3 className="mm-section-title text-lg group-hover:text-amber-800 transition-colors">{t('home.farmersNews')}</h3>
           </div>
           <button
             onClick={() => navigate('/news')}
-            className="text-xs font-bold text-primary-dark hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+            className="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
           >
             <span>{t('home.allNews')}</span>
             <span>→</span>
@@ -252,12 +255,12 @@ export const HomePage = () => {
         </div>
 
         {/* Outer premium container */}
-        <div className="bg-white/80 backdrop-blur-sm border border-border-light rounded-2xl shadow-sm overflow-hidden">
+        <div>
           {newsLoading ? (
             /* Skeleton loading */
-            <div className="flex gap-3 p-4 overflow-hidden">
+            <div className="flex gap-3 py-2 overflow-hidden">
               {[1, 2, 3].map(i => (
-                <div key={i} className="flex-shrink-0 w-64 h-40 bg-gray-100 rounded-xl animate-pulse" />
+                <div key={i} className="flex-shrink-0 w-64 h-40 bg-white/80 border border-amber-100 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : newsError ? (
@@ -276,14 +279,14 @@ export const HomePage = () => {
             /* Horizontal scroll-snap card track — clicking any card redirects to /news */
             <div
               ref={newsScrollRef}
-              className="flex gap-3 p-4 overflow-x-auto scroll-smooth snap-x snap-mandatory"
+              className="flex gap-3 py-2 mm-bleed overflow-x-auto scroll-smooth snap-x snap-mandatory"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {news.map(article => (
                 <div
                   key={article.id}
                   onClick={() => navigate('/news')}
-                  className="flex-shrink-0 w-64 snap-start bg-gradient-to-b from-amber-50 to-white border border-amber-200/60 rounded-xl p-3 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:border-amber-300 transition-all active:scale-[0.98] group"
+                  className="flex-shrink-0 w-64 snap-start mm-card rounded-xl p-3 flex flex-col gap-2 cursor-pointer hover:border-amber-300 active:scale-[0.98] group"
                 >
                   {/* Alert indicator */}
                   {article.is_alert && (
@@ -303,11 +306,11 @@ export const HomePage = () => {
                   </p>
 
                   {/* Footer: source + redirect CTA */}
-                  <div className="flex items-center justify-between mt-auto pt-2 border-t border-amber-200/50">
+                  <div className="flex items-center justify-between mt-auto pt-2 border-t border-stone-100">
                     <p className="text-[9px] font-bold text-text-light uppercase tracking-wider truncate max-w-[100px]">
                       {article.source_name}
                     </p>
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary-dark group-hover:underline flex-shrink-0">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 group-hover:underline flex-shrink-0">
                       {t('home.readFull') || 'ಓದಿ'} →
                     </span>
                   </div>
@@ -317,48 +320,49 @@ export const HomePage = () => {
           )}
 
           {/* Subtitle + CTA bar at bottom */}
-          <div className="px-4 py-2 bg-amber-50/60 border-t border-amber-200/40 flex items-center justify-between">
-            <p className="text-[10px] text-text-light font-semibold">
+          <div className="mt-1 pt-2.5 border-t border-amber-200/60 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-stone-600 font-semibold">
               {t('home.farmersNewsSubtitle')}
             </p>
             <button
               onClick={() => navigate('/news')}
-              className="text-[10px] font-bold text-primary-dark hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[10px] font-bold text-amber-700 hover:underline flex items-center gap-1 cursor-pointer flex-shrink-0"
             >
               <span>{t('home.allNews')}</span>
               <span>→</span>
             </button>
           </div>
         </div>
+        </div>
       </section>
 
       {/* ── 🤝 ನಮ್ಮ ಪಾಲುದಾರರು / Our Partners — below Farmers News ── */}
       {partners.length > 0 && (
-        <section id="home-our-partners" className="max-w-4xl mx-auto px-4 pb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-base font-bold text-text-dark flex items-center gap-2">
+        <section id="home-our-partners" className="max-w-4xl mx-auto px-4 py-5">
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <h3 className="mm-section-title text-lg">
               <Building2 size={18} className="text-amber-600" />
               {t('partners.title')}
             </h3>
             <button
               onClick={() => navigate('/partners')}
-              className="text-[11px] font-bold text-primary-dark hover:underline cursor-pointer"
+              className="text-[11px] font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
             >
               {t('partners.viewAll')} →
             </button>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-1">
+          <div className="flex gap-3 overflow-x-auto py-1 hide-scrollbar">
             {partners.map((p) => (
               <button
                 key={p.id}
                 id={`home-partner-${p.slug}`}
                 onClick={() => navigate(`/partners/${p.id}`)}
-                className="min-w-[200px] flex items-center gap-3 bg-white border border-border-light rounded-2xl shadow-sm px-3.5 py-3 text-left hover:shadow-md hover:border-amber-300 transition-all"
+                className="min-w-[200px] flex items-center gap-3 mm-card rounded-2xl px-3.5 py-3 text-left hover:border-amber-300"
               >
                 <PartnerLogo partner={p} size="w-11 h-11" />
                 <div className="min-w-0">
                   <p className="font-black text-sm text-text-dark">{p.name}</p>
-                  <p className="text-[11px] font-bold text-primary-dark">{p.product_count} {t('partners.productsCount')}</p>
+                  <p className="text-[11px] font-bold text-amber-700">{p.product_count} {t('partners.productsCount')}</p>
                 </div>
               </button>
             ))}
@@ -366,7 +370,7 @@ export const HomePage = () => {
         </section>
       )}
 
-      <section className="max-w-4xl mx-auto px-4 py-4">
+      <section className="max-w-4xl mx-auto px-4 pt-6 pb-4">
         {/* Collapsible heading */}
         <button
           onClick={() => setUpcomingOpen(prev => !prev)}
@@ -374,7 +378,7 @@ export const HomePage = () => {
           aria-controls="upcoming-features-panel"
           className="flex items-center justify-between w-full px-1 mb-4 group"
         >
-          <h3 className="text-lg font-bold text-text-dark">{t('home.comingSoon')}</h3>
+          <h3 className="mm-section-title mm-section-title--accent text-lg">{t('home.comingSoon')}</h3>
           <ChevronDown
             size={20}
             className={`text-text-light transition-transform duration-300 group-hover:text-primary-dark ${upcomingOpen ? 'rotate-0' : '-rotate-90'}`}
@@ -394,7 +398,8 @@ export const HomePage = () => {
               <Card
                 key={index}
                 padding="md"
-                className="flex items-center gap-4 bg-white/70 border border-border-light hover:shadow-none"
+                shadow="sm"
+                className="flex items-center gap-4 border border-[#ece7dc] rounded-2xl"
               >
                 <div className="bg-primary-light p-3 rounded-xl border border-primary-dark/20 text-text-dark">
                   <Icon size={24} />

@@ -116,7 +116,7 @@ export const Header = ({ showBack = false, onBack = null }) => {
 
   return (
     <>
-      <header className="bg-primary sticky top-0 z-40 shadow-sm border-b border-primary-dark">
+      <header className="bg-primary sticky top-0 z-40 border-b border-amber-400/60 shadow-[0_6px_16px_-10px_rgba(120,72,0,0.35)]">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {showBack && onBack ? (

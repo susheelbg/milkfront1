@@ -44,7 +44,7 @@ export const BottomNavigation = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border-light shadow-[0_-4px_12px_rgba(0,0,0,0.05)] md:max-w-2xl md:mx-auto md:bottom-4 md:rounded-2xl md:border md:shadow-xl transition-all duration-300">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#ece7dc] shadow-[0_-6px_20px_-10px_rgba(41,37,36,0.18)] md:max-w-2xl md:mx-auto md:bottom-4 md:rounded-2xl md:border md:shadow-xl transition-all duration-300">
       <div 
         className="flex items-center justify-around w-full"
         style={{
