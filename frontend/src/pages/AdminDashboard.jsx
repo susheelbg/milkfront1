@@ -355,7 +355,6 @@ export const AdminDashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Dashboard', icon: BarChart3 },
-    { id: 'feeds', label: 'Products / Feeds', icon: Layers },
     { id: 'orders', label: 'Orders', icon: ClipboardList },
     { id: 'users', label: 'Registered Users', icon: Users },
     { id: 'cattle', label: 'Cattle Listings', icon: Tag },
@@ -548,121 +547,7 @@ export const AdminDashboard = () => {
                   </div>
                 )}
 
-                {/* 2. FEEDS CATALOG TAB */}
-                {activeTab === 'feeds' && (
-                  <div className="space-y-4 animate-slide-up">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 px-1">
-                      <div>
-                        <h3 className="text-lg font-bold text-text-dark">Products / Feeds ({feedsList.length})</h3>
-                        <p className="text-xs text-text-light">
-                          Active (visible in shop): <span className="font-bold text-emerald-600">{activeFeedsCount}</span> | Hidden: <span className="font-bold text-amber-600">{hiddenFeedsCount}</span>
-                        </p>
-                      </div>
-                      <Button variant="primary" size="sm" onClick={openAddFeed}>
-                        + Add Feed
-                      </Button>
-                    </div>
 
-                    <div className="bg-white border border-border-light rounded-xl overflow-hidden shadow-xs">
-                      {feedsList.length === 0 ? (
-                        <div className="text-center py-16 px-4">
-                          <Layers className="w-12 h-12 text-primary mx-auto mb-3 opacity-60" />
-                          <h4 className="text-base font-bold text-text-dark mb-1">No products have been added yet.</h4>
-                          <p className="text-xs text-text-light mb-4">Start your live feed catalog by adding your first product.</p>
-                          <Button variant="primary" size="sm" onClick={openAddFeed}>
-                            + Add Your First Feed
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-sm text-text-dark border-collapse">
-                            <thead>
-                              <tr className="bg-bg-light border-b border-border-light text-xs font-bold text-text-light uppercase">
-                                <th className="p-4">Product</th>
-                                <th className="p-4">Category</th>
-                                <th className="p-4">Unit</th>
-                                <th className="p-4">Price</th>
-                                <th className="p-4">Status</th>
-                                <th className="p-4 text-right">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border-light">
-                              {feedsList.map((feed) => (
-                                <tr key={feed.id} className="hover:bg-bg-light/40 transition-colors">
-                                  <td className="p-4 font-bold flex items-center gap-3">
-                                    {(feed.image || feed.image_url) ? (
-                                      <img src={feed.image || feed.image_url} alt={feed.name || feed.title} className="w-10 h-10 rounded-lg object-cover border border-border-light" />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-lg bg-bg-light flex items-center justify-center text-xs font-bold text-text-light">
-                                        No img
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p className="text-sm font-black">{feed.name || feed.title}</p>
-                                      <p className="text-xs text-text-light font-normal line-clamp-1">{feed.description || 'No description'}</p>
-                                    </div>
-                                  </td>
-                                  <td className="p-4">
-                                    <span className="bg-bg-light text-text-dark border border-border-light px-2.5 py-1 rounded-md text-xs font-semibold">
-                                      {feed.category || 'Dairy'}
-                                    </span>
-                                  </td>
-                                  <td className="p-4 text-xs font-bold text-text-light">
-                                    {feed.unit || '50 kg'}
-                                  </td>
-                                  <td className="p-4 font-extrabold text-primary-dark">₹{feed.price}</td>
-                                  <td className="p-4">
-                                    {feed.is_hidden ? (
-                                      <span className="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-black uppercase inline-flex items-center gap-1">
-                                        Hidden
-                                      </span>
-                                    ) : (
-                                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-black uppercase inline-flex items-center gap-1">
-                                        Active
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="p-4 text-right whitespace-nowrap">
-                                    <div className="inline-flex items-center gap-1.5 justify-end">
-                                      <button
-                                        onClick={() => openEditFeed(feed)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 border border-border-light rounded-lg transition-all shadow-2xs active:scale-95 cursor-pointer"
-                                        title="Edit Product"
-                                      >
-                                        <Edit size={13} className="text-gray-500" />
-                                        <span>Edit</span>
-                                      </button>
-                                      <button
-                                        onClick={() => handleToggleHideFeed(feed)}
-                                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shadow-2xs active:scale-95 cursor-pointer ${
-                                          feed.is_hidden 
-                                            ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' 
-                                            : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200'
-                                        }`}
-                                        title={feed.is_hidden ? 'Make visible to customers' : 'Hide from customers'}
-                                      >
-                                        {feed.is_hidden ? <Eye size={13} /> : <EyeOff size={13} />}
-                                        <span>{feed.is_hidden ? 'Unhide' : 'Hide'}</span>
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteFeed(feed.id)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all shadow-2xs active:scale-95 cursor-pointer"
-                                        title="Delete Product"
-                                      >
-                                        <Trash2 size={13} />
-                                        <span>Delete</span>
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 {/* 3. ORDERS LIST TAB */}
                 {activeTab === 'orders' && (

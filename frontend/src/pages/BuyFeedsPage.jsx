@@ -327,9 +327,9 @@ export const BuyFeedsPage = () => {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  {selectedFeed.category && (
+                  {selectedFeed.brand && (
                     <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
-                      {selectedFeed.category}
+                      {selectedFeed.brand}
                     </span>
                   )}
                   <h2 className="text-lg font-extrabold text-text-dark mt-2 leading-snug">{selectedFeed.name}</h2>
@@ -386,16 +386,100 @@ export const BuyFeedsPage = () => {
                 </div>
               </div>
 
+              {/* ── Key Attributes Badges (Animal suitability & Milk Yield Range) ── */}
+              {(selectedFeed.animal_type || selectedFeed.milk_production_range || selectedFeed.milk_production_range_kn) && (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {selectedFeed.animal_type && (
+                    <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3">
+                      <p className="text-[10px] font-black uppercase text-emerald-800/80 tracking-wider">Suitable For</p>
+                      <p className="text-xs font-black text-emerald-950 mt-0.5 capitalize">
+                        🐄 {selectedFeed.animal_type === 'cow_buffalo' ? 'Cow & Buffalo' : selectedFeed.animal_type}
+                      </p>
+                    </div>
+                  )}
+                  {(selectedFeed.milk_production_range || selectedFeed.milk_production_range_kn) && (
+                    <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3">
+                      <p className="text-[10px] font-black uppercase text-amber-800/80 tracking-wider">Milk Capacity / Target</p>
+                      <p className="text-xs font-black text-amber-950 mt-0.5">
+                        🥛 {selectedFeed.milk_production_range_kn || selectedFeed.milk_production_range}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Description */}
-              <div className="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 space-y-1.5">
-                <h4 className="text-xs font-black text-text-dark uppercase tracking-wider flex items-center gap-1.5">
-                  <span>📋</span>
-                  <span>About this product</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-text-dark/90 leading-relaxed break-words whitespace-pre-line font-medium">
-                  {selectedFeed.description || 'High quality cattle feed for maximum milk yield and health.'}
-                </p>
-              </div>
+              {(selectedFeed.description_en || selectedFeed.description_kn || selectedFeed.description) && (
+                <div className="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 space-y-1.5">
+                  <h4 className="text-xs font-black text-text-dark uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📋</span>
+                    <span>About this product</span>
+                  </h4>
+                  <p className="text-xs sm:text-sm text-text-dark/90 leading-relaxed break-words whitespace-pre-line font-medium">
+                    {selectedFeed.description_kn || selectedFeed.description_en || selectedFeed.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Recommended Use */}
+              {(selectedFeed.recommended_use_en || selectedFeed.recommended_use_kn) && (
+                <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-200/60 space-y-1.5">
+                  <h4 className="text-xs font-black text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>Recommended Use</span>
+                  </h4>
+                  <p className="text-xs sm:text-sm text-emerald-950 leading-relaxed break-words font-semibold">
+                    {selectedFeed.recommended_use_kn || selectedFeed.recommended_use_en}
+                  </p>
+                </div>
+              )}
+
+              {/* Feeding Instructions */}
+              {(selectedFeed.feeding_instructions_en || selectedFeed.feeding_instructions_kn) && (
+                <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-200/60 space-y-1.5">
+                  <h4 className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🥣</span>
+                    <span>Feeding Instructions</span>
+                  </h4>
+                  <p className="text-xs sm:text-sm text-blue-950 leading-relaxed break-words font-semibold">
+                    {selectedFeed.feeding_instructions_kn || selectedFeed.feeding_instructions_en}
+                  </p>
+                </div>
+              )}
+
+              {/* Nutrition & Composition Data */}
+              {selectedFeed.nutrition_data && typeof selectedFeed.nutrition_data === 'object' && (
+                <div className="bg-white rounded-2xl border border-border-light p-4 space-y-2 shadow-xs">
+                  <h4 className="text-xs font-black uppercase text-text-light tracking-wider flex items-center gap-1.5">
+                    <span>🧪</span>
+                    <span>Nutrition & Composition</span>
+                  </h4>
+                  <div className="divide-y divide-border-light text-xs">
+                    {selectedFeed.nutrition_data.form && (
+                      <div className="flex justify-between py-2 font-semibold">
+                        <span className="text-text-light">Form</span>
+                        <span className="font-extrabold text-text-dark">
+                          {typeof selectedFeed.nutrition_data.form === 'object' 
+                            ? (selectedFeed.nutrition_data.form.kn || selectedFeed.nutrition_data.form.en) 
+                            : selectedFeed.nutrition_data.form}
+                        </span>
+                      </div>
+                    )}
+                    {Object.entries(selectedFeed.nutrition_data)
+                      .filter(([k, v]) => k !== 'form' && v && typeof v === 'object' && v.value !== undefined)
+                      .map(([key, v]) => (
+                        <div key={key} className="flex justify-between py-2 font-semibold">
+                          <span className="text-text-light capitalize">
+                            {key.replace(/_/g, ' ')} {v.limit ? `(${v.limit})` : ''}
+                          </span>
+                          <span className="font-extrabold text-text-dark">
+                            {v.value}{v.unit ? (v.unit === '%' ? '%' : ` ${v.unit}`) : ''}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               {/* ── Other Products Section (Scroll down to see other products) ────── */}
               {feeds.filter(f => f.id !== selectedFeed.id).length > 0 && (

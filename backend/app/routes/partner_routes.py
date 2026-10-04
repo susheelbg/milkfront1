@@ -209,8 +209,11 @@ async def admin_list_products(partner_id: int, admin: Profile = Depends(get_curr
     })
 
 
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+
+
 @router.post("/admin/partner-products")
-async def admin_create_product(req: ProductIn, admin: Profile = Depends(get_current_admin),
+async def admin_create_product(req: ProductIn, background_tasks: BackgroundTasks, admin: Profile = Depends(get_current_admin),
                                db: AsyncSession = Depends(get_db)):
     if not req.partner_id or not req.name or not req.name.strip():
         raise HTTPException(status_code=400, detail="partner_id and name are required")
@@ -225,6 +228,24 @@ async def admin_create_product(req: ProductIn, admin: Profile = Depends(get_curr
     db.add(prod)
     await db.commit()
     await db.refresh(prod)
+
+    # Notify farmers about new partner product
+    try:
+        from app.services.notification_service import dispatch_notifications_background
+        background_tasks.add_task(
+            dispatch_notifications_background,
+            title=f"🌾 New partner product: {prod.name}",
+            message=f"New product {prod.name} from {partner.name} is now available.",
+            type_name="new_partner_product",
+            reference_id=str(prod.id),
+            title_kn=f"🌾 ಹೊಸ ಪಶು ಉತ್ಪನ್ನ: {prod.name}",
+            message_kn=f"{partner.name} ನ ಹೊಸ ಉತ್ಪನ್ನ {prod.name} ಈಗ MilkMaatu ದಲ್ಲಿ ಲಭ್ಯವಿದೆ.",
+            title_en=f"🌾 New partner product: {prod.name}",
+            message_en=f"New product {prod.name} from {partner.name} is now available."
+        )
+    except Exception:
+        pass
+
     return json_response(True, "Product created", svc.product_to_dict(prod, admin=True), 201)
 
 

@@ -10,12 +10,14 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_admin, get_current_super_admin
 from app.models.user import Profile
 from app.models.feed import Feed
+from app.models.partner import PartnerProduct
 from app.models.order import Order, OrderItem
 from app.models.cattle import Cattle
 from app.schemas.user import ProfileResponse, UserRoleUpdate
 from app.schemas.order import OrderResponse, OrderUpdate
 from app.schemas.feed import FeedResponse
 from app.utils.response import json_response
+from app.routes.feed_routes import partner_product_to_feed_dict
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 
@@ -66,6 +68,21 @@ async def get_admin_stats(
     )
     active_feeds = active_feeds_res.scalar_one()
 
+    # Include Partner Products in catalog metrics
+    all_pp_res = await db.execute(select(func.count(PartnerProduct.id)))
+    total_pp = all_pp_res.scalar_one()
+
+    active_pp_res = await db.execute(
+        select(func.count(PartnerProduct.id)).where(
+            PartnerProduct.show_in_buy_feeds.is_(True),
+            PartnerProduct.is_active.is_(True)
+        )
+    )
+    active_pp = active_pp_res.scalar_one()
+
+    total_products_count = total_feeds + total_pp
+    total_active_feeds = active_feeds + active_pp
+
     # 3. Total orders and pending orders
     all_orders_res = await db.execute(select(func.count(Order.id)))
     total_all_orders = all_orders_res.scalar_one()
@@ -93,9 +110,9 @@ async def get_admin_stats(
 
     stats_payload = {
         "usersCount": total_users,
-        "feedsCount": active_feeds, # Active feeds count
-        "activeFeedsCount": active_feeds, # Explicit active feeds count
-        "productsCount": total_feeds, # Total catalog products count
+        "feedsCount": total_active_feeds, # Active feeds count
+        "activeFeedsCount": total_active_feeds, # Explicit active feeds count
+        "productsCount": total_products_count, # Total catalog products count
         "ordersCount": total_all_orders, # Total orders
         "pendingOrdersCount": total_pending_orders,
         "cattleCount": total_cattle,
@@ -355,10 +372,19 @@ async def get_all_feeds_admin(
     admin_user: Profile = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve all feed products in the system including hidden ones (Admin only)."""
+    """Retrieve all feed products in the system including hidden ones and all partner products (Admin only)."""
     result = await db.execute(select(Feed).order_by(Feed.id.asc()))
     feeds = result.scalars().all()
     payload = [FeedResponse.model_validate(f).model_dump(by_alias=True) for f in feeds]
+
+    # Include all products from Our Partners catalog
+    pp_result = await db.execute(select(PartnerProduct).order_by(PartnerProduct.display_order.asc(), PartnerProduct.id.asc()))
+    partner_prods = pp_result.scalars().all()
+    for p in partner_prods:
+        d = partner_product_to_feed_dict(p)
+        d["is_hidden"] = not (p.show_in_buy_feeds and p.is_active)
+        payload.append(d)
+
     return json_response(
         success=True,
         message="Fetched all catalog feeds successfully",
