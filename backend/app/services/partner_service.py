@@ -259,12 +259,106 @@ GODREJ_PRODUCTS = [
 ]
 
 
+TIWANA_SOURCE_URL = "https://tiwana.in/tiwana-nutrition/"
+TIWANA_VERIFIED_ON = "2026-10-04"
+TIWANA_LOGO_URL = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/tiwana/logo/tiwana-logo.png"
+
+
+def _p_tiwana(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib, image_slug, price):
+    storage_base = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/tiwana/products"
+    return {
+        "name": name, "brand": "Tiwana Nutrition", "category": "Bovine / Cattle Nutrition",
+        "animal_type": animal,
+        "milk_production_range": rng, "milk_production_range_kn": rng_kn,
+        "description_en": None, "description_kn": None,
+        "recommended_use_en": use_en, "recommended_use_kn": use_kn,
+        "feeding_instructions_en": feed_en, "feeding_instructions_kn": feed_kn,
+        "nutrition_data": {
+            "form": {"en": form_en, "kn": form_kn},
+            "crude_protein": _nut(cp, "min"),
+            "crude_fat": _nut(cf, "min"),
+            "crude_fibre": _nut(cfib, "max"),
+            "moisture": _nut("11", "max"),
+        },
+        "source_url": TIWANA_SOURCE_URL, "display_order": order,
+        "image_url": f"{storage_base}/{image_slug}/{image_slug}.png",
+        "image_status": "approved",
+        "buy_feeds_price": price,
+        "show_in_buy_feeds": True,
+    }
+
+
+# ONLY BOVINE / CATTLE NUTRITION PRODUCTS (10 products strictly from Tiwana Nutrition bovine section)
+TIWANA_PRODUCTS = [
+    _p_tiwana(1, "Tiwana 8000", "cow_buffalo", "15–25 L/day", "15–25 L/ದಿನ",
+              "High-yield bovine nutrition formulated for dairy cows & buffaloes producing 15–25 L/day.",
+              "ದಿನಕ್ಕೆ 15–25 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗೆ ಹೆಚ್ಚಿನ ಇಳುವರಿ ಆಹಾರ.",
+              "1 kg for every 2.5 L milk production with green and dry fodder.",
+              "ಹಸಿರು ಮತ್ತು ಒಣ ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "21", "4", "10", "tiwana-8000", 1650.0),
+    _p_tiwana(2, "Tiwana 10000", "cow_buffalo", "> 25 L/day", "> 25 L/ದಿನ",
+              "Premium high-energy bovine feed for ultra-high yielding dairy animals producing > 25 L/day.",
+              "ದಿನಕ್ಕೆ 25 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಅತ್ಯಧಿಕ ಇಳುವರಿ ನೀಡುವ ಜಾನುವಾರುಗಳಿಗೆ ಪ್ರೀಮಿಯಂ ಪೋಷಣೆ.",
+              "1 kg for every 2.5 L milk production + corn silage and balanced fodder.",
+              "ಕಾರ್ನ್ ಸೈಲೇಜ್ ಮತ್ತು ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "24", "4.5", "9", "tiwana-10000", 1850.0),
+    _p_tiwana(3, "Milk Plus", "cow_buffalo", "10–18 L/day", "10–18 L/ದಿನ",
+              "Balanced lactating feed designed to maximize milk yield and fat percentage in medium-yielding cattle.",
+              "ಮಧ್ಯಮ ಇಳುವರಿ ನೀಡುವ ಜಾನುವಾರುಗಳಲ್ಲಿ ಹಾಲಿನ ಇಳುವರಿ ಮತ್ತು ಕೊಬ್ಬಿನಂಶ ಹೆಚ್ಚಿಸುವ ಸಮತೋಲಿತ ಆಹಾರ.",
+              "1 kg for every 2.5 L milk production alongside quality fodder.",
+              "ಗುಣಮಟ್ಟದ ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "20", "3.5", "11", "milk-plus", 1550.0),
+    _p_tiwana(4, "Silage Plus", "cow_buffalo", "Silage Compatible Feed", "ಸೈಲೇಜ್ ಬೆಂಬಲಿತ ಆಹಾರ",
+              "Specialized feed formulated for dairy animals fed on maize silage, boosting rumen health and digestion.",
+              "ಮೆಕ್ಕೆಜೋಳ ಸೈಲೇಜ್ ಸೇವಿಸುವ ಜಾನುವಾರುಗಳಿಗೆ ಹೊಟ್ಟೆಯ ಆರೋಗ್ಯ ಮತ್ತು ಜೀರ್ಣಕ್ರಿಯೆ ಹೆಚ್ಚಿಸುವ ಆಹಾರ.",
+              "1 kg per 2.5 L milk production, fed together with maize silage.",
+              "ಮೆಕ್ಕೆಜೋಳ ಸೈಲೇಜ್‌ನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "10", "silage-plus", 1680.0),
+    _p_tiwana(5, "T-20 Dry", "cow_buffalo", "Dry Period Nutrition", "ಶುಷ್ಕ ಅವಧಿಯ ಪೋಷಣೆ",
+              "Specifically formulated for dry non-lactating cows and buffaloes to restore body condition and prepare for calving.",
+              "ಹಾಲು ನೀಡದ ಶುಷ್ಕ ಹಸು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗೆ ದೇಹದ ಆರೋಗ್ಯವನ್ನು ಮರುಸ್ಥಾಪಿಸಲು ಮತ್ತು ಕರು ಹಾಕಲು ಸಿದ್ಧಪಡಿಸುವ ಆಹಾರ.",
+              "1.5 kg to 2 kg daily with green fodder during dry period.",
+              "ಶುಷ್ಕ ಅವಧಿಯಲ್ಲಿ ಹಸಿರು ಮೇವಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 1.5 ರಿಂದ 2 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "18", "3", "12", "t20-dry", 1350.0),
+    _p_tiwana(6, "T-20 Fresher", "cow_buffalo", "21 Days Before Calving", "ಕರು ಹಾಕುವ 21 ದಿನಗಳ ಮೊದಲು",
+              "Transition feed given 21 days before calving to prevent metabolic disorders and ensure smooth lactation onset.",
+              "ಕರು ಹಾಕುವ 21 ದಿನಗಳ ಮೊದಲು ಚಯಾಪಚಯ ಅಸ್ವಸ್ಥತೆಗಳನ್ನು ತಡೆಗಟ್ಟಲು ನೀಡಲಾಗುವ ಪರಿವರ್ತನಾ ಆಹಾರ.",
+              "2–3 kg daily during the transition period with good quality green fodder.",
+              "ಉತ್ತಮ ಹಸಿರು ಮೇವಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 2–3 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "10", "t20-fresher", 1750.0),
+    _p_tiwana(7, "Dry Bovine", "cow_buffalo", "Maintenance & Dry Animals", "ಪೋಷಣೆ ಮತ್ತು ಶುಷ್ಕ ಜಾನುವಾರು",
+              "Economical maintenance feed for dry adult bovine animals to sustain metabolic health and weight.",
+              "ಶುಷ್ಕ ಜಾನುವಾರುಗಳ ಆರೋಗ್ಯ ಮತ್ತು ತೂಕ ನಿರ್ವಹಣೆಗಾಗಿ ಕೈಗೆಟುಕುವ ದೈನಂದಿನ ಆಹಾರ.",
+              "1–2 kg daily along with dry fodder and fresh clean water.",
+              "ಒಣ ಮೇವು ಮತ್ತು ಶುದ್ಧ ನೀರಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 1–2 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "16", "2.5", "14", "dry-bovine", 1280.0),
+    _p_tiwana(8, "Calf Starter Plus", "calf", "0–6 Months", "0–6 ತಿಂಗಳು",
+              "Highly digestible starter feed for young calves from 14 days up to 6 months, promoting early rumen development.",
+              "14 ದಿನದಿಂದ 6 ತಿಂಗಳ ಕರುಗಳಲ್ಲಿ ಮುಂಚಿನ ಹೊಟ್ಟೆಯ ಬೆಳವಣಿಗೆಯನ್ನು ಉತ್ತೇಜಿಸುವ ಸುಲಭವಾಗಿ ಜೀರ್ಣವಾಗುವ ಆಹಾರ.",
+              "Start with 250g daily and gradually increase to 1 kg daily alongside mother milk.",
+              "ತಾಯಿಯ ಹಾಲಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 250ಗ್ರಾಂ ನಿಂದ ಪ್ರಾರಂಭಿಸಿ 1 ಕೆಜಿಗೆ ಹೆಚ್ಚಿಸಿ.",
+              "Pellets / Crumbles", "ಪೆಲೆಟ್‌ಗಳು / ಕ್ರಂಬಲ್ಸ್", "22", "4", "7", "calf-starter-plus", 1400.0),
+    _p_tiwana(9, "Calf Grower", "calf", "6–12 Months", "6–12 ತಿಂಗಳು",
+              "Nutritional growth feed for growing heifers and young calves (6 to 12 months) for optimal weight gain and skeleton growth.",
+              "6 ರಿಂದ 12 ತಿಂಗಳ ಬೆಳೆಯುತ್ತಿರುವ ಕರುಗಳು ಮತ್ತು ಹೆಫರ್‌ಗಳ ಉತ್ತಮ ಮೂಳೆ ಮತ್ತು ತೂಕದ ಬೆಳವಣಿಗೆಗಾಗಿ.",
+              "1.5 kg to 2 kg daily with green fodder.",
+              "ಹಸಿರು ಮೇವಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 1.5 ರಿಂದ 2 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "20", "3.5", "9", "calf-grower", 1350.0),
+    _p_tiwana(10, "35 Protein", "cow_buffalo", "Protein Concentrate Feed", "ಪ್ರೋಟೀನ್ ಸಾಂದ್ರಿತ ಆಹಾರ",
+              "High-protein 35% bypass protein concentrate feed for mixing with farm grains or top-dressing for ultra-high milkers.",
+              "ಹೆಚ್ಚಿನ ಇಳುವರಿ ನೀಡುವ ಜಾನುವಾರುಗಳಿಗೆ ಧಾನ್ಯಗಳೊಂದಿಗೆ ಬೆರೆಸಲು 35% ಪ್ರೋಟೀನ್ ಸಾಂದ್ರಿತ ಆಹಾರ.",
+              "500g to 1 kg daily mixed with regular farm grains or home feed.",
+              "ಸಾಮಾನ್ಯ ಧಾನ್ಯಗಳು ಅಥವಾ ಗೃಹ ಆಹಾರದೊಂದಿಗೆ ಬೆರೆಸಿ ದಿನಕ್ಕೆ 500ಗ್ರಾಂ ನಿಂದ 1 ಕೆಜಿ.",
+              "Pellets / Mash", "ಪೆಲೆಟ್‌ಗಳು / ಮ್ಯಾಶ್", "35", "5", "8", "35-protein", 1950.0),
+]
+
+
 def _checked_at() -> datetime:
     return datetime.strptime(CARGILL_VERIFIED_ON, "%Y-%m-%d")
 
 
 async def ensure_partner_schema_and_seed() -> None:
-    """Idempotent: create tables if missing and seed Cargill + Innoterra + verified products."""
+    """Idempotent: create tables if missing and seed Cargill + Innoterra + Godrej Agrovet + Tiwana Nutrition verified products."""
     try:
         async with engine.begin() as conn:
             await conn.run_sync(
@@ -388,6 +482,44 @@ async def ensure_partner_schema_and_seed() -> None:
             else:
                 prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing_godrej.id))).scalars().all()
                 price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in GODREJ_PRODUCTS}
+                updated = False
+                for p in prods:
+                    if p.name in price_map:
+                        def_price, def_show = price_map[p.name]
+                        if p.buy_feeds_price is None or p.buy_feeds_price == 0.0:
+                            p.buy_feeds_price = def_price
+                            updated = True
+                        if p.show_in_buy_feeds is None:
+                            p.show_in_buy_feeds = def_show
+                            updated = True
+                if updated:
+                    await db.commit()
+
+            # Seed Tiwana Nutrition (BOVINE / CATTLE PRODUCTS ONLY)
+            existing_tiwana = (await db.execute(select(Partner).where(Partner.slug == "tiwana"))).scalars().first()
+            if not existing_tiwana:
+                partner_tiwana = Partner(
+                    slug="tiwana", name="Tiwana Nutrition",
+                    tagline_en="Balanced Bovine Nutrition & Dairy Feeds",
+                    tagline_kn="ಸಮತೋಲಿತ ಜಾನುವಾರು ಪೋಷಣೆ ಮತ್ತು ಡೈರಿ ಆಹಾರ",
+                    description_en="Tiwana Nutrition focuses on balanced bovine nutrition for dairy animals, offering nutrition programs for calves, pregnancy, lactation, dry animals and growing animals.",
+                    description_kn="ಟಿವಾನಾ ನ್ಯೂಟ್ರಿಷನ್ ಕರುಗಳು, ಗರ್ಭಾವಸ್ಥೆ, ಹಾಲಿನ ಅವಧಿ, ಶುಷ್ಕ ಮತ್ತು ಬೆಳೆಯುತ್ತಿರುವ ಜಾನುವಾರುಗಳಿಗೆ ಸಮತೋಲಿತ ಪೋಷಣೆಯನ್ನು ಒದಗಿಸುತ್ತದೆ.",
+                    logo_url=TIWANA_LOGO_URL,
+                    is_active=True, display_order=4,
+                )
+                db.add(partner_tiwana)
+                await db.flush()
+                for item in TIWANA_PRODUCTS:
+                    db.add(PartnerProduct(
+                        partner_id=partner_tiwana.id, is_active=True,
+                        source_checked_at=_checked_at(),
+                        needs_review=False, review_note=None, **item,
+                    ))
+                await db.commit()
+                logger.info("[PARTNERS] Seeded Tiwana Nutrition with %d verified bovine products.", len(TIWANA_PRODUCTS))
+            else:
+                prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing_tiwana.id))).scalars().all()
+                price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in TIWANA_PRODUCTS}
                 updated = False
                 for p in prods:
                     if p.name in price_map:
