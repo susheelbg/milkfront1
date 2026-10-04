@@ -64,10 +64,9 @@ export const AdminPartners = () => {
     setEditing(p ? {
       ...EMPTY, ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v ?? ''])),
       show_in_buy_feeds: p.show_in_buy_feeds ?? true,
-      is_in_stock: p.is_in_stock ?? true,
       buy_feeds_price: p.buy_feeds_price ?? '',
       nutrition_text: p.nutrition_data ? JSON.stringify(p.nutrition_data, null, 2) : '',
-    } : { ...EMPTY, id: null, show_in_buy_feeds: true, is_in_stock: true, buy_feeds_price: '' });
+    } : { ...EMPTY, id: null, show_in_buy_feeds: true, buy_feeds_price: '' });
   };
 
   const onFile = (e) => {
@@ -95,7 +94,6 @@ export const AdminPartners = () => {
       feeding_instructions_en: nullable(editing.feeding_instructions_en), feeding_instructions_kn: nullable(editing.feeding_instructions_kn),
       nutrition_data: nutrition, source_url: nullable(editing.source_url),
       show_in_buy_feeds: Boolean(editing.show_in_buy_feeds),
-      is_in_stock: Boolean(editing.is_in_stock),
       buy_feeds_price: editing.buy_feeds_price !== '' && editing.buy_feeds_price !== null ? parseFloat(editing.buy_feeds_price) : 0.0,
       needs_review: false, review_note: null,
     };
@@ -209,7 +207,6 @@ export const AdminPartners = () => {
                     <th className="p-3">Product</th>
                     <th className="p-3">Image</th>
                     <th className="p-3">Partners Status</th>
-                    <th className="p-3">Stock Status</th>
                     <th className="p-3">Buy Feeds Status & Price</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
@@ -228,14 +225,6 @@ export const AdminPartners = () => {
                       </td>
                       <td className="p-3 text-xs font-bold">
                         {p.is_active ? <span className="text-emerald-700 flex items-center gap-1"><CheckCircle2 size={13} /> Visible</span> : <span className="text-text-light">Hidden</span>}
-                      </td>
-                      <td className="p-3 text-xs">
-                        <button
-                          onClick={() => patch(p, { is_in_stock: !p.is_in_stock }, p.is_in_stock ? 'Marked Out of Stock' : 'Marked In Stock')}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-colors ${p.is_in_stock ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'}`}
-                        >
-                          {p.is_in_stock ? 'In Stock' : 'Out of Stock'}
-                        </button>
                       </td>
                       <td className="p-3 text-xs">
                         <button
@@ -311,15 +300,9 @@ export const AdminPartners = () => {
               <Field label="Buy Feeds Price (₹)">
                 <input type="number" step="1" className={inputCls} value={editing.buy_feeds_price} onChange={(e) => setEditing({ ...editing, buy_feeds_price: e.target.value })} />
               </Field>
-              <div className="flex flex-wrap items-center gap-4 pt-6">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="edit_show_in_buy_feeds" checked={Boolean(editing.show_in_buy_feeds)} onChange={(e) => setEditing({ ...editing, show_in_buy_feeds: e.target.checked })} />
-                  <label htmlFor="edit_show_in_buy_feeds" className="text-xs font-bold text-text-dark cursor-pointer">Show in Buy Feeds</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="edit_is_in_stock" checked={Boolean(editing.is_in_stock)} onChange={(e) => setEditing({ ...editing, is_in_stock: e.target.checked })} />
-                  <label htmlFor="edit_is_in_stock" className="text-xs font-bold text-text-dark cursor-pointer">In Stock</label>
-                </div>
+              <div className="flex items-center gap-2 pt-6">
+                <input type="checkbox" id="edit_show_in_buy_feeds" checked={Boolean(editing.show_in_buy_feeds)} onChange={(e) => setEditing({ ...editing, show_in_buy_feeds: e.target.checked })} />
+                <label htmlFor="edit_show_in_buy_feeds" className="text-xs font-bold text-text-dark cursor-pointer">Show in Buy Feeds</label>
               </div>
             </div>
             {[['description', 'Description'], ['recommended_use', 'Recommended use'], ['feeding_instructions', 'Feeding instructions']].map(([k, label]) => (

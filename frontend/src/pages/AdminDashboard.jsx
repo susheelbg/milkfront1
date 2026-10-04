@@ -298,20 +298,6 @@ export const AdminDashboard = () => {
     }
   };
 
-  const handleToggleStockFeed = async (feed) => {
-    const nextInStock = feed.is_in_stock === false || (feed.stock_quantity === 0) ? true : false;
-    try {
-      await feedsApi.updateFeed(feed.id, {
-        is_in_stock: nextInStock,
-        stock_quantity: nextInStock ? 100 : 0,
-      });
-      toastService.success(nextInStock ? `${feed.name || feed.title} is now In Stock.` : `${feed.name || feed.title} is now Out of Stock.`);
-      loadData();
-    } catch (e) {
-      toastService.error('Failed to update stock status.');
-    }
-  };
-
   const handleDeleteCattle = async (id) => {
     if (!window.confirm('Delete this cattle listing from Sante marketplace?')) return;
     try {
@@ -638,17 +624,6 @@ export const AdminDashboard = () => {
                                   </td>
                                   <td className="p-4 text-right whitespace-nowrap">
                                     <div className="inline-flex items-center gap-1.5 justify-end">
-                                      <button
-                                        onClick={() => handleToggleStockFeed(feed)}
-                                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shadow-2xs active:scale-95 cursor-pointer ${
-                                          feed.is_in_stock !== false && (feed.stock_quantity > 0)
-                                            ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' 
-                                            : 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200'
-                                        }`}
-                                        title={feed.is_in_stock !== false && (feed.stock_quantity > 0) ? 'Mark as Out of Stock' : 'Mark as In Stock'}
-                                      >
-                                        <span>{feed.is_in_stock !== false && (feed.stock_quantity > 0) ? 'In Stock' : 'Out of Stock'}</span>
-                                      </button>
                                       <button
                                         onClick={() => openEditFeed(feed)}
                                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 border border-border-light rounded-lg transition-all shadow-2xs active:scale-95 cursor-pointer"

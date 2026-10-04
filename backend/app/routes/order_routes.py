@@ -52,12 +52,6 @@ async def place_order(
                     detail=f"Partner feed product with ID {item.id} not found."
                 )
             
-            if getattr(partner_prod, "is_in_stock", True) is False:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"{partner_prod.name} is currently out of stock."
-                )
-            
             unit_price = partner_prod.buy_feeds_price if partner_prod.buy_feeds_price is not None else item.price
             line_total = unit_price * item.quantity
             calculated_total += line_total

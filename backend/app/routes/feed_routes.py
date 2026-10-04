@@ -26,8 +26,7 @@ def partner_product_to_feed_dict(p: PartnerProduct) -> dict:
         "unit": "50 kg",
         "image": p.image_url,
         "image_url": p.image_url,
-        "is_in_stock": getattr(p, "is_in_stock", True) if getattr(p, "is_in_stock", True) is not None else True,
-        "stock_quantity": 100 if (getattr(p, "is_in_stock", True) is not False) else 0,
+        "stock_quantity": 100,
         "is_hidden": False,
         "is_partner_product": True,
         "partner_product_id": p.id,
@@ -219,10 +218,6 @@ async def update_feed(
             partner_prod.buy_feeds_price = float(update_data["price"])
         if "is_hidden" in update_data and update_data["is_hidden"] is not None:
             partner_prod.show_in_buy_feeds = not update_data["is_hidden"]
-        if "is_in_stock" in update_data and update_data["is_in_stock"] is not None:
-            partner_prod.is_in_stock = bool(update_data["is_in_stock"])
-        elif "stock_quantity" in update_data and update_data["stock_quantity"] is not None:
-            partner_prod.is_in_stock = update_data["stock_quantity"] > 0
         if "name" in update_data and update_data["name"]:
             partner_prod.name = update_data["name"]
         if "description" in update_data and update_data["description"]:

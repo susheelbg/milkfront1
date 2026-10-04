@@ -155,7 +155,6 @@ export const BuyFeedsPage = () => {
             {feeds.map(feed => {
               const qty = cart[feed.id] || 0;
               const hasMultipleImages = Boolean(feed.image2 || feed.image_url_2);
-              const isOutOfStock = feed.is_in_stock === false || feed.stock_quantity === 0;
               return (
                 <Card key={feed.id} className="flex flex-col overflow-hidden border border-border-light" padding="0">
                   {/* Tappable image area → opens detail sheet */}
@@ -170,16 +169,10 @@ export const BuyFeedsPage = () => {
                         alt={feed.name}
                         className={`w-full h-full ${feed.is_partner_product ? 'object-contain p-2 bg-white' : 'object-cover'}`}
                       />
-                      {isOutOfStock ? (
-                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full shadow-xs z-10">
-                          {t('feeds.outOfStock')}
+                      {feed.category && (
+                        <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-text-dark text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-border-light shadow-xs">
+                          {feed.category}
                         </span>
-                      ) : (
-                        feed.category && (
-                          <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs text-text-dark text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded-full border border-border-light shadow-xs">
-                            {feed.category}
-                          </span>
-                        )
                       )}
                       {hasMultipleImages && (
                         <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] font-bold py-0.5 px-1.5 rounded-md backdrop-blur-xs flex items-center gap-1">
@@ -201,11 +194,7 @@ export const BuyFeedsPage = () => {
 
                   {/* Add & Buy action row */}
                   <div className="px-2.5 pb-2.5 flex flex-col gap-1.5">
-                    {isOutOfStock ? (
-                      <button disabled className="w-full bg-red-50 text-red-700 font-extrabold text-xs py-2 rounded-xl border border-red-200 cursor-not-allowed uppercase">
-                        {t('feeds.outOfStock')}
-                      </button>
-                    ) : qty > 0 ? (
+                    {qty > 0 ? (
                       <div className="flex items-center justify-between bg-primary-light rounded-xl border border-primary-dark/30 overflow-hidden">
                         <button onClick={() => removeFromCart(feed.id)} className="p-2 hover:bg-primary-dark/20 active:scale-95 transition-all" title="Remove">
                           <Minus size={14} />
@@ -360,47 +349,41 @@ export const BuyFeedsPage = () => {
 
               {/* ── Purchase Action Buttons (Above Description) ──────────── */}
               <div className="pt-1">
-                {(selectedFeed.is_in_stock === false || selectedFeed.stock_quantity === 0) ? (
-                  <button disabled className="w-full bg-red-100 text-red-800 font-black py-3 rounded-2xl border border-red-200 cursor-not-allowed uppercase text-sm">
-                    {t('feeds.outOfStock')}
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {/* Quantity selector or Add to Cart */}
-                    {(cart[selectedFeed.id] || 0) > 0 ? (
-                      <div className="flex items-center justify-between gap-3 bg-primary-light rounded-2xl border border-primary-dark/30 p-1.5 px-3 flex-1">
-                        <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
-                          <Minus size={16} />
-                        </button>
-                        <span className="text-base font-extrabold text-text-dark min-w-[24px] text-center">{cart[selectedFeed.id]}</span>
-                        <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => addToCart(selectedFeed.id)}
-                        className="flex-1 font-extrabold shadow-xs active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 border-2 border-primary-dark text-primary-dark bg-primary-light/40 hover:bg-primary-light"
-                      >
-                        <ShoppingCart size={16} />
-                        <span>+ Add to Cart</span>
-                      </Button>
-                    )}
-
-                    {/* Instant Buy Now Button */}
+                <div className="flex items-center gap-2">
+                  {/* Quantity selector or Add to Cart */}
+                  {(cart[selectedFeed.id] || 0) > 0 ? (
+                    <div className="flex items-center justify-between gap-3 bg-primary-light rounded-2xl border border-primary-dark/30 p-1.5 px-3 flex-1">
+                      <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                        <Minus size={16} />
+                      </button>
+                      <span className="text-base font-extrabold text-text-dark min-w-[24px] text-center">{cart[selectedFeed.id]}</span>
+                      <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  ) : (
                     <Button
-                      variant="primary"
+                      variant="outline"
                       size="lg"
-                      onClick={() => handleBuyNow(selectedFeed.id)}
-                      className="flex-1 font-extrabold shadow-md active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-primary-dark text-text-dark hover:bg-primary-dark/90"
+                      onClick={() => addToCart(selectedFeed.id)}
+                      className="flex-1 font-extrabold shadow-xs active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 border-2 border-primary-dark text-primary-dark bg-primary-light/40 hover:bg-primary-light"
                     >
-                      <Zap size={16} className="fill-current text-text-dark" />
-                      <span>Buy Now — ₹{selectedFeed.price}</span>
+                      <ShoppingCart size={16} />
+                      <span>+ Add to Cart</span>
                     </Button>
-                  </div>
-                )}
+                  )}
+
+                  {/* Instant Buy Now Button */}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => handleBuyNow(selectedFeed.id)}
+                    className="flex-1 font-extrabold shadow-md active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-primary-dark text-text-dark hover:bg-primary-dark/90"
+                  >
+                    <Zap size={16} className="fill-current text-text-dark" />
+                    <span>Buy Now — ₹{selectedFeed.price}</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Description */}
@@ -452,47 +435,41 @@ export const BuyFeedsPage = () => {
 
             {/* ── Sticky Add To Cart & Buy Now Footer (Always 100% visible on mobile) ── */}
             <div className="p-4 bg-white border-t border-border-light shadow-lg flex-shrink-0 z-20">
-              {(selectedFeed.is_in_stock === false || selectedFeed.stock_quantity === 0) ? (
-                <button disabled className="w-full bg-red-100 text-red-800 font-black py-3 rounded-2xl border border-red-200 cursor-not-allowed uppercase text-sm">
-                  {t('feeds.outOfStock')}
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {/* Quantity selector or Add to Cart */}
-                  {(cart[selectedFeed.id] || 0) > 0 ? (
-                    <div className="flex items-center justify-between gap-3 bg-primary-light rounded-2xl border border-primary-dark/30 p-1.5 px-3 flex-1">
-                      <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
-                        <Minus size={16} />
-                      </button>
-                      <span className="text-base font-extrabold text-text-dark min-w-[24px] text-center">{cart[selectedFeed.id]}</span>
-                      <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => addToCart(selectedFeed.id)}
-                      className="flex-1 font-extrabold shadow-xs active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 border-2 border-primary-dark text-primary-dark bg-primary-light/40 hover:bg-primary-light"
-                    >
-                      <ShoppingCart size={16} />
-                      <span>+ Add to Cart</span>
-                    </Button>
-                  )}
-
-                  {/* Instant Buy Now Button */}
+              <div className="flex items-center gap-2">
+                {/* Quantity selector or Add to Cart */}
+                {(cart[selectedFeed.id] || 0) > 0 ? (
+                  <div className="flex items-center justify-between gap-3 bg-primary-light rounded-2xl border border-primary-dark/30 p-1.5 px-3 flex-1">
+                    <button onClick={() => removeFromCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                      <Minus size={16} />
+                    </button>
+                    <span className="text-base font-extrabold text-text-dark min-w-[24px] text-center">{cart[selectedFeed.id]}</span>
+                    <button onClick={() => addToCart(selectedFeed.id)} className="p-2 hover:bg-primary-dark/20 rounded-xl active:scale-95 transition-all bg-white shadow-xs">
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                ) : (
                   <Button
-                    variant="primary"
+                    variant="outline"
                     size="lg"
-                    onClick={() => handleBuyNow(selectedFeed.id)}
-                    className="flex-1 font-extrabold shadow-md active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-primary-dark text-text-dark hover:bg-primary-dark/90"
+                    onClick={() => addToCart(selectedFeed.id)}
+                    className="flex-1 font-extrabold shadow-xs active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 border-2 border-primary-dark text-primary-dark bg-primary-light/40 hover:bg-primary-light"
                   >
-                    <Zap size={16} className="fill-current text-text-dark" />
-                    <span>Buy Now — ₹{selectedFeed.price}</span>
+                    <ShoppingCart size={16} />
+                    <span>+ Add to Cart</span>
                   </Button>
-                </div>
-              )}
+                )}
+
+                {/* Instant Buy Now Button */}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => handleBuyNow(selectedFeed.id)}
+                  className="flex-1 font-extrabold shadow-md active:scale-95 py-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-primary-dark text-text-dark hover:bg-primary-dark/90"
+                >
+                  <Zap size={16} className="fill-current text-text-dark" />
+                  <span>Buy Now — ₹{selectedFeed.price}</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
