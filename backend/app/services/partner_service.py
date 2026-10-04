@@ -63,6 +63,7 @@ def _p(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_
         "image_status": "approved",
         "buy_feeds_price": price,
         "show_in_buy_feeds": True,
+        "is_in_stock": True,
     }
 
 
@@ -125,6 +126,7 @@ async def ensure_partner_schema_and_seed() -> None:
             for sql in [
                 "ALTER TABLE partner_products ADD COLUMN show_in_buy_feeds BOOLEAN DEFAULT TRUE NOT NULL;",
                 "ALTER TABLE partner_products ADD COLUMN buy_feeds_price FLOAT DEFAULT 0.0;",
+                "ALTER TABLE partner_products ADD COLUMN is_in_stock BOOLEAN DEFAULT TRUE NOT NULL;",
             ]:
                 try:
                     await conn.execute(text(sql))
@@ -205,16 +207,9 @@ def product_to_dict(p: PartnerProduct, admin: bool = False) -> dict:
         "feeding_instructions_kn": p.feeding_instructions_kn,
         "nutrition_data": p.nutrition_data, "image_url": p.image_url,
         "show_in_buy_feeds": p.show_in_buy_feeds, "buy_feeds_price": p.buy_feeds_price,
+        "is_in_stock": getattr(p, "is_in_stock", True) if getattr(p, "is_in_stock", True) is not None else True,
         "display_order": p.display_order,
     }
-    if admin:
-        data.update({
-            "is_active": p.is_active, "image_status": p.image_status,
-            "needs_review": p.needs_review, "review_note": p.review_note,
-            "source_url": p.source_url, "source_checked_at": _iso(p.source_checked_at),
-            "created_at": _iso(p.created_at), "updated_at": _iso(p.updated_at),
-        })
-    return data
     if admin:
         data.update({
             "is_active": p.is_active, "image_status": p.image_status,

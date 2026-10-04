@@ -56,9 +56,16 @@ export const PartnerProductCard = ({ product, onOpen }) => {
       type="button"
       id={`partner-product-card-${product.id}`}
       onClick={() => onOpen(product)}
-      className="w-full text-left bg-white rounded-2xl border border-border-light shadow-sm hover:shadow-md hover:border-amber-300 active:scale-[0.99] transition-all overflow-hidden group"
+      className="w-full text-left bg-white rounded-2xl border border-border-light shadow-sm hover:shadow-md hover:border-amber-300 active:scale-[0.99] transition-all overflow-hidden group relative"
     >
-      <ProductImage src={product.image_url} alt={product.name} className="h-36 w-full border-b border-border-light" />
+      <div className="relative">
+        <ProductImage src={product.image_url} alt={product.name} className="h-36 w-full border-b border-border-light" />
+        {product.is_in_stock === false && (
+          <span className="absolute top-2 right-2 bg-red-600 text-white font-extrabold text-[10px] uppercase px-2 py-0.5 rounded shadow-xs">
+            {t('feeds.outOfStock')}
+          </span>
+        )}
+      </div>
       <div className="p-3.5 space-y-2">
         <div>
           <h3 className="text-base font-black text-text-dark break-words">{product.name}</h3>

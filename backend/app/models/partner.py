@@ -65,6 +65,7 @@ class PartnerProduct(Base):
     source_checked_at = Column(DateTime, nullable=True)
 
     is_active = Column(Boolean, default=True, nullable=False)
+    is_in_stock = Column(Boolean, default=True, nullable=False)
     show_in_buy_feeds = Column(Boolean, default=True, nullable=False)
     buy_feeds_price = Column(Float, default=0.0, nullable=True)
 

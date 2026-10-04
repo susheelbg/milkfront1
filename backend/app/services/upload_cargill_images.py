@@ -10,22 +10,17 @@ BRAIN_DIR = "/Users/susheel/.gemini/antigravity-ide/brain/26a04922-a60c-4b15-85a
 
 PRODUCT_IMAGE_MAPPING = [
     ("Milkgen8000", os.path.join(BRAIN_DIR, "media__1791062826536.png"), "partners/cargill/products/milkgen8000/milkgen8000.png"),
-    ("Milkgen10000", os.path.join(BRAIN_DIR, "media__1791059022898.png"), "partners/cargill/products/milkgen10000/milkgen10000.png"),
-    ("Pragati", os.path.join(BRAIN_DIR, "pragati_cargill.png"), "partners/cargill/products/pragati/pragati.png"),
-    ("Milkgen5000", os.path.join(BRAIN_DIR, "media__1791058973997.png"), "partners/cargill/products/milkgen5000/milkgen5000.png"),
+    ("Milkgen10000", os.path.join(BRAIN_DIR, "media__1791085001998.jpg"), "partners/cargill/products/milkgen10000/milkgen10000.jpg"),
+    ("Pragati", os.path.join(BRAIN_DIR, "media__1791085546822.jpg"), "partners/cargill/products/pragati/pragati.jpg"),
+    ("Milkgen5000", os.path.join(BRAIN_DIR, "media__1791085401747.jpg"), "partners/cargill/products/milkgen5000/milkgen5000.jpg"),
     ("Buffgen4000", os.path.join(BRAIN_DIR, "media__1791058955128.png"), "partners/cargill/products/buffgen4000/buffgen4000.png"),
-    ("Bullet", os.path.join(BRAIN_DIR, "media__1791059002758.png"), "partners/cargill/products/bullet/bullet.png"),
+    ("Bullet", os.path.join(BRAIN_DIR, "media__1791085204556.jpg"), "partners/cargill/products/bullet/bullet.jpg"),
 ]
 
 async def upload_and_verify():
     await svc.ensure_partner_schema_and_seed()
     
     url_prefix = f"{settings.SUPABASE_URL}/storage/v1/object/milkmaatu-image"
-    headers = {
-        "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}",
-        "x-upsert": "true",
-        "Content-Type": "image/png"
-    }
 
     verified_urls = {}
 
@@ -35,6 +30,13 @@ async def upload_and_verify():
                 print(f"[ERROR] Local temp file missing for {name}: {local_file}")
                 continue
             
+            content_type = "image/jpeg" if local_file.endswith(".jpg") or local_file.endswith(".jpeg") else "image/png"
+            headers = {
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}",
+                "x-upsert": "true",
+                "Content-Type": content_type
+            }
+
             with open(local_file, "rb") as f:
                 content = f.read()
 

@@ -155,7 +155,9 @@
     "items": "items",
     "total": "Total",
     "checkout": "Checkout",
-    "cartEmpty": "Your cart is empty"
+    "cartEmpty": "Your cart is empty",
+    "outOfStock": "Out of Stock",
+    "inStock": "In Stock"
   },
   "orderSummary": {
     "title": "Order Summary",

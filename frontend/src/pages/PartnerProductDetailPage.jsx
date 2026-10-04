@@ -66,7 +66,14 @@ export const PartnerProductDetailPage = () => {
             <ProductImage src={p.image_url} alt={p.name} iconSize={56} className="w-full h-60 rounded-2xl border border-border-light shadow-sm" />
 
             <div>
-              <h1 className="text-2xl font-black text-text-dark break-words">{p.name}</h1>
+              <div className="flex items-center justify-between gap-2">
+                <h1 className="text-2xl font-black text-text-dark break-words">{p.name}</h1>
+                {p.is_in_stock === false && (
+                  <span className="bg-red-600 text-white font-black text-xs uppercase px-2.5 py-1 rounded-full shadow-xs shrink-0">
+                    {t('feeds.outOfStock')}
+                  </span>
+                )}
+              </div>
               <p className="text-sm font-semibold text-text-light">{t('partners.manufacturedBy')} {partner?.name || p.brand}</p>
             </div>
 
