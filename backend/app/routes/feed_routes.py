@@ -14,14 +14,16 @@ router = APIRouter(tags=["Feeds Catalog"])
 from app.models.partner import PartnerProduct
 
 def partner_product_to_feed_dict(p: PartnerProduct) -> dict:
+    rich_desc_en = p.description_en or p.recommended_use_en or f"{p.brand or 'Cargill'} {p.name}"
+    rich_desc_kn = p.description_kn or p.recommended_use_kn or rich_desc_en
     return {
         "id": 10000 + p.id,
         "name": p.name,
         "title": p.name,
         "price": float(p.buy_feeds_price) if p.buy_feeds_price is not None else 0.0,
-        "description": p.description_en or p.recommended_use_en or f"{p.brand or 'Cargill'} {p.name}",
-        "description_en": p.description_en,
-        "description_kn": p.description_kn,
+        "description": rich_desc_en,
+        "description_en": rich_desc_en,
+        "description_kn": rich_desc_kn,
         "brand": p.brand or "Cargill",
         "category": p.category or "Lactating cattle feed",
         "unit": "50 kg",
@@ -39,6 +41,7 @@ def partner_product_to_feed_dict(p: PartnerProduct) -> dict:
         "milk_production_range_kn": p.milk_production_range_kn,
         "animal_type": p.animal_type,
         "nutrition_data": p.nutrition_data,
+        "source_url": p.source_url,
     }
 
 # --- PUBLIC ENDPOINTS ---

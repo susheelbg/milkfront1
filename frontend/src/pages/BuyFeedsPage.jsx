@@ -5,11 +5,22 @@ import { feedsApi } from '../services/api/feedsApi';
 import { Plus, Minus, ShoppingCart, Loader2, ChevronLeft, ChevronRight, X, Zap } from 'lucide-react';
 import { toastService } from '../services/toastService';
 import { useTranslation } from '../i18n/useTranslation';
+import { useLocalized, useAnimalLabel, useMilkRange } from '../components/PartnerProductCard';
 
 export const BuyFeedsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const pick = useLocalized();
+  const animalLabel = useAnimalLabel();
+  const rangeOf = useMilkRange();
+
+  const nutrientLabel = (key) => {
+    const tr = t(`partners.nutrient.${key}`);
+    return typeof tr === 'string' ? tr : key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+  const nutrientValue = (v) => `${v.value}${v.unit ? (v.unit === '%' ? '%' : ` ${v.unit}`) : ''}`;
+
   const [feeds, setFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState({});
@@ -180,9 +191,27 @@ export const BuyFeedsPage = () => {
                         </span>
                       )}
                     </div>
-                    {/* Name */}
-                    <div className="px-2.5 pt-2.5 pb-1">
+                    {/* Name & Details */}
+                    <div className="px-2.5 pt-2.5 pb-1 space-y-1">
+                      {feed.brand && (
+                        <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 inline-block truncate max-w-full">
+                          {feed.brand}
+                        </span>
+                      )}
                       <h3 className="text-xs font-extrabold text-text-dark leading-snug line-clamp-2">{feed.name}</h3>
+
+                      {/* Animal suitability & Milk Yield if present */}
+                      {(animalLabel(feed.animal_type) || rangeOf(feed)) && (
+                        <div className="text-[10px] font-bold text-text-light space-y-0.5">
+                          {animalLabel(feed.animal_type) && (
+                            <p className="truncate text-emerald-800">🐄 {animalLabel(feed.animal_type)}</p>
+                          )}
+                          {rangeOf(feed) && (
+                            <p className="truncate text-amber-800">🥛 {rangeOf(feed)}</p>
+                          )}
+                        </div>
+                      )}
+
                       <p className="text-amber-700 font-black text-sm mt-0.5">
                         ₹{feed.price}
                         {feed.unit && (
@@ -387,21 +416,21 @@ export const BuyFeedsPage = () => {
               </div>
 
               {/* ── Key Attributes Badges (Animal suitability & Milk Yield Range) ── */}
-              {(selectedFeed.animal_type || selectedFeed.milk_production_range || selectedFeed.milk_production_range_kn) && (
+              {(animalLabel(selectedFeed.animal_type) || rangeOf(selectedFeed)) && (
                 <div className="grid grid-cols-2 gap-2.5">
-                  {selectedFeed.animal_type && (
+                  {animalLabel(selectedFeed.animal_type) && (
                     <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3">
-                      <p className="text-[10px] font-black uppercase text-emerald-800/80 tracking-wider">Suitable For</p>
-                      <p className="text-xs font-black text-emerald-950 mt-0.5 capitalize">
-                        🐄 {selectedFeed.animal_type === 'cow_buffalo' ? 'Cow & Buffalo' : selectedFeed.animal_type}
+                      <p className="text-[10px] font-black uppercase text-emerald-800/80 tracking-wider">{t('partners.suitableFor') || 'Suitable For'}</p>
+                      <p className="text-xs font-black text-emerald-950 mt-0.5 break-words">
+                        🐄 {animalLabel(selectedFeed.animal_type)}
                       </p>
                     </div>
                   )}
-                  {(selectedFeed.milk_production_range || selectedFeed.milk_production_range_kn) && (
+                  {rangeOf(selectedFeed) && (
                     <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3">
-                      <p className="text-[10px] font-black uppercase text-amber-800/80 tracking-wider">Milk Capacity / Target</p>
-                      <p className="text-xs font-black text-amber-950 mt-0.5">
-                        🥛 {selectedFeed.milk_production_range_kn || selectedFeed.milk_production_range}
+                      <p className="text-[10px] font-black uppercase text-amber-800/80 tracking-wider">{t('partners.milkProduction') || 'Milk Capacity / Target'}</p>
+                      <p className="text-xs font-black text-amber-950 mt-0.5 break-words">
+                        🥛 {rangeOf(selectedFeed)}
                       </p>
                     </div>
                   )}
@@ -409,40 +438,40 @@ export const BuyFeedsPage = () => {
               )}
 
               {/* Description */}
-              {(selectedFeed.description_en || selectedFeed.description_kn || selectedFeed.description) && (
+              {(pick(selectedFeed, 'description') || selectedFeed.description || selectedFeed.description_en) && (
                 <div className="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 space-y-1.5">
                   <h4 className="text-xs font-black text-text-dark uppercase tracking-wider flex items-center gap-1.5">
                     <span>📋</span>
-                    <span>About this product</span>
+                    <span>{t('partners.about') || 'About this product'}</span>
                   </h4>
                   <p className="text-xs sm:text-sm text-text-dark/90 leading-relaxed break-words whitespace-pre-line font-medium">
-                    {selectedFeed.description_kn || selectedFeed.description_en || selectedFeed.description}
+                    {pick(selectedFeed, 'description') || selectedFeed.description || selectedFeed.description_en}
                   </p>
                 </div>
               )}
 
               {/* Recommended Use */}
-              {(selectedFeed.recommended_use_en || selectedFeed.recommended_use_kn) && (
+              {(pick(selectedFeed, 'recommended_use') || selectedFeed.recommended_use_en) && (
                 <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-200/60 space-y-1.5">
                   <h4 className="text-xs font-black text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
                     <span>💡</span>
-                    <span>Recommended Use</span>
+                    <span>{t('partners.recommendedUse') || 'Recommended Use'}</span>
                   </h4>
                   <p className="text-xs sm:text-sm text-emerald-950 leading-relaxed break-words font-semibold">
-                    {selectedFeed.recommended_use_kn || selectedFeed.recommended_use_en}
+                    {pick(selectedFeed, 'recommended_use') || selectedFeed.recommended_use_en}
                   </p>
                 </div>
               )}
 
               {/* Feeding Instructions */}
-              {(selectedFeed.feeding_instructions_en || selectedFeed.feeding_instructions_kn) && (
+              {(pick(selectedFeed, 'feeding_instructions') || selectedFeed.feeding_instructions_en) && (
                 <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-200/60 space-y-1.5">
                   <h4 className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🥣</span>
-                    <span>Feeding Instructions</span>
+                    <span>{t('partners.feeding') || 'Feeding Instructions'}</span>
                   </h4>
                   <p className="text-xs sm:text-sm text-blue-950 leading-relaxed break-words font-semibold">
-                    {selectedFeed.feeding_instructions_kn || selectedFeed.feeding_instructions_en}
+                    {pick(selectedFeed, 'feeding_instructions') || selectedFeed.feeding_instructions_en}
                   </p>
                 </div>
               )}
@@ -452,12 +481,12 @@ export const BuyFeedsPage = () => {
                 <div className="bg-white rounded-2xl border border-border-light p-4 space-y-2 shadow-xs">
                   <h4 className="text-xs font-black uppercase text-text-light tracking-wider flex items-center gap-1.5">
                     <span>🧪</span>
-                    <span>Nutrition & Composition</span>
+                    <span>{t('partners.nutrition') || 'Nutrition & Composition'}</span>
                   </h4>
                   <div className="divide-y divide-border-light text-xs">
                     {selectedFeed.nutrition_data.form && (
                       <div className="flex justify-between py-2 font-semibold">
-                        <span className="text-text-light">Form</span>
+                        <span className="text-text-light">{t('partners.form') || 'Form'}</span>
                         <span className="font-extrabold text-text-dark">
                           {typeof selectedFeed.nutrition_data.form === 'object' 
                             ? (selectedFeed.nutrition_data.form.kn || selectedFeed.nutrition_data.form.en) 
@@ -469,11 +498,11 @@ export const BuyFeedsPage = () => {
                       .filter(([k, v]) => k !== 'form' && v && typeof v === 'object' && v.value !== undefined)
                       .map(([key, v]) => (
                         <div key={key} className="flex justify-between py-2 font-semibold">
-                          <span className="text-text-light capitalize">
-                            {key.replace(/_/g, ' ')} {v.limit ? `(${v.limit})` : ''}
+                          <span className="text-text-light">
+                            {nutrientLabel(key)}{v.limit ? ` (${t(`partners.${v.limit}`) || v.limit})` : ''}
                           </span>
                           <span className="font-extrabold text-text-dark">
-                            {v.value}{v.unit ? (v.unit === '%' ? '%' : ` ${v.unit}`) : ''}
+                            {nutrientValue(v)}
                           </span>
                         </div>
                       ))}
