@@ -176,10 +176,10 @@
   },
   "sante": {
     "title": "Cattle Sante",
-    "subtitle": "20 KM Localized Buying & Selling Hub",
+    "subtitle": "Available local cows",
     "krsSante": "KRS Sante",
     "thendekereSante": "Thendekere Sante",
-    "santeRadius": "Sante Radius: 20 KM",
+    "santeRadius": "Available local cows",
     "deletesIn": "Deletes in",
     "days24Hours": "Sante ads automatically expire and delete after 24 hours",
     "buyCattle": "Buy Cattle",

@@ -170,7 +170,7 @@ export const SanteBuyPage = () => {
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-text-dark mb-1">{t('sante.buyCattle')}</h1>
-            <p className="text-text-dark opacity-90">{santeName}</p>
+            <p className="text-text-dark opacity-90 text-sm font-medium">{t('sante.subtitle')}</p>
           </div>
           <Button
             variant="secondary"
