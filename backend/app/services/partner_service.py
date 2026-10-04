@@ -188,6 +188,77 @@ INNOTERRA_PRODUCTS = [
 ]
 
 
+GODREJ_SOURCE_URL = "https://www.godrejagrovet.com/businesses/animal-nutrition"
+GODREJ_VERIFIED_ON = "2026-10-04"
+GODREJ_LOGO_URL = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/godrej/logo/godrej-logo.png"
+
+
+def _p_godrej(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib, image_slug, price):
+    storage_base = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/godrej/products"
+    ext = ".png"
+    return {
+        "name": name, "brand": "Godrej Agrovet", "category": "Lactating cattle feed",
+        "animal_type": animal,
+        "milk_production_range": rng, "milk_production_range_kn": rng_kn,
+        "description_en": None, "description_kn": None,
+        "recommended_use_en": use_en, "recommended_use_kn": use_kn,
+        "feeding_instructions_en": feed_en, "feeding_instructions_kn": feed_kn,
+        "nutrition_data": {
+            "form": {"en": form_en, "kn": form_kn},
+            "crude_protein": _nut(cp, "min"),
+            "crude_fat": _nut(cf, "min"),
+            "crude_fibre": _nut(cfib, "max"),
+            "moisture": _nut("11", "max"),
+        },
+        "source_url": GODREJ_SOURCE_URL, "display_order": order,
+        "image_url": f"{storage_base}/{image_slug}/{image_slug}{ext}",
+        "image_status": "approved",
+        "buy_feeds_price": price,
+        "show_in_buy_feeds": True,
+    }
+
+
+# ONLY CATTLE FEED PRODUCTS (6 products strictly from Godrej Animal Nutrition Cattle Feed section)
+GODREJ_PRODUCTS = [
+    _p_godrej(1, "Godrej Samruddhi", "cow", "15–25 L/day", "15–25 L/ದಿನ",
+              "High-energy cattle feed formulated for high milk yield cows giving 15–25 L/day.",
+              "ದಿನಕ್ಕೆ 15–25 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಹೆಚ್ಚಿನ ಶಕ್ತಿಯ ಆಹಾರ.",
+              "1 kg for every 2.5 L milk production + quality fodder.",
+              "ಉತ್ತಮ ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "10", "godrej-samruddhi", 1650.0),
+    _p_godrej(2, "Godrej Transeefeed D-60", "cow", "21 days before calving", "ಕರು ಹಾಕುವ 21 ದಿನಗಳ ಮೊದಲು",
+              "Specialized transition cattle feed for pregnant cows 21 days before calving.",
+              "ಕರು ಹಾಕುವ 21 ದಿನಗಳ ಮೊದಲು ಗರ್ಭಿಣಿ ಹಸುಗಳಿಗೆ ವಿಶೇಷ ಪರಿವರ್ತನೆ ಆಹಾರ.",
+              "2–3 kg daily during transition period alongside quality green fodder.",
+              "ಗುಣಮಟ್ಟದ ಮೇವಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 2–3 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "24", "4.5", "9", "godrej-transeefeed-d60", 1800.0),
+    _p_godrej(3, "Godrej Dhanavruddhi", "cow_buffalo", "10–18 L/day", "10–18 L/ದಿನ",
+              "Balanced cattle feed enhancing milk fat and total milk volume for cows and buffaloes.",
+              "ಹಸು ಮತ್ತು ಎಮ್ಮೆಗಳಲ್ಲಿ ಹಾಲಿನ ಕೊಬ್ಬು ಮತ್ತು ಪ್ರಮಾಣ ಹೆಚ್ಚಿಸುವ ಸಮತೋಲಿತ ಆಹಾರ.",
+              "1 kg for every 2.5 L milk + fodder.",
+              "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "21", "3.5", "11", "godrej-dhanavruddhi", 1550.0),
+    _p_godrej(4, "Godrej Dairy Xpert", "cow", "> 20 L/day", "> 20 L/ದಿನ",
+              "Advanced nutrition formula for high-yielding dairy cows giving > 20 L/day.",
+              "ದಿನಕ್ಕೆ 20 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸುಧಾರಿತ ಪೋಷಣೆ.",
+              "1 kg for every 2.5 L milk + silage and green fodder.",
+              "ಸೈಲೇಜ್ ಮತ್ತು ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "23", "4", "10", "godrej-dairy-xpert", 1720.0),
+    _p_godrej(5, "Godrej Bypro Plus", "cow_buffalo", "Bypass Protein Feed", "ಬೈಪಾಸ್ ಪ್ರೋಟೀನ್ ಆಹಾರ",
+              "Bypass protein & fat enriched feed improving lactation efficiency and rumen health.",
+              "ಬೈಪಾಸ್ ಪ್ರೋಟೀನ್ ಮತ್ತು ಕೊಬ್ಬು ಸರಿಹೊಂದಿಸಿದ ಸಮತೋಲಿತ ಪಶು ಆಹಾರ.",
+              "1 kg for every 2 L milk + green/dry fodder.",
+              "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "5", "10", "godrej-bypro-plus", 1620.0),
+    _p_godrej(6, "Godrej Dhanlaxmi-G", "cow_buffalo", "≤ 10 L/day", "≤ 10 L/ದಿನ",
+              "Economical daily cattle feed for medium & low-yielding cows and buffaloes.",
+              "ಮಧ್ಯಮ ಮತ್ತು ಕಡಿಮೆ ಹಾಲು ನೀಡುವ ಹಸುಗಳು ಮತ್ತು ಎಮ್ಮೆಗಳಿಗೆ ಕೈಗೆಟುಕುವ ಆಹಾರ.",
+              "1 kg for every 2 L milk + dry fodder.",
+              "ಒಣ ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+              "Mash / Pellets", "ಮ್ಯಾಶ್ / ಪೆಲೆಟ್‌ಗಳು", "19", "3", "12", "godrej-dhanlaxmi-g", 1320.0),
+]
+
+
 def _checked_at() -> datetime:
     return datetime.strptime(CARGILL_VERIFIED_ON, "%Y-%m-%d")
 
@@ -279,6 +350,44 @@ async def ensure_partner_schema_and_seed() -> None:
             else:
                 prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing_inno.id))).scalars().all()
                 price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in INNOTERRA_PRODUCTS}
+                updated = False
+                for p in prods:
+                    if p.name in price_map:
+                        def_price, def_show = price_map[p.name]
+                        if p.buy_feeds_price is None or p.buy_feeds_price == 0.0:
+                            p.buy_feeds_price = def_price
+                            updated = True
+                        if p.show_in_buy_feeds is None:
+                            p.show_in_buy_feeds = def_show
+                            updated = True
+                if updated:
+                    await db.commit()
+
+            # Seed Godrej Agrovet (CATTLE FEED PRODUCTS ONLY)
+            existing_godrej = (await db.execute(select(Partner).where(Partner.slug == "godrej"))).scalars().first()
+            if not existing_godrej:
+                partner_godrej = Partner(
+                    slug="godrej", name="Godrej Agrovet",
+                    tagline_en="Scientific Cattle Feed & Animal Nutrition",
+                    tagline_kn="ವೈಜ್ಞಾನಿಕ ಪಶು ಆಹಾರ ಮತ್ತು ಪೋಷಣೆ",
+                    description_en="Godrej Agrovet Animal Nutrition offers scientifically formulated cattle feeds designed to boost milk yield, fat content, and overall herd health.",
+                    description_kn="ಹಾಲಿನ ಇಳುವರಿ, ಕೊಬ್ಬಿನಂಶ ಮತ್ತು ಜಾನುವಾರು ಆರೋಗ್ಯ ಹೆಚ್ಚಿಸಲು ಗಾಡ್ರೇಜ್ ಅಗ್ರೋವೆಟ್ ವೈಜ್ಞಾನಿಕ ಪಶು ಆಹಾರಗಳು.",
+                    logo_url=GODREJ_LOGO_URL,
+                    is_active=True, display_order=3,
+                )
+                db.add(partner_godrej)
+                await db.flush()
+                for item in GODREJ_PRODUCTS:
+                    db.add(PartnerProduct(
+                        partner_id=partner_godrej.id, is_active=True,
+                        source_checked_at=_checked_at(),
+                        needs_review=False, review_note=None, **item,
+                    ))
+                await db.commit()
+                logger.info("[PARTNERS] Seeded Godrej Agrovet with %d verified cattle products.", len(GODREJ_PRODUCTS))
+            else:
+                prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing_godrej.id))).scalars().all()
+                price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in GODREJ_PRODUCTS}
                 updated = False
                 for p in prods:
                     if p.name in price_map:
