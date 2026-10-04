@@ -107,12 +107,93 @@ CARGILL_PRODUCTS = [
 ]
 
 
+INNOTERRA_SOURCE_URL = "https://innoterra.in/cattle-nutrition/"
+INNOTERRA_VERIFIED_ON = "2026-10-04"
+INNOTERRA_LOGO_URL = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/innoterra/logo/innoterra-logo.png"
+
+
+def _p_inno(order, name, animal, rng, rng_kn, use_en, use_kn, feed_en, feed_kn, form_en, form_kn, cp, cf, cfib, image_slug, price):
+    storage_base = "https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/partners/innoterra/products"
+    return {
+        "name": name, "brand": "Innoterra Aayush", "category": "Lactating cattle feed",
+        "animal_type": animal,
+        "milk_production_range": rng, "milk_production_range_kn": rng_kn,
+        "description_en": None, "description_kn": None,
+        "recommended_use_en": use_en, "recommended_use_kn": use_kn,
+        "feeding_instructions_en": feed_en, "feeding_instructions_kn": feed_kn,
+        "nutrition_data": {
+            "form": {"en": form_en, "kn": form_kn},
+            "crude_protein": _nut(cp, "min"),
+            "crude_fat": _nut(cf, "min"),
+            "crude_fibre": _nut(cfib, "max"),
+            "moisture": _nut("11", "max"),
+        },
+        "source_url": INNOTERRA_SOURCE_URL, "display_order": order,
+        "image_url": f"{storage_base}/{image_slug}/{image_slug}.png",
+        "image_status": "approved",
+        "buy_feeds_price": price,
+        "show_in_buy_feeds": True,
+    }
+
+
+INNOTERRA_PRODUCTS = [
+    _p_inno(1, "Aayush Rich", "cow", "14–16 L/day", "14–16 L/ದಿನ",
+            "High-energy feed designed for high-yielding cows giving 14–16 L/day.",
+            "ದಿನಕ್ಕೆ 14–16 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹೆಚ್ಚು ಇಳುವರಿ ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ.",
+            "1 kg for every 2.5 L milk + fodder/silage.",
+            "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "10", "aayush-rich", 1600.0),
+    _p_inno(2, "Aayush Vardhan", "cow", "> 16 L/day", "> 16 L/ದಿನ",
+            "High-energy premium feed for high-yielding cows giving > 16 L/day.",
+            "ದಿನಕ್ಕೆ 16 ಲೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಪ್ರೀಮಿಯಂ ಪೋಷಣೆ.",
+            "1 kg for every 2.5 L milk + green fodder.",
+            "ಹಸಿರು ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "24", "4", "10", "aayush-vardhan", 1750.0),
+    _p_inno(3, "Aayush Special", "cow", "15–20 L/day", "15–20 L/ದಿನ",
+            "Balanced high-energy feed for cows producing 15–20 L/day.",
+            "ದಿನಕ್ಕೆ 15–20 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸಮತೋಲಿತ ಆಹಾರ.",
+            "1 kg for every 2.5 L milk + dry/green fodder.",
+            "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2.5 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "10", "aayush-special", 1680.0),
+    _p_inno(4, "Aayush Max", "cow", "6–10 L/day", "6–10 L/ದಿನ",
+            "Nutritional feed for medium-yielding dairy cows giving 6–10 L/day.",
+            "ದಿನಕ್ಕೆ 6–10 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸೂಕ್ತ ಆಹಾರ.",
+            "1 kg for every 2 L milk + fodder.",
+            "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "20", "2.5", "12", "aayush-max", 1400.0),
+    _p_inno(5, "Aayush Supreme", "cow", "11–13 L/day", "11–13 L/ದಿನ",
+            "Formulated for medium-yielding dairy cows giving 11–13 L/day.",
+            "ದಿನಕ್ಕೆ 11–13 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ವಿಶೇಷ ರೂಪಿಸಿದ ಆಹಾರ.",
+            "1 kg for every 2 L milk + green fodder.",
+            "ಹಸಿರು ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "21", "2.5", "12", "aayush-supreme", 1480.0),
+    _p_inno(6, "Aayush Super", "cow", "4–5 L/day", "4–5 L/ದಿನ",
+            "Balanced feed supporting low-yielding cows giving 4–5 L/day.",
+            "ದಿನಕ್ಕೆ 4–5 ಲೀಟರ್ ಹಾಲು ನೀಡುವ ಹಸುಗಳಿಗೆ ಸಮತೋಲಿತ ಪೋಷಣೆ.",
+            "1 kg for every 2 L milk + fodder.",
+            "ಮೇವಿನೊಂದಿಗೆ ಪ್ರತಿ 2 ಲೀಟರ್ ಹಾಲಿಗೆ 1 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "18", "2.5", "14", "aayush-super", 1300.0),
+    _p_inno(7, "Aayush TranSafe", "cow", "21 days before calving", "ಕರು ಹಾಕುವ 21 ದಿನಗಳ ಮೊದಲು",
+            "Specialized transition nutrition for pregnant cows 21 days before calving.",
+            "ಕರು ಹಾಕುವ 21 ದಿನಗಳ ಮೊದಲು ಗರ್ಭಿಣಿ ಹಸುಗಳಿಗೆ ವಿಶೇಷ ಪೋಷಣೆ.",
+            "2–3 kg/day during the transition period with quality fodder.",
+            "ಗುಣಮಟ್ಟದ ಮೇವಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 2–3 ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "10", "aayush-transafe", 1720.0),
+    _p_inno(8, "Aayush Shakthi", "calf", "0–6 Months", "0–6 ತಿಂಗಳು",
+            "Nutritional calf starter feed supporting calf growth and immunity.",
+            "ಕರುಗಳ ಬೆಳವಣಿಗೆ ಮತ್ತು ರೋಗನಿರೋಧಕ ಶಕ್ತಿಗೆ ಬೆಂಬಲ ನೀಡುವ ಆಹಾರ.",
+            "500g to 1kg daily alongside mother milk and soft fodder.",
+            "ತಾಯಿಯ ಹಾಲು ಮತ್ತು ಮೃದುವಾದ ಮೇವಿನೊಂದಿಗೆ ದಿನಕ್ಕೆ 500ಗ್ರಾಂ ದಿಂದ 1ಕೆಜಿ.",
+            "Pellets", "ಪೆಲೆಟ್‌ಗಳು", "22", "4", "7", "aayush-shakthi", 1380.0),
+]
+
+
 def _checked_at() -> datetime:
     return datetime.strptime(CARGILL_VERIFIED_ON, "%Y-%m-%d")
 
 
 async def ensure_partner_schema_and_seed() -> None:
-    """Idempotent: create the two tables if missing and seed Cargill + its six products."""
+    """Idempotent: create tables if missing and seed Cargill + Innoterra + verified products."""
     try:
         async with engine.begin() as conn:
             await conn.run_sync(
@@ -135,8 +216,9 @@ async def ensure_partner_schema_and_seed() -> None:
 
     try:
         async with SessionLocal() as db:
-            existing = (await db.execute(select(Partner).where(Partner.slug == "cargill"))).scalars().first()
-            if not existing:
+            # Seed Cargill
+            existing_cargill = (await db.execute(select(Partner).where(Partner.slug == "cargill"))).scalars().first()
+            if not existing_cargill:
                 partner = Partner(
                     slug="cargill", name="Cargill",
                     tagline_en="Animal Nutrition & Dairy Feed",
@@ -157,9 +239,46 @@ async def ensure_partner_schema_and_seed() -> None:
                 await db.commit()
                 logger.info("[PARTNERS] Seeded Cargill with %d verified products.", len(CARGILL_PRODUCTS))
             else:
-                # Update existing seeded partner products to ensure default prices and visibility are set
-                prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing.id))).scalars().all()
+                prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing_cargill.id))).scalars().all()
                 price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in CARGILL_PRODUCTS}
+                updated = False
+                for p in prods:
+                    if p.name in price_map:
+                        def_price, def_show = price_map[p.name]
+                        if p.buy_feeds_price is None or p.buy_feeds_price == 0.0:
+                            p.buy_feeds_price = def_price
+                            updated = True
+                        if p.show_in_buy_feeds is None:
+                            p.show_in_buy_feeds = def_show
+                            updated = True
+                if updated:
+                    await db.commit()
+
+            # Seed Innoterra
+            existing_inno = (await db.execute(select(Partner).where(Partner.slug == "innoterra"))).scalars().first()
+            if not existing_inno:
+                partner_inno = Partner(
+                    slug="innoterra", name="Innoterra",
+                    tagline_en="Aayush Cattle Nutrition & Livestock Health",
+                    tagline_kn="ಆಯುಷ್ ಪಶು ಪೋಷಣೆ ಮತ್ತು ಜಾನುವಾರು ಆರೋಗ್ಯ",
+                    description_en="Scientifically formulated cattle nutrition by Innoterra designed to enhance livestock health, improve milk yield, and support reproductive health.",
+                    description_kn="ಜಾನುವಾರು ಆರೋಗ್ಯ, ಹಾಲಿನ ಇಳುವರಿ ಮತ್ತು ಸಂತಾನೋತ್ಪತ್ತಿ ಬೆಂಬಲಿಸಲು ಇನೋಟೆರ್ರಾ ಅಭಿವೃದ್ಧಿಪಡಿಸಿದ ವೈಜ್ಞಾನಿಕ ಪಶು ಪೋಷಣೆ.",
+                    logo_url=INNOTERRA_LOGO_URL,
+                    is_active=True, display_order=2,
+                )
+                db.add(partner_inno)
+                await db.flush()
+                for item in INNOTERRA_PRODUCTS:
+                    db.add(PartnerProduct(
+                        partner_id=partner_inno.id, is_active=True,
+                        source_checked_at=_checked_at(),
+                        needs_review=False, review_note=None, **item,
+                    ))
+                await db.commit()
+                logger.info("[PARTNERS] Seeded Innoterra with %d verified products.", len(INNOTERRA_PRODUCTS))
+            else:
+                prods = (await db.execute(select(PartnerProduct).where(PartnerProduct.partner_id == existing_inno.id))).scalars().all()
+                price_map = {p["name"]: (p["buy_feeds_price"], p["show_in_buy_feeds"]) for p in INNOTERRA_PRODUCTS}
                 updated = False
                 for p in prods:
                     if p.name in price_map:
