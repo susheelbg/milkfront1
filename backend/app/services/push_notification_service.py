@@ -28,14 +28,31 @@ def _get_service_account_raw() -> tuple[Optional[str], Optional[str]]:
     if settings.FIREBASE_SERVICE_ACCOUNT_JSON and settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip():
         return settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip(), "FIREBASE_SERVICE_ACCOUNT_JSON"
 
-    # 2. Dynamic scan of all os.environ keys for any key containing FIREBASE or service_account JSON content
+    # 2. Check prioritized env var names
+    priority_keys = [
+        "FIREBASE_SERVICE_ACCOUNT_JSON",
+        "FIREBASE_SERVICE_ACCOUNT",
+        "FIREBASE_CREDENTIALS",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+    ]
+    for key in priority_keys:
+        val = os.environ.get(key)
+        if val and val.strip():
+            return val.strip(), key
+
+    # 3. Dynamic scan of os.environ for Firebase JSON strings or valid file paths
     for k, v in os.environ.items():
         if not v:
             continue
+        # Skip generic Render system variables
+        if k.startswith("RENDER_") or k.startswith("KUBERNETES_"):
+            continue
         v_strip = v.strip()
-        if (v_strip.startswith("{") and "service_account" in v_strip) or ("private_key" in v_strip and "project_id" in v_strip):
+        # JSON string format
+        if (v_strip.startswith("{") and ("private_key" in v_strip or "project_id" in v_strip or "service_account" in v_strip)):
             return v_strip, k
-        if os.path.exists(v_strip) and ("firebase" in k.lower() or "service" in k.lower()):
+        # File path format
+        if os.path.isfile(v_strip) and ("firebase" in k.lower() or "google" in k.lower() or "service_account" in k.lower()):
             return v_strip, k
 
     return None, None
