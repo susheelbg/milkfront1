@@ -96,6 +96,7 @@ def _send_batch(
     """Send one Firebase batch and pair each token with its response error, if any."""
     app = _get_firebase_app()
     if app is None:
+        print("[FCM WARNING] Firebase app not initialized — FIREBASE_SERVICE_ACCOUNT_JSON may be missing/invalid on Render.")
         logger.warning("[FCM] Firebase app not initialized — skipping batch send.")
         return None
 
@@ -103,23 +104,28 @@ def _send_batch(
 
     data = {"type": type_name}
     if reference_id is not None:
-        data["reference_id"] = reference_id
+        data["reference_id"] = str(reference_id)
 
-    multicast = messaging.MulticastMessage(
-        notification=messaging.Notification(title=title, body=message),
-        data=data,
-        tokens=tokens,
-        android=messaging.AndroidConfig(
-            priority="high",
-            notification=messaging.AndroidNotification(
-                sound="default",
-                channel_id="default",
-                default_sound=True,
-                default_vibrate_timings=True,
+    messages = [
+        messaging.Message(
+            notification=messaging.Notification(title=title, body=message),
+            data=data,
+            token=token,
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    sound="default",
+                    channel_id="default",
+                    default_sound=True,
+                    default_vibrate_timings=True,
+                ),
             ),
-        ),
-    )
-    batch_response = messaging.send_each_for_multicast(multicast, app=app)
+        )
+        for token in tokens
+    ]
+
+    batch_response = messaging.send_each(messages, app=app)
+    print(f"[FCM SUCCESS] Batch sent: {len(tokens)} token(s) | Success={batch_response.success_count} Failure={batch_response.failure_count} | Type={type_name}")
     logger.info(
         "[FCM] Batch sent: %d tokens | success=%d failure=%d | type=%s",
         len(tokens),
@@ -151,9 +157,11 @@ async def send_push_notifications(
 ) -> None:
     """Send best-effort pushes to active devices; push failures never escape this function."""
     if not user_ids:
+        print("[FCM INFO] send_push_notifications called with 0 target users — no push sent.")
         logger.info("[FCM] send_push_notifications called with empty user_ids — no push sent.")
         return
 
+    print(f"[FCM PUSH REQUEST] Requesting push for {len(user_ids)} recipient user(s) | Type={type_name}")
     logger.info("[FCM] Push requested for %d recipient user(s) | type=%s", len(user_ids), type_name)
 
     try:
@@ -164,7 +172,8 @@ async def send_push_notifications(
             )
         )
         tokens = list(result.scalars().all())
-    except Exception:
+    except Exception as db_err:
+        print(f"[FCM DB ERROR] Could not retrieve active device tokens: {db_err}")
         logger.exception("Could not retrieve active device tokens; skipping push delivery.")
         try:
             await db.rollback()
@@ -173,12 +182,14 @@ async def send_push_notifications(
         return
 
     if not tokens:
+        print(f"[FCM NOTICE] No active device tokens (is_active=True) found in user_devices for target user(s) — push skipped.")
         logger.info(
             "[FCM] No active device tokens found for %d user(s) — push skipped (type=%s).",
             len(user_ids), type_name,
         )
         return
 
+    print(f"[FCM DISPATCH] Found {len(tokens)} active device token(s) — delivering via Firebase...")
     logger.info("[FCM] Found %d active device token(s) — sending FCM batch(es).", len(tokens))
 
     invalid_tokens = []
