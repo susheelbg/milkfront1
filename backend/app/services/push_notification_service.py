@@ -109,6 +109,15 @@ def _send_batch(
         notification=messaging.Notification(title=title, body=message),
         data=data,
         tokens=tokens,
+        android=messaging.AndroidConfig(
+            priority="high",
+            notification=messaging.AndroidNotification(
+                sound="default",
+                channel_id="default",
+                default_sound=True,
+                default_vibrate_timings=True,
+            ),
+        ),
     )
     batch_response = messaging.send_each_for_multicast(multicast, app=app)
     logger.info(

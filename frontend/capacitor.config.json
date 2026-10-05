@@ -13,5 +13,10 @@
   },
   "android": {
     "zoomEnabled": false
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
   }
 }

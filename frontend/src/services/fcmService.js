@@ -230,6 +230,36 @@ export const initFCM = async () => {
     // Register listeners (idempotent — only runs once)
     await registerListeners();
 
+    // Create default notification channel with high importance on Android 8+
+    if (Capacitor.getPlatform() === 'android') {
+      try {
+        await PushNotifications.createChannel({
+          id: 'default',
+          name: 'General Notifications',
+          description: 'MilkMaatu app notifications',
+          importance: 5, // High importance (heads-up popup & sound)
+          visibility: 1, // Public on lockscreen
+          vibration: true,
+        });
+      } catch (err) {
+        console.warn('[FCM] Channel creation error (non-fatal):', err?.message);
+      }
+    }
+
+    // If we already have a cached token from a previous session or register event,
+    // ensure backend is updated immediately so is_active=true on re-login
+    const existingToken = getCurrentFCMToken();
+    if (existingToken) {
+      try {
+        await deviceApi.registerDevice(existingToken, getPlatform());
+        if (import.meta.env.DEV) {
+          console.log('[FCM] Existing token reactivated with backend on login');
+        }
+      } catch (err) {
+        console.warn('[FCM] Re-activation of existing token failed (non-fatal):', err?.message);
+      }
+    }
+
     if (_fcmInitialized) {
       if (import.meta.env.DEV) {
         console.log('[FCM] Already initialized this session — token refresh handled by listener');
@@ -237,8 +267,8 @@ export const initFCM = async () => {
       return;
     }
 
-    // First call: trigger Firebase SDK registration
-    // This fires the 'registration' listener asynchronously with the token
+    // Trigger Firebase SDK registration
+    // This fires the 'registration' listener asynchronously when Firebase generates/refreshes token
     await PushNotifications.register();
     _fcmInitialized = true;
 
