@@ -141,7 +141,7 @@ def _send_batch(
                 notification=messaging.AndroidNotification(
                     title=title,
                     body=message,
-                    icon="ic_stat_ic_notification",
+                    icon="ic_stat_milkmaatu",
                     color="#D97706",
                     channel_id="milkmaatu_high_importance",
                     default_sound=True,

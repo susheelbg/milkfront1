@@ -19,7 +19,7 @@
       "presentationOptions": ["badge", "sound", "alert"]
     },
     "LocalNotifications": {
-      "smallIcon": "ic_stat_ic_notification",
+      "smallIcon": "ic_stat_milkmaatu",
       "iconColor": "#D97706"
     }
   }

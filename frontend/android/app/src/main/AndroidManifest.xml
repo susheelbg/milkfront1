@@ -42,7 +42,7 @@
             android:value="milkmaatu_high_importance" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_stat_ic_notification" />
+            android:resource="@drawable/ic_stat_milkmaatu" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_color" />
