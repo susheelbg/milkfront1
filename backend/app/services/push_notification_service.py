@@ -18,9 +18,14 @@ _FIREBASE_APP_NAME = "milkmaatu-push"
 _firebase_lock = threading.Lock()
 
 
+_last_init_error: Optional[str] = None
+
+
 def _get_firebase_app():
     """Initialize Firebase Admin once, using backend-only service-account credentials."""
+    global _last_init_error
     if not settings.FIREBASE_SERVICE_ACCOUNT_JSON:
+        _last_init_error = "FIREBASE_SERVICE_ACCOUNT_JSON environment variable is empty."
         return None
 
     import firebase_admin
@@ -48,6 +53,7 @@ def _get_firebase_app():
 
                 credential_project_id = service_account_info.get("project_id")
                 if credential_project_id != settings.FIREBASE_PROJECT_ID:
+                    _last_init_error = f"Project mismatch: service account is '{credential_project_id}' but FIREBASE_PROJECT_ID is '{settings.FIREBASE_PROJECT_ID}'"
                     logger.error(
                         "Firebase service-account project (%s) does not match FIREBASE_PROJECT_ID (%s).",
                         credential_project_id, settings.FIREBASE_PROJECT_ID,
@@ -60,12 +66,14 @@ def _get_firebase_app():
                     {"projectId": settings.FIREBASE_PROJECT_ID},
                     name=_FIREBASE_APP_NAME,
                 )
+                _last_init_error = None
                 logger.info(
                     "[FIREBASE] Admin SDK initialized successfully — project: %s app: %s",
                     settings.FIREBASE_PROJECT_ID, _FIREBASE_APP_NAME,
                 )
                 return app
-            except Exception:
+            except Exception as e:
+                _last_init_error = f"{type(e).__name__}: {str(e)}"
                 logger.exception("Firebase Admin initialization failed; push delivery is disabled.")
                 return None
 
@@ -75,14 +83,21 @@ def check_firebase_status() -> dict:
     Safe diagnostic: check if Firebase Admin is configured and initialized.
     Never returns credentials, private keys, or token values.
     """
+    import os
+    env_keys = [
+        k for k in ["FIREBASE_SERVICE_ACCOUNT_JSON", "FIREBASE_SERVICE_ACCOUNT", "FIREBASE_KEY", "FIREBASE_CREDENTIALS"]
+        if os.getenv(k)
+    ]
     has_config = bool(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
     project_id = settings.FIREBASE_PROJECT_ID or "NOT SET"
     app = _get_firebase_app()
     return {
         "firebase_configured": has_config,
+        "env_keys_found": env_keys,
         "firebase_project_id": project_id,
         "firebase_initialized": app is not None,
         "firebase_app_name": app.name if app else None,
+        "init_error": _last_init_error if app is None else None,
     }
 
 
