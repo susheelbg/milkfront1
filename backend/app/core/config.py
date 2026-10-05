@@ -38,7 +38,13 @@ class Settings(BaseSettings):
 
     # Firebase Admin credentials are backend-only; keep the service-account JSON in a secret.
     FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID") or "milkfront1"
-    FIREBASE_SERVICE_ACCOUNT_JSON: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON") or ""
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = (
+        os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON") or
+        os.getenv("FIREBASE_SERVICE_ACCOUNT") or
+        os.getenv("FIREBASE_KEY") or
+        os.getenv("FIREBASE_CREDENTIALS") or
+        ""
+    )
 
     # CORS Settings
     CORS_ORIGINS: List[str] = ["*"]
