@@ -92,6 +92,18 @@ async def deactivate_device(
     )
 
 
+@router.get("/fcm-health")
+async def get_fcm_health():
+    """Public diagnostic check to verify if Firebase Admin SDK is initialized on backend server."""
+    from app.services.push_notification_service import check_firebase_status
+    status_info = check_firebase_status()
+    return json_response(
+        success=True,
+        message="Firebase Admin SDK health check",
+        data=status_info,
+    )
+
+
 @router.get("/fcm-status")
 async def get_fcm_status(
     admin_user: Profile = Depends(get_current_admin),

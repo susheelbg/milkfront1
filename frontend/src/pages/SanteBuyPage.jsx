@@ -365,11 +365,14 @@ export const SanteBuyPage = () => {
                     <Button
                       variant="primary"
                       size="md"
-                      className="w-full flex items-center justify-center gap-2"
+                      className="w-full flex items-center justify-center gap-2 cursor-pointer"
                       onClick={() => {
-                        alert(
-                          `📞 ${t('sante.seller')}\n\nName: Seller at ${villageName}\nPhone: ${contactNumber}`
-                        );
+                        const cleanPhone = (contactNumber || '').trim();
+                        if (cleanPhone) {
+                          window.location.href = `tel:${cleanPhone}`;
+                        } else {
+                          toastService.error('Phone number not available');
+                        }
                       }}
                     >
                       <Phone size={16} />

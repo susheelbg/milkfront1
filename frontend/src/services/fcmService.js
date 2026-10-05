@@ -230,15 +230,16 @@ export const initFCM = async () => {
     // Register listeners (idempotent — only runs once)
     await registerListeners();
 
-    // Create default notification channel with high importance on Android 8+
+    // Create high-importance notification channel on Android 8+
     if (Capacitor.getPlatform() === 'android') {
       try {
         await PushNotifications.createChannel({
-          id: 'default',
-          name: 'General Notifications',
-          description: 'MilkMaatu app notifications',
+          id: 'milkmaatu_high_importance',
+          name: 'MilkMaatu Notifications',
+          description: 'High-priority MilkMaatu market alerts and notifications',
           importance: 5, // High importance (heads-up popup & sound)
           visibility: 1, // Public on lockscreen
+          sound: 'default',
           vibration: true,
         });
       } catch (err) {

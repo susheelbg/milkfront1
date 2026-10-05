@@ -115,7 +115,7 @@ def _send_batch(
                 priority="high",
                 notification=messaging.AndroidNotification(
                     sound="default",
-                    channel_id="default",
+                    channel_id="milkmaatu_high_importance",
                     default_sound=True,
                     default_vibrate_timings=True,
                 ),
