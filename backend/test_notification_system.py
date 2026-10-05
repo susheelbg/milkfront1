@@ -42,7 +42,7 @@ def verify_android_push_payload():
     assert android_notification.title == message.notification.title
     assert android_notification.body == message.notification.body
     assert android_notification.channel_id == "milkmaatu_high_importance"
-    assert android_notification.icon == "ic_stat_ic_notification"
+    assert android_notification.icon == "ic_stat_milkmaatu"
     assert android_notification.color == "#D97706"
     assert android_notification.default_sound is True
     assert android_notification.default_vibrate_timings is True
