@@ -17,6 +17,10 @@
   "plugins": {
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_ic_notification",
+      "iconColor": "#D97706"
     }
   }
 }

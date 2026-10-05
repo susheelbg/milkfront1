@@ -143,7 +143,7 @@ const registerListeners = async () => {
     if (import.meta.env.DEV) {
       console.log('[FCM] Foreground notification received:', notification.title);
     }
-    if (!notification.title && !notification.body) return;
+    if (Capacitor.getPlatform() !== 'android' || (!notification.title && !notification.body)) return;
 
     LocalNotifications.schedule({
       notifications: [{
@@ -251,9 +251,8 @@ export const initFCM = async () => {
           id: 'milkmaatu_high_importance',
           name: 'MilkMaatu Notifications',
           description: 'High-priority MilkMaatu market alerts and notifications',
-          importance: 5, // High importance (heads-up popup & sound)
+          importance: 4,
           visibility: 1, // Public on lockscreen
-          sound: 'default',
           vibration: true,
         });
       } catch (err) {

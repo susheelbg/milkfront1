@@ -13,10 +13,44 @@ from app.models.user import Profile
 from app.models.notification import Notification
 from app.models.user_device import UserDevice
 from app.services import notification_service
+from app.services import push_notification_service
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+def verify_android_push_payload():
+    with patch.object(push_notification_service, "_get_firebase_app", return_value=object()):
+        with patch("firebase_admin.messaging.send_each") as send_each:
+            send_each.return_value = SimpleNamespace(
+                success_count=1,
+                failure_count=0,
+                responses=[SimpleNamespace(exception=None)],
+            )
+            push_notification_service._send_batch(
+                tokens=["test-token"],
+                title="New cattle available",
+                message="A new cattle listing was posted.",
+                type_name="new_cattle",
+                reference_id="101",
+            )
+
+    message = send_each.call_args.args[0][0]
+    android_notification = message.android.notification
+    assert message.notification.title == "New cattle available"
+    assert message.notification.body == "A new cattle listing was posted."
+    assert message.data == {"type": "new_cattle", "reference_id": "101"}
+    assert message.android.priority == "high"
+    assert android_notification.title == message.notification.title
+    assert android_notification.body == message.notification.body
+    assert android_notification.channel_id == "milkmaatu_high_importance"
+    assert android_notification.icon == "ic_stat_ic_notification"
+    assert android_notification.color == "#D97706"
+    assert android_notification.default_sound is True
+    assert android_notification.default_vibrate_timings is True
+    assert android_notification.visibility == "public"
+
+
 async def run_tests():
+    verify_android_push_payload()
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

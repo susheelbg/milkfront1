@@ -22,39 +22,9 @@ _last_init_error: Optional[str] = None
 
 
 def _get_service_account_raw() -> tuple[Optional[str], Optional[str]]:
-    """Dynamically scan settings and os.environ for Firebase service account JSON."""
-    import os
-    # 1. Check configured setting first
+    """Read the backend-only service account from its required setting."""
     if settings.FIREBASE_SERVICE_ACCOUNT_JSON and settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip():
         return settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip(), "FIREBASE_SERVICE_ACCOUNT_JSON"
-
-    # 2. Check prioritized env var names
-    priority_keys = [
-        "FIREBASE_SERVICE_ACCOUNT_JSON",
-        "FIREBASE_SERVICE_ACCOUNT",
-        "FIREBASE_CREDENTIALS",
-        "GOOGLE_APPLICATION_CREDENTIALS",
-    ]
-    for key in priority_keys:
-        val = os.environ.get(key)
-        if val and val.strip():
-            return val.strip(), key
-
-    # 3. Dynamic scan of os.environ for Firebase JSON strings or valid file paths
-    for k, v in os.environ.items():
-        if not v:
-            continue
-        # Skip generic Render system variables
-        if k.startswith("RENDER_") or k.startswith("KUBERNETES_"):
-            continue
-        v_strip = v.strip()
-        # JSON string format
-        if (v_strip.startswith("{") and ("private_key" in v_strip or "project_id" in v_strip or "service_account" in v_strip)):
-            return v_strip, k
-        # File path format
-        if os.path.isfile(v_strip) and ("firebase" in k.lower() or "google" in k.lower() or "service_account" in k.lower()):
-            return v_strip, k
-
     return None, None
 
 
@@ -65,6 +35,11 @@ def _get_firebase_app():
     raw_json, key_found = _get_service_account_raw()
     if not raw_json:
         _last_init_error = "FIREBASE_SERVICE_ACCOUNT_JSON is empty (no matching env var found)."
+        return None
+
+    if settings.FIREBASE_PROJECT_ID != "milkfront1":
+        _last_init_error = "FIREBASE_PROJECT_ID must be 'milkfront1'."
+        logger.error("Firebase Admin initialization requires FIREBASE_PROJECT_ID=milkfront1.")
         return None
 
     import firebase_admin
@@ -164,10 +139,14 @@ def _send_batch(
             android=messaging.AndroidConfig(
                 priority="high",
                 notification=messaging.AndroidNotification(
-                    sound="default",
+                    title=title,
+                    body=message,
+                    icon="ic_stat_ic_notification",
+                    color="#D97706",
                     channel_id="milkmaatu_high_importance",
                     default_sound=True,
                     default_vibrate_timings=True,
+                    visibility="public",
                 ),
             ),
         )
