@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { toastService } from '../services/toastService';
-import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, LogOut, LogIn, Mail } from 'lucide-react';
+import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, LogOut, LogIn, Mail, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useTranslation();
-  const { user, isAuthenticated, signOut, updateProfile, isAdmin, isSuperAdmin } = useAuth();
+  const { user, isAuthenticated, signOut, updateProfile, deleteAccount, isAdmin, isSuperAdmin } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -54,6 +56,20 @@ export const ProfilePage = () => {
       navigate('/login', { replace: true });
     } catch (err) {
       toastService.error('Sign out error.');
+    }
+  };
+
+  const handleDeleteAccountConfirm = async () => {
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      toastService.success(t('profile.deleteAccountSuccess') || 'Your account and all associated data have been permanently deleted.');
+      setShowDeleteModal(false);
+      navigate('/login', { replace: true });
+    } catch (err) {
+      toastService.error(err.message || 'Failed to delete account.');
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -340,7 +356,100 @@ export const ProfilePage = () => {
             <span className="text-xs text-text-light">→</span>
           </button>
         </Card>
+
+        {/* Permanent Account Deletion Option (Red colored letters at bottom) */}
+        {isAuthenticated && (
+          <Card padding="lg" className="border border-red-200/80 bg-red-50/40 shadow-xs space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-red-700 flex items-center gap-1.5">
+              <AlertTriangle size={14} className="text-red-600" />
+              <span>{t('profile.dangerZone') || 'Danger Zone / Permanent Erasure'}</span>
+            </h3>
+
+            <button
+              type="button"
+              id="btn-delete-account"
+              onClick={() => setShowDeleteModal(true)}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-white hover:bg-red-50 border border-red-200 text-red-600 hover:text-red-700 transition-all font-bold text-sm shadow-2xs group cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <Trash2 size={18} className="text-red-600 group-hover:scale-110 transition-transform" />
+                <span className="font-extrabold text-red-600 group-hover:text-red-700">
+                  {t('profile.deleteAccount') || 'Delete Account permanently'}
+                </span>
+              </div>
+              <span className="text-xs font-black text-red-500 underline">
+                {t('profile.deleteAccountAction') || 'Delete Account'}
+              </span>
+            </button>
+
+            <p className="text-[11px] text-red-600/80 font-medium px-1">
+              {t('profile.deleteAccountDesc') || 'Permanently erases your profile, feed orders, and posted cattle listings.'}
+            </p>
+          </Card>
+        )}
       </section>
+
+      {/* Permanent Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <Card className="w-full max-w-sm border-2 border-red-200 shadow-2xl animate-scale-up" padding="lg">
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner border border-red-200">
+                <Trash2 size={28} />
+              </div>
+
+              <h3 className="text-lg font-black text-text-dark">
+                {t('profile.deleteAccountConfirmTitle') || 'Delete Account Permanently?'}
+              </h3>
+
+              <p className="text-xs text-text-light leading-relaxed font-medium">
+                {t('profile.deleteAccountConfirmMessage') ||
+                 'Are you sure you want to permanently delete your MilkMaatu account? All your profile details, feed orders, and posted cattle listings will be deleted forever. This action cannot be undone.'}
+              </p>
+
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-left">
+                <p className="text-[11px] font-bold text-red-800 flex items-start gap-1.5">
+                  <span>⚠️</span>
+                  <span>
+                    {t('profile.deleteWarningNotice') || 'This will immediately erase your phone number, address, and all Sante market ads.'}
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="lg"
+                  disabled={deletingAccount}
+                  onClick={handleDeleteAccountConfirm}
+                  className="w-full bg-red-600 hover:bg-red-700 border-red-600 text-white font-black text-sm py-3 shadow-md shadow-red-600/20 active:scale-95 cursor-pointer"
+                >
+                  {deletingAccount ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="animate-spin" size={16} />
+                      <span>Deleting Account...</span>
+                    </span>
+                  ) : (
+                    <span>{t('profile.deleteAccountBtn') || 'Yes, Delete My Account'}</span>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={deletingAccount}
+                  onClick={() => setShowDeleteModal(false)}
+                  className="w-full font-bold text-xs py-2.5 cursor-pointer"
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

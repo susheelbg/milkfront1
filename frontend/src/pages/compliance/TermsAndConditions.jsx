@@ -17,7 +17,7 @@ export const TermsAndConditions = () => {
         <Card className="prose max-w-none text-text-dark">
           {locale === 'kn' ? (
             <div className="space-y-6 text-sm leading-relaxed">
-              <p className="font-bold">ಕೊನೆಯದಾಗಿ ನವೀಕರಿಸಿದ್ದು: ಜೂನ್ 7, 2026</p>
+              <p className="font-bold">ಕೊನೆಯದಾಗಿ ನವೀಕರಿಸಿದ್ದು: ಅಕ್ಟೋಬರ್ 5, 2026</p>
               
               <div>
                 <h3 className="text-lg font-bold mb-2">೧. ನಿಯಮಗಳ ಅಂಗೀಕಾರ</h3>
@@ -44,13 +44,18 @@ export const TermsAndConditions = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold mb-2">೫. ಹೊಣೆಗಾರಿಕೆಯ ಹಕ್ಕುತ್ಯಾಗ (Disclaimer of Liability)</h3>
+                <h3 className="text-lg font-bold mb-2">೫. ಖಾತೆ ರದ್ದತಿ ಮತ್ತು ಕಾಯಂ ಅಳಿಸುವಿಕೆ (Account Termination & Deletion)</h3>
+                <p>ಬಳಕೆದಾರರು ಯಾವುದೇ ಸಮಯದಲ್ಲಿ ತಮ್ಮ ಖಾತೆಯನ್ನು ಪ್ರೊಫೈಲ್ ಪುಟದ ಕೆಳಭಾಗದಲ್ಲಿರುವ "ಖಾತೆಯನ್ನು ಕಾಯಂ ಆಗಿ ಅಳಿಸಿ" (Delete Account) ಆಯ್ಕೆಯ ಮೂಲಕ ಸ್ವಯಂ ರದ್ದುಗೊಳಿಸಬಹುದು. ಖಾತೆ ಅಳಿಸಿದ ನಂತರ ಬಳಕೆದಾರರ ಎಲ್ಲಾ ವೈಯಕ್ತಿಕ ವಿವರಗಳು, ಮೇವಿನ ಆರ್ಡರ್‌ಗಳು ಮತ್ತು ಸಂತೆ ಜಾಹೀರಾತುಗಳು ಪುನಃ ಪಡೆಯಲಾಗದಂತೆ ಶಾಶ್ವತವಾಗಿ ನಾಶವಾಗುತ್ತವೆ.</p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold mb-2">೬. ಹೊಣೆಗಾರಿಕೆಯ ಹಕ್ಕುತ್ಯಾಗ (Disclaimer of Liability)</h3>
                 <p>ದನಗಳ ಮಾರಾಟ ಅಥವಾ ಆರೋಗ್ಯ ಮಾಹಿತಿ ಒಪ್ಪಂದಗಳು ಕೇವಲ ಖರೀದಿದಾರರು ಮತ್ತು ಮಾರಾಟಗಾರರ ನಡುವಿನ ವೈಯಕ್ತಿಕ ಒಪ್ಪಂದಗಳಾಗಿವೆ. MilkMaatu ಕೇವಲ ಸಂಪರ್ಕ ಕಲ್ಪಿಸುವ ವೇದಿಕೆಯಾಗಿದ್ದು, ಯಾವುದೇ ಆರ್ಥಿಕ ಅಥವಾ ದನಗಳ ಆರೋಗ್ಯದ ನಷ್ಟಕ್ಕೆ ಜವಾಬ್ದಾರರಾಗಿರುವುದಿಲ್ಲ.</p>
               </div>
             </div>
           ) : (
             <div className="space-y-6 text-sm leading-relaxed">
-              <p className="font-bold">Last Updated: June 7, 2026</p>
+              <p className="font-bold">Last Updated: October 5, 2026</p>
               
               <div>
                 <h3 className="text-lg font-bold mb-2">1. Acceptance of Terms</h3>
@@ -72,7 +77,12 @@ export const TermsAndConditions = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold mb-2">4. Disclaimers of Liability</h3>
+                <h3 className="text-lg font-bold mb-2">4. Account Termination & Permanent Deletion</h3>
+                <p>Users may terminate their account registration at any time via the "Delete Account permanently" option at the bottom of their Profile page. Permanent account deletion immediately and irreversibly erases all profile records, active listings, order dispatches, and tokens.</p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold mb-2">5. Disclaimers of Liability</h3>
                 <p>MilkMaatu acts as a digital matching marketplace. We are not liable for negotiations, transactions, transport safety, livestock health disputes, or monetary losses arising between buyer and seller.</p>
               </div>
             </div>

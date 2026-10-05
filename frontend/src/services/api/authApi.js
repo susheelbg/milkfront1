@@ -99,6 +99,13 @@ export const authApi = {
     return resp?.data || null;
   },
 
+  // Delete user account permanently
+  deleteAccount: async () => {
+    const resp = await apiClient.delete('/auth/account');
+    await supabase.auth.signOut();
+    return resp?.data || resp;
+  },
+
   // Send password reset email
   resetPassword: async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {

@@ -17,7 +17,7 @@ export const PrivacyPolicy = () => {
         <Card className="prose max-w-none text-text-dark">
           {locale === 'kn' ? (
             <div className="space-y-6 text-sm leading-relaxed">
-              <p className="font-bold">ಕೊನೆಯದಾಗಿ ನವೀಕರಿಸಿದ್ದು: ಜೂನ್ 7, 2026</p>
+              <p className="font-bold">ಕೊನೆಯದಾಗಿ ನವೀಕರಿಸಿದ್ದು: ಅಕ್ಟೋಬರ್ 5, 2026</p>
               <p>MilkMaatu ಅಪ್ಲಿಕೇಶನ್ ಕರ್ನಾಟಕದ ಹೈನುಗಾರರ ಸುಲಭ ಸೇವೆಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ. ಈ ಗೌಪ್ಯತಾ ನೀತಿಯು ನಿಮ್ಮ ಮಾಹಿತಿ ಸಂಗ್ರಹಣೆ, ಸಂಗ್ರಹಿಸುವ ಕಾರಣ ಮತ್ತು ಅದರ ಸುರಕ್ಷತೆಯ ವಿವರಗಳನ್ನು ಒದಗಿಸುತ್ತದೆ.</p>
               
               <div>
@@ -45,8 +45,8 @@ export const PrivacyPolicy = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold mb-2">೪. ಮಾಹಿತಿ ಅಳಿಸುವಿಕೆ (Account Deletion)</h3>
-                <p>ಬಳಕೆದಾರರಿಗೆ ತಮ್ಮ ಖಾತೆಯನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಅಳಿಸುವ ಹಕ್ಕಿದೆ. ಪ್ರೊಫೈಲ್ ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ "ಖಾತೆಯನ್ನು ಅಳಿಸಿ" ಕ್ಲಿಕ್ ಮಾಡುವ ಮೂಲಕ ನಿಮ್ಮ ಹೆಸರು, ಮೊಬೈಲ್ ಸಂಖ್ಯೆ, ವಿಳಾಸ, ಮತ್ತು ಎಲ್ಲಾ ಸಂತೆ ಜಾಹೀರಾತುಗಳನ್ನು ತಕ್ಷಣವೇ ಮತ್ತು ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಬಹುದು.</p>
+                <h3 className="text-lg font-bold mb-2">೪. ಖಾತೆ ಮತ್ತು ಡೇಟಾ ಕಾಯಂ ಅಳಿಸುವಿಕೆ (Permanent Account & Data Deletion)</h3>
+                <p>ಬಳಕೆದಾರರಿಗೆ ತಮ್ಮ ಖಾತೆಯನ್ನು ತಕ್ಷಣವೇ ಮತ್ತು ಕಾಯಂ ಆಗಿ ಅಳಿಸುವ ಪೂರ್ಣ ಹಕ್ಕಿದೆ. ಪ್ರೊಫೈಲ್ ಪುಟದ ಕೆಳಭಾಗದಲ್ಲಿರುವ "ಖಾತೆಯನ್ನು ಕಾಯಂ ಆಗಿ ಅಳಿಸಿ" (Delete Account) ಆಯ್ಕೆಯನ್ನು ಕ್ಲಿಕ್ ಮಾಡುವ ಮೂಲಕ ನಿಮ್ಮ ಹೆಸರು, ಮೊಬೈಲ್ ಸಂಖ್ಯೆ, ವಿಳಾಸ, ಆರ್ಡರ್‌ಗಳ ಇತಿಹಾಸ ಮತ್ತು ಎಲ್ಲಾ ಸಂತೆ ಜಾನುವಾರು ಜಾಹೀರಾತುಗಳನ್ನು ಡೇಟಾಬೇಸ್‌ನಿಂದ ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಿಹಾಕಬಹುದು.</p>
               </div>
 
               <div>
@@ -56,7 +56,7 @@ export const PrivacyPolicy = () => {
             </div>
           ) : (
             <div className="space-y-6 text-sm leading-relaxed">
-              <p className="font-bold">Last Updated: June 7, 2026</p>
+              <p className="font-bold">Last Updated: October 5, 2026</p>
               <p>MilkMaatu is committed to protecting the privacy of dairy farmers in Karnataka. This Privacy Policy explains how we collect, use, and safe-guard your data.</p>
               
               <div>
@@ -83,13 +83,13 @@ export const PrivacyPolicy = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold mb-2">4. User Rights & Deletion</h3>
-                <p>You have full authority to request database deletion. By visiting the Profile page and clicking "Delete Account", all personal indicators, active listings, and session authorizations are completely removed and anonymized.</p>
+                <h3 className="text-lg font-bold mb-2">4. Permanent Account & Data Deletion Rights</h3>
+                <p>You possess full authority and right to permanently delete your account and associated personal data at any time. By navigating to your Profile page and clicking "Delete Account permanently", all your personal identifiers, mobile number, address, feed order history, and active cattle Sante listings are permanently erased from our system.</p>
               </div>
 
               <div>
                 <h3 className="text-lg font-bold mb-2">5. Contact Support</h3>
-                <p>For inquiries regarding data safety, reach us at support@milkmaatu.com.</p>
+                <p>For inquiries regarding data safety or account erasure, reach us at support@milkmaatu.com.</p>
               </div>
             </div>
           )}

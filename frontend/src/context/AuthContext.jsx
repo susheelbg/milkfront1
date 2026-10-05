@@ -150,6 +150,21 @@ export const AuthProvider = ({ children }) => {
     return updated;
   };
 
+  const deleteAccount = async () => {
+    setLoading(true);
+    try {
+      await deregisterFCM().catch(() => {});
+      await authApi.deleteAccount();
+      setUser(null);
+      setSession(null);
+      localStorage.removeItem('milkmaatu_auth_user');
+      localStorage.removeItem('active_cart');
+      localStorage.removeItem('my_cattle_listings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Construct effective user with safe fallback to session user metadata if backend profile is still loading
   const effectiveUser = user || (session?.user ? {
     id: session.user.id,
@@ -176,6 +191,7 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signOut,
     updateProfile,
+    deleteAccount,
     refreshProfile: fetchProfile,
   };
 

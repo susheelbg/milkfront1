@@ -240,7 +240,16 @@
     "language": "Language / ಭಾಷೆ",
     "updating": "Updating...",
     "updateSuccess": "Profile updated successfully!",
-    "avatarSuccess": "Avatar updated!"
+    "avatarSuccess": "Avatar updated!",
+    "dangerZone": "Danger Zone / Permanent Erasure",
+    "deleteAccount": "Delete Account permanently",
+    "deleteAccountAction": "Delete Account",
+    "deleteAccountDesc": "Permanently erases your profile, feed orders, and posted cattle listings.",
+    "deleteAccountConfirmTitle": "Permanently Delete Account?",
+    "deleteAccountConfirmMessage": "Are you sure you want to permanently delete your MilkMaatu account? All your profile details, feed orders, and posted cattle listings will be erased forever. This action cannot be undone.",
+    "deleteWarningNotice": "This will immediately erase your phone number, address, and all Sante market ads.",
+    "deleteAccountBtn": "Yes, Delete My Account",
+    "deleteAccountSuccess": "Your account and all associated data have been permanently deleted."
   },
   "nandini": {
     "title": "Nandini AI Assistant",
