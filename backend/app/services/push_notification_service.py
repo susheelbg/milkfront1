@@ -21,11 +21,33 @@ _firebase_lock = threading.Lock()
 _last_init_error: Optional[str] = None
 
 
+def _get_service_account_raw() -> tuple[Optional[str], Optional[str]]:
+    """Dynamically scan settings and os.environ for Firebase service account JSON."""
+    import os
+    # 1. Check configured setting first
+    if settings.FIREBASE_SERVICE_ACCOUNT_JSON and settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip():
+        return settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip(), "FIREBASE_SERVICE_ACCOUNT_JSON"
+
+    # 2. Dynamic scan of all os.environ keys for any key containing FIREBASE or service_account JSON content
+    for k, v in os.environ.items():
+        if not v:
+            continue
+        v_strip = v.strip()
+        if (v_strip.startswith("{") and "service_account" in v_strip) or ("private_key" in v_strip and "project_id" in v_strip):
+            return v_strip, k
+        if os.path.exists(v_strip) and ("firebase" in k.lower() or "service" in k.lower()):
+            return v_strip, k
+
+    return None, None
+
+
 def _get_firebase_app():
     """Initialize Firebase Admin once, using backend-only service-account credentials."""
     global _last_init_error
-    if not settings.FIREBASE_SERVICE_ACCOUNT_JSON:
-        _last_init_error = "FIREBASE_SERVICE_ACCOUNT_JSON environment variable is empty."
+
+    raw_json, key_found = _get_service_account_raw()
+    if not raw_json:
+        _last_init_error = "FIREBASE_SERVICE_ACCOUNT_JSON is empty (no matching env var found)."
         return None
 
     import firebase_admin
@@ -42,7 +64,6 @@ def _get_firebase_app():
         except ValueError:
             try:
                 import os
-                raw_json = settings.FIREBASE_SERVICE_ACCOUNT_JSON.strip()
                 if os.path.exists(raw_json):
                     with open(raw_json, "r", encoding="utf-8") as f:
                         service_account_info = json.load(f)
@@ -53,7 +74,7 @@ def _get_firebase_app():
 
                 credential_project_id = service_account_info.get("project_id")
                 if credential_project_id != settings.FIREBASE_PROJECT_ID:
-                    _last_init_error = f"Project mismatch: service account is '{credential_project_id}' but FIREBASE_PROJECT_ID is '{settings.FIREBASE_PROJECT_ID}'"
+                    _last_init_error = f"Project mismatch: service account project is '{credential_project_id}' but FIREBASE_PROJECT_ID is '{settings.FIREBASE_PROJECT_ID}'"
                     logger.error(
                         "Firebase service-account project (%s) does not match FIREBASE_PROJECT_ID (%s).",
                         credential_project_id, settings.FIREBASE_PROJECT_ID,
@@ -68,8 +89,8 @@ def _get_firebase_app():
                 )
                 _last_init_error = None
                 logger.info(
-                    "[FIREBASE] Admin SDK initialized successfully — project: %s app: %s",
-                    settings.FIREBASE_PROJECT_ID, _FIREBASE_APP_NAME,
+                    "[FIREBASE] Admin SDK initialized successfully via env var '%s' — project: %s app: %s",
+                    key_found, settings.FIREBASE_PROJECT_ID, _FIREBASE_APP_NAME,
                 )
                 return app
             except Exception as e:
@@ -84,17 +105,14 @@ def check_firebase_status() -> dict:
     Never returns credentials, private keys, or token values.
     """
     import os
-    env_keys = [
-        k for k in ["FIREBASE_SERVICE_ACCOUNT_JSON", "FIREBASE_SERVICE_ACCOUNT", "FIREBASE_KEY", "FIREBASE_CREDENTIALS"]
-        if os.getenv(k)
-    ]
-    has_config = bool(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
-    project_id = settings.FIREBASE_PROJECT_ID or "NOT SET"
+    raw_json, key_found = _get_service_account_raw()
+    all_env_keys = [k for k in os.environ.keys() if "FIREBASE" in k.upper() or "SERVICE" in k.upper() or "ACCOUNT" in k.upper()]
     app = _get_firebase_app()
     return {
-        "firebase_configured": has_config,
-        "env_keys_found": env_keys,
-        "firebase_project_id": project_id,
+        "firebase_configured": bool(raw_json),
+        "key_found_name": key_found,
+        "matching_env_keys": all_env_keys,
+        "firebase_project_id": settings.FIREBASE_PROJECT_ID or "NOT SET",
         "firebase_initialized": app is not None,
         "firebase_app_name": app.name if app else None,
         "init_error": _last_init_error if app is None else None,
