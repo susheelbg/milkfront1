@@ -27,6 +27,7 @@
  */
 
 import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { deviceApi } from './api/deviceApi';
 
@@ -142,7 +143,20 @@ const registerListeners = async () => {
     if (import.meta.env.DEV) {
       console.log('[FCM] Foreground notification received:', notification.title);
     }
-    // Stage 2: dispatch event or call notificationApi.getUnreadCount() here
+    if (!notification.title && !notification.body) return;
+
+    LocalNotifications.schedule({
+      notifications: [{
+        id: Math.floor(Date.now() % 2147483647),
+        title: notification.title || 'MilkMaatu',
+        body: notification.body || '',
+        schedule: { at: new Date(Date.now() + 250) },
+        channelId: 'milkmaatu_high_importance',
+        extra: notification.data,
+      }],
+    }).catch((err) => {
+      console.warn('[FCM] Could not display foreground notification:', err?.message);
+    });
   });
 
   /**
