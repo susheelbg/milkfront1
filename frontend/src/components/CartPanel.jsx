@@ -117,7 +117,7 @@ export const CartPanel = ({ onClose }) => {
 
       {/* Drawer Panel */}
       <div
-        className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col z-10 animate-slide-left"
+        className="relative w-full max-w-md bg-white h-[100dvh] max-h-[100dvh] min-h-0 shadow-2xl flex flex-col z-10 animate-slide-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -154,7 +154,7 @@ export const CartPanel = ({ onClose }) => {
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-3">
           {loading ? (
             <div className="py-20 text-center text-text-light font-semibold text-sm">
               Loading cart items...
@@ -249,7 +249,7 @@ export const CartPanel = ({ onClose }) => {
 
         {/* Footer Summary */}
         {cartEntries.length > 0 && (
-          <div className="p-5 border-t border-border-light bg-white shadow-lg space-y-3">
+          <div className="shrink-0 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] border-t border-border-light bg-white shadow-lg space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-text-light uppercase tracking-wider">{t('cart.total')}</span>
               <span className="text-2xl font-black text-text-dark">₹{getTotalPrice().toLocaleString()}</span>
