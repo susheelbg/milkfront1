@@ -28,6 +28,10 @@ import {
   Clock,
   CheckCircle,
   Building2,
+  Bell,
+  Search,
+  UserRound,
+  Send,
 } from 'lucide-react';
 import { AdminPartners } from './AdminPartners';
 import { useTranslation } from '../i18n/useTranslation';
@@ -49,6 +53,15 @@ export const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushMessage, setPushMessage] = useState('');
+  const [pushRecipientType, setPushRecipientType] = useState('all');
+  const [pushUserSearch, setPushUserSearch] = useState('');
+  const [pushUserId, setPushUserId] = useState('');
+  const [isPushConfirmationOpen, setIsPushConfirmationOpen] = useState(false);
+  const [isPushSending, setIsPushSending] = useState(false);
+  const [pushResult, setPushResult] = useState(null);
+  const [pushError, setPushError] = useState('');
 
   // Data states
   const [usersList, setUsersList] = useState([]);
@@ -184,6 +197,55 @@ export const AdminDashboard = () => {
       loadData();
     } catch (e) {
       toastService.error('Failed to update order status.');
+    }
+  };
+
+  const handlePushFormSubmit = (event) => {
+    event.preventDefault();
+    setPushError('');
+    setPushResult(null);
+
+    if (!pushTitle.trim() || !pushMessage.trim()) {
+      setPushError('Enter both a notification title and message.');
+      return;
+    }
+    if (pushRecipientType === 'user' && !pushUserId) {
+      setPushError('Select a registered user to continue.');
+      return;
+    }
+
+    setIsPushConfirmationOpen(true);
+  };
+
+  const handleConfirmPush = async () => {
+    if (isPushSending) return;
+    setIsPushSending(true);
+    setPushError('');
+
+    try {
+      const response = await adminApi.sendPushNotification({
+        title: pushTitle.trim(),
+        message: pushMessage.trim(),
+        recipient_type: pushRecipientType,
+        ...(pushRecipientType === 'user' ? { user_id: pushUserId } : {}),
+      });
+      const result = response?.data || response;
+      setPushResult({
+        message: response?.message || 'Notification request completed.',
+        ...result,
+      });
+      setIsPushConfirmationOpen(false);
+      toastService.success(response?.message || 'Notification request completed.');
+      setPushTitle('');
+      setPushMessage('');
+      setPushUserId('');
+      setPushUserSearch('');
+    } catch (error) {
+      setPushError(error.message || 'Could not send the notification. Please try again.');
+      setIsPushConfirmationOpen(false);
+      toastService.error(error.message || 'Could not send the notification.');
+    } finally {
+      setIsPushSending(false);
     }
   };
 
@@ -360,6 +422,7 @@ export const AdminDashboard = () => {
     { id: 'cattle', label: 'Cattle Listings', icon: Tag },
     { id: 'moderation', label: 'Moderation', icon: ShieldAlert },
     { id: 'partners', label: 'Our Partners', icon: Building2 },
+    { id: 'push-notifications', label: 'Push Notifications', icon: Bell },
   ];
 
   if (authLoading) {
@@ -373,6 +436,16 @@ export const AdminDashboard = () => {
 
   const activeFeedsCount = feedsList.filter(f => !f.is_hidden).length;
   const hiddenFeedsCount = feedsList.filter(f => f.is_hidden).length;
+  const selectedPushUser = usersList.find(user => user.id === pushUserId);
+  const filteredPushUsers = usersList
+    .filter(user => user.role === 'user')
+    .filter(user => {
+      const search = pushUserSearch.trim().toLowerCase();
+      if (!search) return false;
+      return [user.name, user.email, user.phone]
+        .some(value => (value || '').toLowerCase().includes(search));
+    })
+    .slice(0, 8);
 
   return (
     <div className="min-h-screen bg-bg-light pb-12">
@@ -940,11 +1013,215 @@ export const AdminDashboard = () => {
                     <AdminPartners />
                   </div>
                 )}
+
+                {activeTab === 'push-notifications' && (
+                  <div className="space-y-5 animate-slide-up">
+                    <div>
+                      <h2 className="text-xl font-extrabold text-text-dark">Push Notifications</h2>
+                      <p className="text-sm text-text-light mt-1">Compose a notification for MilkMaatu users.</p>
+                    </div>
+
+                    <Card padding="lg" className="border border-border-light">
+                      <form onSubmit={handlePushFormSubmit} className="space-y-5">
+                        <div>
+                          <label htmlFor="push-title" className="block text-xs text-text-light font-bold uppercase mb-1.5">
+                            Notification Title
+                          </label>
+                          <Input
+                            id="push-title"
+                            value={pushTitle}
+                            onChange={event => setPushTitle(event.target.value)}
+                            placeholder="Write a short title"
+                            maxLength={120}
+                            required
+                          />
+                          <p className="text-[11px] text-text-light text-right mt-1">{pushTitle.length}/120</p>
+                        </div>
+
+                        <div>
+                          <label htmlFor="push-message" className="block text-xs text-text-light font-bold uppercase mb-1.5">
+                            Notification Message
+                          </label>
+                          <textarea
+                            id="push-message"
+                            value={pushMessage}
+                            onChange={event => setPushMessage(event.target.value)}
+                            placeholder="Write your message"
+                            maxLength={2000}
+                            rows={5}
+                            required
+                            className="w-full px-4 py-3 rounded-lg border-2 border-border-light focus:border-primary focus:outline-none resize-y text-sm text-text-dark"
+                          />
+                          <p className="text-[11px] text-text-light text-right mt-1">{pushMessage.length}/2000</p>
+                        </div>
+
+                        <fieldset>
+                          <legend className="block text-xs text-text-light font-bold uppercase mb-2">Recipient</legend>
+                          <div className="grid grid-cols-2 gap-2 rounded-xl bg-bg-light p-1.5 border border-border-light">
+                            {[
+                              { value: 'all', label: 'All Users', Icon: Users },
+                              { value: 'user', label: 'Specific User', Icon: UserRound },
+                            ].map(({ value, label, Icon }) => (
+                              <label
+                                key={value}
+                                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-bold cursor-pointer transition-colors ${
+                                  pushRecipientType === value
+                                    ? 'bg-white text-text-dark shadow-sm border border-border-light'
+                                    : 'text-text-light hover:text-text-dark'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="push-recipient"
+                                  value={value}
+                                  checked={pushRecipientType === value}
+                                  onChange={() => {
+                                    setPushRecipientType(value);
+                                    setPushError('');
+                                  }}
+                                  className="sr-only"
+                                />
+                                <Icon size={16} />
+                                {label}
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+
+                        {pushRecipientType === 'user' && (
+                          <div className="space-y-2">
+                            {selectedPushUser ? (
+                              <div className="flex items-start justify-between gap-3 rounded-lg border border-border-light bg-bg-light/60 px-4 py-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-text-dark truncate">{selectedPushUser.name || 'Unnamed user'}</p>
+                                  <p className="text-xs text-text-light break-all">{selectedPushUser.email || 'No email'}</p>
+                                  <p className="text-xs text-text-light">{selectedPushUser.phone || 'No phone number'}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setPushUserId('')}
+                                  aria-label="Remove selected user"
+                                  className="shrink-0 p-1 text-text-light hover:text-text-dark"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <label htmlFor="push-user-search" className="block text-xs text-text-light font-bold uppercase">
+                                  Search registered users
+                                </label>
+                                <div className="relative">
+                                  <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light" />
+                                  <input
+                                    id="push-user-search"
+                                    type="search"
+                                    value={pushUserSearch}
+                                    onChange={event => setPushUserSearch(event.target.value)}
+                                    placeholder="Name, email, or phone"
+                                    className="w-full pl-10 pr-3 py-2.5 rounded-lg border-2 border-border-light focus:border-primary focus:outline-none text-sm bg-white"
+                                  />
+                                </div>
+                                {pushUserSearch.trim() && (
+                                  <div className="max-h-56 overflow-y-auto rounded-lg border border-border-light divide-y divide-border-light">
+                                    {filteredPushUsers.length ? filteredPushUsers.map(user => (
+                                      <button
+                                        type="button"
+                                        key={user.id}
+                                        onClick={() => {
+                                          setPushUserId(user.id);
+                                          setPushUserSearch('');
+                                        }}
+                                        className="w-full text-left px-4 py-3 hover:bg-bg-light focus:bg-bg-light focus:outline-none"
+                                      >
+                                        <span className="block text-sm font-bold text-text-dark">{user.name || 'Unnamed user'}</span>
+                                        <span className="block text-xs text-text-light break-all">{user.email || 'No email'} · {user.phone || 'No phone'}</span>
+                                      </button>
+                                    )) : (
+                                      <p className="px-4 py-3 text-sm text-text-light">No registered users match that search.</p>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        {pushError && (
+                          <p role="alert" className="text-sm font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                            {pushError}
+                          </p>
+                        )}
+
+                        {pushResult && (
+                          <div role="status" className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+                            <p className="font-bold">{pushResult.message}</p>
+                            <p className="text-xs mt-1">
+                              {pushResult.recipient_count ?? 0} recipients · {pushResult.success_count ?? 0} delivered · {pushResult.failure_count ?? 0} failed
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end border-t border-border-light pt-4">
+                          <Button
+                            type="submit"
+                            variant="primary"
+                            size="lg"
+                            disabled={isPushSending}
+                            className="w-full sm:w-auto font-bold"
+                          >
+                            <span className="inline-flex items-center gap-2"><Send size={17} /> Send Notification 🔔</span>
+                          </Button>
+                        </div>
+                      </form>
+                    </Card>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </section>
+
+      {isPushConfirmationOpen && (
+        <div className="fixed inset-0 bg-text-dark/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <Card
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="push-confirmation-title"
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-border-light shadow-2xl"
+            padding="lg"
+          >
+            <h3 id="push-confirmation-title" className="text-lg font-extrabold text-text-dark">Confirm notification</h3>
+            <p className="text-sm text-text-light mt-2">Are you sure you want to send this notification?</p>
+            <div className="mt-4 rounded-lg bg-bg-light border border-border-light px-4 py-3">
+              <p className="text-sm font-bold text-text-dark break-words">{pushTitle.trim()}</p>
+              <p className="text-sm text-text-light mt-1 whitespace-pre-wrap break-words">{pushMessage.trim()}</p>
+              <p className="text-xs text-text-light mt-3">
+                Recipient: {pushRecipientType === 'all' ? 'All Users' : (selectedPushUser?.name || selectedPushUser?.email || 'Specific User')}
+              </p>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isPushSending}
+                onClick={() => setIsPushConfirmationOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={isPushSending}
+                onClick={handleConfirmPush}
+              >
+                {isPushSending ? 'Sending...' : 'Send Notification'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* FEED PRODUCT ADD/EDIT MODAL */}
       {isFeedModalOpen && (

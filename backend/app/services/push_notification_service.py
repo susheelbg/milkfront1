@@ -183,12 +183,19 @@ async def send_push_notifications(
     message: str,
     type_name: str,
     reference_id: Optional[str] = None,
-) -> None:
+) -> dict[str, int]:
     """Send best-effort pushes to active devices; push failures never escape this function."""
+    delivery_result = {
+        "device_count": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "invalid_token_count": 0,
+        "delivery_error": 0,
+    }
     if not user_ids:
         print("[FCM INFO] send_push_notifications called with 0 target users — no push sent.")
         logger.info("[FCM] send_push_notifications called with empty user_ids — no push sent.")
-        return
+        return delivery_result
 
     print(f"[FCM PUSH REQUEST] Requesting push for {len(user_ids)} recipient user(s) | Type={type_name}")
     logger.info("[FCM] Push requested for %d recipient user(s) | type=%s", len(user_ids), type_name)
@@ -204,11 +211,14 @@ async def send_push_notifications(
     except Exception as db_err:
         print(f"[FCM DB ERROR] Could not retrieve active device tokens: {db_err}")
         logger.exception("Could not retrieve active device tokens; skipping push delivery.")
+        delivery_result["delivery_error"] = 1
         try:
             await db.rollback()
         except Exception:
             pass
-        return
+        return delivery_result
+
+    delivery_result["device_count"] = len(tokens)
 
     if not tokens:
         print(f"[FCM NOTICE] No active device tokens (is_active=True) found in user_devices for target user(s) — push skipped.")
@@ -216,7 +226,7 @@ async def send_push_notifications(
             "[FCM] No active device tokens found for %d user(s) — push skipped (type=%s).",
             len(user_ids), type_name,
         )
-        return
+        return delivery_result
 
     print(f"[FCM DISPATCH] Found {len(tokens)} active device token(s) — delivering via Firebase...")
     logger.info("[FCM] Found %d active device token(s) — sending FCM batch(es).", len(tokens))
@@ -234,16 +244,21 @@ async def send_push_notifications(
                 reference_id,
             )
             if responses is None:
-                return
+                delivery_result["failure_count"] += len(tokens) - offset
+                break
+            delivery_result["success_count"] += sum(error is None for _, error in responses)
+            delivery_result["failure_count"] += sum(error is not None for _, error in responses)
             batch_invalid = [
                 token for token, error in responses
                 if error is not None and _is_invalid_token_error(error)
             ]
             if batch_invalid:
                 logger.info("[FCM] %d token(s) are invalid/unregistered — will deactivate.", len(batch_invalid))
+                delivery_result["invalid_token_count"] += len(batch_invalid)
             invalid_tokens.extend(batch_invalid)
         except Exception:
             logger.exception("Firebase push batch failed; in-app notifications remain available.")
+            delivery_result["failure_count"] += len(token_batch)
 
     if invalid_tokens:
         try:
@@ -263,3 +278,5 @@ async def send_push_notifications(
                 await db.rollback()
             except Exception:
                 pass
+
+    return delivery_result

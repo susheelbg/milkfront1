@@ -16,6 +16,9 @@ from app.models.cattle import Cattle
 from app.schemas.user import ProfileResponse, UserRoleUpdate
 from app.schemas.order import OrderResponse, OrderUpdate
 from app.schemas.feed import FeedResponse
+from app.schemas.notification import AdminPushNotificationRequest
+from app.models.user_device import UserDevice
+from app.services.notification_service import create_notifications_for_users
 from app.utils.response import json_response
 from app.routes.feed_routes import partner_product_to_feed_dict
 
@@ -155,6 +158,77 @@ async def get_all_users(
         success=True,
         message="Fetched users directory successfully",
         data=payload
+    )
+
+
+@router.post("/notifications/push")
+async def send_admin_push_notification(
+    req: AdminPushNotificationRequest,
+    admin_user: Profile = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a custom notification to all active-device users or one selected user."""
+    if req.recipient_type == "all":
+        result = await db.execute(
+            select(UserDevice.user_id)
+            .join(Profile, Profile.id == UserDevice.user_id)
+            .where(
+                UserDevice.is_active.is_(True),
+                Profile.role == "user",
+            )
+            .distinct()
+        )
+        user_ids = list(result.scalars().all())
+    else:
+        result = await db.execute(
+            select(Profile.id).where(
+                Profile.id == req.user_id,
+                Profile.role == "user",
+            )
+        )
+        user_id = result.scalar_one_or_none()
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registered user not found.",
+            )
+        user_ids = [user_id]
+
+    notification_id = str(uuid.uuid4())
+    delivery = await create_notifications_for_users(
+        db=db,
+        user_ids=user_ids,
+        title=req.title,
+        message=req.message,
+        type_name="admin_custom",
+        reference_id=notification_id,
+    )
+
+    device_count = delivery["device_count"]
+    sent_count = delivery["success_count"]
+    failed_count = delivery["failure_count"]
+    invalid_count = delivery["invalid_token_count"]
+    if delivery["delivery_error"]:
+        response_message = "Notification saved, but push delivery could not be completed."
+    elif device_count == 0 and not user_ids:
+        response_message = "No users with active devices were found."
+    elif device_count == 0:
+        response_message = "Notification saved, but no active devices were found."
+    elif failed_count == 0:
+        response_message = f"Notification sent successfully to {sent_count} active devices."
+    else:
+        response_message = (
+            f"Notification sent to {sent_count} of {device_count} active devices; "
+            f"{failed_count} failed, including {invalid_count} invalid tokens deactivated."
+        )
+
+    return json_response(
+        success=True,
+        message=response_message,
+        data={
+            **delivery,
+            "notification_id": notification_id,
+        },
     )
 
 

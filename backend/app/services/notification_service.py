@@ -104,6 +104,58 @@ def resolve_localized_content(
     return default_title, default_message
 
 
+async def create_notifications_for_users(
+    db: AsyncSession,
+    user_ids: list[uuid.UUID],
+    title: str,
+    message: str,
+    type_name: str,
+    reference_id: Optional[str] = None,
+) -> dict[str, int]:
+    """Persist and push one exact-content notification to the selected users."""
+    target_user_ids = list(dict.fromkeys(user_ids))
+    if target_user_ids:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        db.add_all([
+            Notification(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                type=type_name,
+                title=title,
+                message=message,
+                reference_id=str(reference_id) if reference_id is not None else None,
+                is_read=False,
+                created_at=now,
+                read_at=None,
+            )
+            for user_id in target_user_ids
+        ])
+        await db.commit()
+
+    try:
+        from app.services.push_notification_service import send_push_notifications
+
+        delivery_result = await send_push_notifications(
+            db=db,
+            user_ids=target_user_ids,
+            title=title,
+            message=message,
+            type_name=type_name,
+            reference_id=str(reference_id) if reference_id is not None else None,
+        )
+    except Exception:
+        logger.exception("Push delivery failed after custom notifications were committed.")
+        delivery_result = {
+            "device_count": 0,
+            "success_count": 0,
+            "failure_count": 0,
+            "invalid_token_count": 0,
+            "delivery_error": 1,
+        }
+
+    return {"recipient_count": len(target_user_ids), **delivery_result}
+
+
 def fetch_all_supabase_users() -> List[dict]:
     """
     Fetches all registered users from Supabase Auth Admin API using SUPABASE_SERVICE_ROLE_KEY.

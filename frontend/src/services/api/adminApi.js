@@ -52,6 +52,11 @@ export const adminApi = {
     return res && res.success ? (res.data || res) : res;
   },
 
+  // Send a custom push notification (Admin only)
+  sendPushNotification: async (payload) => {
+    return apiClient.post('/admin/notifications/push', payload);
+  },
+
   // Get all cattle listings
   getCattle: async () => {
     const res = await apiClient.get('/admin/cattle');

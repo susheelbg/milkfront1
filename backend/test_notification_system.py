@@ -1,17 +1,23 @@
 import asyncio
+import json
 import uuid
 from datetime import datetime, timezone, timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from fastapi import HTTPException
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
+from app.core.dependencies import get_current_admin
 from app.models.user import Profile
 from app.models.notification import Notification
 from app.models.user_device import UserDevice
+from app.routes.admin_routes import send_admin_push_notification
+from app.schemas.notification import AdminPushNotificationRequest
 from app.services import notification_service
 from app.services import push_notification_service
 
@@ -48,9 +54,53 @@ def verify_android_push_payload():
     assert android_notification.default_vibrate_timings is True
     assert android_notification.visibility == "public"
 
+    custom_title = "🎁 Prize Drop!"
+    custom_message = "ಹಾಲು ಉತ್ಪಾದಕರಿಗೆ ವಿಶೇಷ ಕೊಡುಗೆ ಲಭ್ಯವಿದೆ."
+    with patch.object(push_notification_service, "_get_firebase_app", return_value=object()):
+        with patch("firebase_admin.messaging.send_each") as send_each:
+            send_each.return_value = SimpleNamespace(
+                success_count=1,
+                failure_count=0,
+                responses=[SimpleNamespace(exception=None)],
+            )
+            push_notification_service._send_batch(
+                tokens=["test-token"],
+                title=custom_title,
+                message=custom_message,
+                type_name="admin_custom",
+                reference_id="custom-campaign",
+            )
+
+    custom_payload = send_each.call_args.args[0][0]
+    assert custom_payload.notification.title == custom_title
+    assert custom_payload.notification.body == custom_message
+    assert custom_payload.data == {"type": "admin_custom", "reference_id": "custom-campaign"}
+
+
+def verify_admin_push_validation():
+    valid = AdminPushNotificationRequest(
+        title="  🥛 ಹಾಲು ಉತ್ಪಾದಕರಿಗೆ ಹೊಸ ಮಾಹಿತಿ  ",
+        message="ನಿಮ್ಮ MilkMaatu ಆ್ಯಪ್‌ನಲ್ಲಿ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಲಭ್ಯವಿದೆ.",
+    )
+    assert valid.title == "🥛 ಹಾಲು ಉತ್ಪಾದಕರಿಗೆ ಹೊಸ ಮಾಹಿತಿ"
+    assert valid.message == "ನಿಮ್ಮ MilkMaatu ಆ್ಯಪ್‌ನಲ್ಲಿ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಲಭ್ಯವಿದೆ."
+    assert valid.recipient_type == "all"
+
+    for payload in (
+        {"title": "   ", "message": "A message"},
+        {"title": "A title", "message": "\n  "},
+        {"title": "A title", "message": "A message", "recipient_type": "user"},
+    ):
+        try:
+            AdminPushNotificationRequest(**payload)
+        except ValidationError:
+            continue
+        raise AssertionError("Invalid custom notification request was accepted")
+
 
 async def run_tests():
     verify_android_push_payload()
+    verify_admin_push_validation()
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
@@ -69,6 +119,107 @@ async def run_tests():
 
         db.add_all([user_a, user_b, user_c])
         await db.commit()
+
+        user_d_id = uuid.uuid4()
+        user_e_id = uuid.uuid4()
+        user_d = Profile(id=user_d_id, email="farmer_d@milkmaatu.com", name="Farmer D", role="user")
+        user_e = Profile(id=user_e_id, email="farmer_e@milkmaatu.com", name="Farmer E", role="user")
+        inactive_device = UserDevice(
+            user_id=user_e_id,
+            device_token="custom-inactive-token",
+            platform="android",
+            is_active=False,
+        )
+        invalid_device = UserDevice(
+            user_id=user_e_id,
+            device_token="custom-invalid-token",
+            platform="android",
+        )
+        db.add_all([
+            user_d,
+            user_e,
+            UserDevice(user_id=user_d_id, device_token="user-d-device-1", platform="android"),
+            UserDevice(user_id=user_d_id, device_token="user-d-device-2", platform="android"),
+            invalid_device,
+            UserDevice(user_id=user_e_id, device_token="user-e-device-1", platform="android"),
+            inactive_device,
+        ])
+        await db.commit()
+
+        try:
+            await get_current_admin(current_user=user_a)
+        except HTTPException as error:
+            assert error.status_code == 403
+        else:
+            raise AssertionError("A normal user passed the admin authorization dependency")
+
+        with patch(
+            "app.services.push_notification_service._send_batch",
+            side_effect=lambda tokens, *_: [
+                (token, SimpleNamespace(code="UNREGISTERED") if token == "custom-invalid-token" else None)
+                for token in tokens
+            ],
+        ) as send_batch:
+            all_response = await send_admin_push_notification(
+                req=AdminPushNotificationRequest(
+                    title="All users",
+                    message="An update for all active users.",
+                    recipient_type="all",
+                ),
+                admin_user=user_c,
+                db=db,
+            )
+
+        all_result = json.loads(all_response.body)["data"]
+        sent_tokens = [token for call in send_batch.call_args_list for token in call.args[0]]
+        assert set(sent_tokens) == {
+            "user-d-device-1",
+            "user-d-device-2",
+            "custom-invalid-token",
+            "user-e-device-1",
+        }
+        assert "custom-inactive-token" not in sent_tokens
+        assert all_result["recipient_count"] == 2
+        assert all_result["device_count"] == 4
+        assert all_result["success_count"] == 3
+        assert all_result["failure_count"] == 1
+        assert all_result["invalid_token_count"] == 1
+        await db.refresh(invalid_device)
+        assert invalid_device.is_active is False
+        all_notifications = (await db.execute(
+            select(Notification).where(Notification.reference_id == all_result["notification_id"])
+        )).scalars().all()
+        assert {notification.user_id for notification in all_notifications} == {user_d_id, user_e_id}
+
+        specific_title = "🥛 ಹಾಲು ಉತ್ಪಾದಕರಿಗೆ ಹೊಸ ಮಾಹಿತಿ"
+        specific_message = "ನಿಮ್ಮ MilkMaatu ಆ್ಯಪ್‌ನಲ್ಲಿ ಹೊಸ ಅಪ್‌ಡೇಟ್ ಲಭ್ಯವಿದೆ."
+        with patch(
+            "app.services.push_notification_service._send_batch",
+            side_effect=lambda tokens, *_: [(token, None) for token in tokens],
+        ) as send_batch:
+            specific_response = await send_admin_push_notification(
+                req=AdminPushNotificationRequest(
+                    title=specific_title,
+                    message=specific_message,
+                    recipient_type="user",
+                    user_id=user_d_id,
+                ),
+                admin_user=user_c,
+                db=db,
+            )
+
+        specific_result = json.loads(specific_response.body)["data"]
+        specific_tokens = [token for call in send_batch.call_args_list for token in call.args[0]]
+        assert set(specific_tokens) == {"user-d-device-1", "user-d-device-2"}
+        assert specific_result["recipient_count"] == 1
+        assert specific_result["device_count"] == 2
+        specific_notifications = (await db.execute(
+            select(Notification).where(Notification.reference_id == specific_result["notification_id"])
+        )).scalars().all()
+        assert len(specific_notifications) == 1
+        assert specific_notifications[0].user_id == user_d_id
+        assert specific_notifications[0].title == specific_title
+        assert specific_notifications[0].message == specific_message
 
         print("=== 2. Testing Cattle Listing Notifications (Excluding Owner & Localized) ===")
         # User A posts cattle
