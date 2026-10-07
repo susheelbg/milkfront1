@@ -8,9 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 class ChatMessageCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    message_type: Literal["text", "voice"]
+    message_type: Literal["text", "voice", "image"]
     content: Optional[str] = Field(None, max_length=2000)
     voice_path: Optional[str] = Field(None, max_length=512)
+    image_path: Optional[str] = Field(None, max_length=512)
 
     @field_validator("content")
     @classmethod
@@ -29,21 +30,31 @@ class ChatMessageCreate(BaseModel):
             raise ValueError("Invalid voice message path.")
         return value
 
+    @field_validator("image_path")
+    @classmethod
+    def validate_image_path(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and (not value.strip() or ".." in value or value.startswith("/")):
+            raise ValueError("Invalid image message path.")
+        return value
+
     @model_validator(mode="after")
     def validate_payload(self):
-        if self.message_type == "text" and (self.content is None or self.voice_path is not None):
-            raise ValueError("Text messages require content and cannot include a voice path.")
-        if self.message_type == "voice" and (self.content is not None or self.voice_path is None):
-            raise ValueError("Voice messages require a voice path and cannot include text content.")
+        if self.message_type == "text" and (self.content is None or self.voice_path is not None or self.image_path is not None):
+            raise ValueError("Text messages require content and cannot include a voice/image path.")
+        if self.message_type == "voice" and (self.content is not None or self.voice_path is None or self.image_path is not None):
+            raise ValueError("Voice messages require a voice path and cannot include text or image content.")
+        if self.message_type == "image" and (self.content is not None or self.voice_path is not None or self.image_path is None):
+            raise ValueError("Image messages require an image path and cannot include text or voice content.")
         return self
 
 
 class ChatMessageResponse(BaseModel):
     id: UUID
     user_id: UUID
-    message_type: Literal["text", "voice"]
+    message_type: Literal["text", "voice", "image"]
     content: Optional[str]
     voice_path: Optional[str]
+    image_path: Optional[str]
     created_at: datetime
     display_name: str
     avatar_url: Optional[str] = None
@@ -72,6 +83,7 @@ class ChatModerationReport(BaseModel):
     reason: str
     created_at: datetime
     sender_name: str
-    message_type: Literal["text", "voice"]
+    message_type: Literal["text", "voice", "image"]
     content: Optional[str]
     voice_path: Optional[str]
+    image_path: Optional[str]

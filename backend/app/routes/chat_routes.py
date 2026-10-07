@@ -58,6 +58,7 @@ def _message_response(message: ChatMessage) -> ChatMessageResponse:
         message_type=message.message_type,
         content=message.content,
         voice_path=message.voice_path,
+        image_path=message.image_path,
         created_at=message.created_at,
         display_name=(message.profile.name or "MilkMaatu Farmer").strip() or "MilkMaatu Farmer",
         avatar_url=message.profile.avatar_url,
@@ -101,6 +102,7 @@ async def create_chat_message(
     db: AsyncSession = Depends(get_db),
 ):
     voice_path = req.voice_path
+    image_path = req.image_path
     if req.message_type == "voice":
         owner_prefix = f"{current_user.id}/"
         if not voice_path or not voice_path.startswith(owner_prefix) or "/" in voice_path[len(owner_prefix):]:
@@ -108,12 +110,19 @@ async def create_chat_message(
         if not voice_path.lower().endswith((".webm", ".mp4", ".aac", ".ogg", ".3gp")):
             raise HTTPException(status_code=415, detail="Unsupported voice message format.")
         await _validate_voice_object(voice_path)
+    elif req.message_type == "image":
+        owner_prefix = f"{current_user.id}/"
+        if not image_path or not image_path.startswith(owner_prefix) or "/" in image_path[len(owner_prefix):]:
+            raise HTTPException(status_code=400, detail="Image path must belong to the authenticated user.")
+        if not image_path.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            raise HTTPException(status_code=415, detail="Unsupported image message format.")
 
     message = ChatMessage(
         user_id=current_user.id,
         message_type=req.message_type,
         content=req.content,
         voice_path=voice_path,
+        image_path=image_path,
     )
     db.add(message)
     try:
@@ -199,6 +208,7 @@ async def get_chat_reports(
             message_type=report.message.message_type,
             content=report.message.content,
             voice_path=report.message.voice_path,
+            image_path=report.message.image_path,
         )
         for report in reports
     ]

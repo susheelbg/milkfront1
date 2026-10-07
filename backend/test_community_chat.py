@@ -73,6 +73,15 @@ async def run_tests():
             )
             assert voice_message.voice_path == voice_path
 
+            image_path = f"{farmer_id}/chat-photo.png"
+            image_message = await create_chat_message(
+                req=ChatMessageCreate(message_type="image", image_path=image_path),
+                current_user=farmer,
+                db=db,
+            )
+            assert image_message.image_path == image_path
+            assert image_message.message_type == "image"
+
             try:
                 await create_chat_message(
                     req=ChatMessageCreate(message_type="voice", voice_path=f"{another_farmer_id}/spoof.webm"),
@@ -85,7 +94,7 @@ async def run_tests():
                 raise AssertionError("Voice path belonging to another user was accepted")
 
         page = await get_chat_messages(limit=30, current_user=farmer, db=db)
-        assert len(page.items) == 2
+        assert len(page.items) == 3
         assert {item.user_id for item in page.items} == {farmer_id}
 
         try:

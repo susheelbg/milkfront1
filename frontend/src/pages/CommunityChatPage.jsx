@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, MessageCircle, Mic, Play, Send, Square, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Loader2, MessageCircle, Mic, Pause, Play, Send, Square, Trash2, X } from 'lucide-react';
 import { Button, Card, Header } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n/useTranslation';
@@ -10,6 +10,7 @@ import { toastService } from '../services/toastService';
 
 const PAGE_SIZE = 30;
 const MAX_VOICE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_RECORDING_MS = 90_000;
 
 const formatDuration = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
@@ -23,6 +24,10 @@ const UserAvatar = ({ name, url, size = 'md' }) => (
 const VoicePlayer = ({ path, t }) => {
   const [url, setUrl] = useState('');
   const [failed, setFailed] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -36,9 +41,89 @@ const VoicePlayer = ({ path, t }) => {
     return () => { active = false; };
   }, [path]);
 
+  useEffect(() => () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+  }, []);
+
+  const togglePlayback = async () => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      await audioRef.current.play();
+      setIsPlaying(true);
+    } else {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
   if (failed) return <p className="text-xs text-red-700">{t('chat.failedToUpload')}</p>;
   if (!url) return <span className="inline-flex items-center gap-2 text-xs text-text-light"><Loader2 size={14} className="animate-spin" />{t('common.loading')}</span>;
-  return <audio controls preload="none" src={url} className="w-full max-w-xs h-10" />;
+
+  return (
+    <div className="flex w-full max-w-xs items-center gap-2">
+      <button
+        type="button"
+        onClick={togglePlayback}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-white shadow-sm"
+        aria-label={isPlaying ? t('common.pause') || 'Pause' : t('common.play') || 'Play'}
+      >
+        {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+      </button>
+      <div className="flex-1">
+        <div className="h-2 overflow-hidden rounded-full bg-emerald-100">
+          <div
+            className="h-full rounded-full bg-emerald-700 transition-all duration-150"
+            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+          />
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[10px] text-text-light">
+          <span>{formatDuration(currentTime)}</span>
+          <span>{formatDuration(duration)}</span>
+        </div>
+      </div>
+      <audio
+        ref={audioRef}
+        preload="none"
+        controlsList="nodownload noplaybackrate nofullscreen"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onLoadedMetadata={(event) => setDuration(event.target.duration || 0)}
+        onTimeUpdate={(event) => setCurrentTime(event.target.currentTime || 0)}
+        src={url}
+        className="hidden"
+      />
+    </div>
+  );
+};
+
+const ChatImageMessage = ({ path, onOpen }) => {
+  const [url, setUrl] = useState('');
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!path) return undefined;
+    supabase.storage.from('chat-images').createSignedUrl(path, 3600)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error || !data?.signedUrl) setFailed(true);
+        else setUrl(data.signedUrl);
+      })
+      .catch(() => { if (active) setFailed(true); });
+    return () => { active = false; };
+  }, [path]);
+
+  if (failed) return <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">Image unavailable</div>;
+  if (!url) return <div className="flex h-40 w-52 items-center justify-center rounded-xl bg-emerald-50 text-xs text-text-light"><Loader2 size={16} className="animate-spin" /></div>;
+
+  return (
+    <button type="button" onClick={() => onOpen(url)} className="block overflow-hidden rounded-xl border border-emerald-100 bg-white">
+      <img src={url} alt="Shared chat photo" className="max-h-64 w-full max-w-xs object-cover" />
+    </button>
+  );
 };
 
 export const CommunityChatPage = () => {
@@ -58,6 +143,9 @@ export const CommunityChatPage = () => {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [voiceDraft, setVoiceDraft] = useState(null);
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
+  const [expandedImage, setExpandedImage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef(null);
   const scrollRef = useRef(null);
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -294,6 +382,49 @@ export const CommunityChatPage = () => {
     }
   };
 
+  const handlePhotoSelect = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError(t('chat.photoTypeInvalid'));
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError(t('chat.photoTooLarge'));
+      return;
+    }
+
+    if (!user?.id) return;
+    setUploadingImage(true);
+    setError('');
+
+    const extensionByType = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const uniqueId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const imagePath = `${user.id}/${uniqueId}.${extensionByType[file.type]}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage.from('chat-images').upload(imagePath, file, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+      const response = await chatApi.sendMessage({ message_type: 'image', image_path: imagePath });
+      const message = response?.id ? response : response?.data;
+      if (message?.id) setMessages(current => [message, ...current.filter(item => item.id !== message.id)]);
+      toastService.success(t('chat.messageSent') || 'Photo shared');
+    } catch (photoError) {
+      setError(photoError?.message || t('chat.photoUploadFailed'));
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const deleteMessage = async (message) => {
     if (!window.confirm(t('chat.confirmDelete'))) return;
     try {
@@ -326,10 +457,10 @@ export const CommunityChatPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-bg-light pb-2">
+    <div className="min-h-screen bg-[#f7f8f4]">
       <Header showBack onBack={() => navigate('/home')} />
-      <main className="mx-auto flex h-[calc(100dvh-152px)] min-h-[420px] max-w-3xl flex-col px-3 py-3 sm:px-5">
-        <Card padding="none" className="flex min-h-0 flex-1 flex-col overflow-hidden border border-border-light shadow-sm">
+      <main className="mx-auto flex h-[calc(100dvh-72px)] w-full flex-col overflow-hidden bg-[#f7f8f4]">
+        <Card padding="none" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border-0 shadow-none">
           <header className="flex items-center gap-3 border-b border-border-light bg-white px-4 py-3">
             <button type="button" onClick={() => navigate('/home')} aria-label={t('common.back')} className="rounded-lg p-2 text-text-light hover:bg-bg-light md:hidden">
               <ArrowLeft size={18} />
@@ -362,18 +493,22 @@ export const CommunityChatPage = () => {
                 <p className="mt-1 text-sm text-text-light">{t('chat.startConversation')}</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 pb-2">
                 {chronologicalMessages.map(message => {
                   const ownMessage = message.user_id === user?.id;
                   return (
                     <article key={message.id} className={`flex items-end gap-2 ${ownMessage ? 'flex-row-reverse' : ''}`}>
                       <UserAvatar name={message.display_name} url={message.avatar_url} size="sm" />
-                      <div className={`max-w-[84%] min-w-0 sm:max-w-[75%] ${ownMessage ? 'items-end' : 'items-start'} flex flex-col`}>
+                      <div className={`max-w-[86%] min-w-0 sm:max-w-[74%] ${ownMessage ? 'items-end' : 'items-start'} flex flex-col`}>
                         <p className="mb-1 px-1 text-[11px] font-bold text-text-light">{ownMessage ? t('chat.you') : message.display_name}</p>
-                        <div className={`w-full rounded-2xl border px-3.5 py-2.5 shadow-sm ${ownMessage ? 'rounded-br-sm border-emerald-200 bg-emerald-50' : 'rounded-bl-sm border-border-light bg-white'}`}>
+                        <div className={`w-full rounded-2xl border px-3 py-2.5 shadow-sm ${ownMessage ? 'rounded-br-sm border-emerald-200 bg-emerald-50' : 'rounded-bl-sm border-border-light bg-white'}`}>
                           {message.message_type === 'text' ? (
                             <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text-dark">{message.content}</p>
-                          ) : <VoicePlayer path={message.voice_path} t={t} />}
+                          ) : message.message_type === 'voice' ? (
+                            <VoicePlayer path={message.voice_path} t={t} />
+                          ) : (
+                            <ChatImageMessage path={message.image_path} onOpen={setExpandedImage} />
+                          )}
                           <time className="mt-1.5 block text-right text-[10px] text-text-light">
                             {new Date(message.created_at).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}
                           </time>
@@ -396,9 +531,9 @@ export const CommunityChatPage = () => {
             )}
           </div>
 
-          <div className="border-t border-border-light bg-white px-3 py-3 sm:px-4">
+          <div className="border-t border-border-light bg-white px-2 py-2 sm:px-3" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
             {(recording || voiceDraft) && (
-              <div className="mb-3 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-2 py-2">
                 {recording ? (
                   <>
                     <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" />
@@ -408,7 +543,7 @@ export const CommunityChatPage = () => {
                 ) : (
                   <>
                     <span className="shrink-0 text-sm font-bold text-text-dark">🎤 {t('chat.voiceMessage')} · {formatDuration(voiceDraft.duration)}</span>
-                    <audio controls preload="metadata" src={voiceDraft.url} className="h-9 min-w-0 flex-1" />
+                    <audio controls preload="metadata" controlsList="nodownload noplaybackrate nofullscreen" src={voiceDraft.url} className="h-9 min-w-0 flex-1" />
                     <button type="button" onClick={cancelVoiceDraft} disabled={isUploadingVoice} className="rounded-lg p-2 text-text-light hover:bg-white" aria-label={t('chat.cancel')}><X size={17} /></button>
                     <Button type="button" variant="primary" size="sm" disabled={isUploadingVoice} onClick={sendVoice}>
                       {isUploadingVoice ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -420,19 +555,17 @@ export const CommunityChatPage = () => {
 
             {error && messages.length > 0 && <p role="alert" className="mb-2 text-xs font-semibold text-red-700">{error}</p>}
             {!voiceDraft && !recording && (
-              <form onSubmit={sendText} className="flex items-end gap-2">
+              <div className="flex items-end gap-2">
+                <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
                 <button
                   type="button"
-                  onPointerDown={event => { recordPressActiveRef.current = true; startRecording(event); }}
-                  onPointerUp={endRecordPress}
-                  onPointerCancel={endRecordPress}
-                  onPointerLeave={event => { if (recording && event.buttons === 0) endRecordPress(); }}
-                  disabled={isSending || isUploadingVoice}
-                  className="flex h-11 w-11 shrink-0 touch-none items-center justify-center rounded-xl border border-border-light bg-bg-light text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
-                  aria-label={t('chat.holdToRecord')}
-                  title={t('chat.holdToRecord')}
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage || isSending || isUploadingVoice}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border-light bg-bg-light text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+                  aria-label={t('chat.choosePhoto') || 'Add photo'}
+                  title={t('chat.choosePhoto') || 'Add photo'}
                 >
-                  <Mic size={19} />
+                  {uploadingImage ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
                 </button>
                 <textarea
                   value={text}
@@ -446,17 +579,39 @@ export const CommunityChatPage = () => {
                   placeholder={t('chat.typeMessage')}
                   maxLength={2000}
                   rows={1}
-                  className="max-h-28 min-h-11 min-w-0 flex-1 resize-y rounded-xl border border-border-light bg-white px-3.5 py-3 text-sm text-text-dark outline-none focus:border-emerald-700"
+                  className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-xl border border-border-light bg-white px-3.5 py-3 text-sm text-text-dark outline-none focus:border-emerald-700"
                   aria-label={t('chat.typeMessage')}
                 />
-                <button type="submit" disabled={!text.trim() || isSending} aria-label={t('chat.send')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-800 text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-45">
+                <button
+                  type="button"
+                  onPointerDown={event => { recordPressActiveRef.current = true; startRecording(event); }}
+                  onPointerUp={endRecordPress}
+                  onPointerCancel={endRecordPress}
+                  onPointerLeave={event => { if (recording && event.buttons === 0) endRecordPress(); }}
+                  disabled={isSending || isUploadingVoice || uploadingImage}
+                  className="flex h-11 w-11 shrink-0 touch-none items-center justify-center rounded-xl border border-border-light bg-bg-light text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+                  aria-label={t('chat.holdToRecord')}
+                  title={t('chat.holdToRecord')}
+                >
+                  <Mic size={18} />
+                </button>
+                <button type="button" onClick={sendText} disabled={!text.trim() || isSending || uploadingImage} aria-label={t('chat.send')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-800 text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-45">
                   {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                 </button>
-              </form>
+              </div>
             )}
           </div>
         </Card>
       </main>
+
+      {expandedImage && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" onClick={() => setExpandedImage('')}>
+          <button type="button" className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" onClick={() => setExpandedImage('')} aria-label="Close image">
+            <X size={20} />
+          </button>
+          <img src={expandedImage} alt="Expanded chat photo" className="max-h-[90vh] max-w-full rounded-2xl object-contain shadow-2xl" onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
 
       {reportTarget && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">

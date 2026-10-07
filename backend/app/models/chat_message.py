@@ -16,6 +16,7 @@ class ChatMessage(Base):
     message_type = Column(String, nullable=False)
     content = Column(Text, nullable=True)
     voice_path = Column(String(512), nullable=True)
+    image_path = Column(String(512), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     profile = relationship("Profile", foreign_keys=[user_id])

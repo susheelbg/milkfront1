@@ -6,14 +6,17 @@ ALTER TABLE public.profiles
 CREATE TABLE IF NOT EXISTS public.chat_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    message_type TEXT NOT NULL CHECK (message_type IN ('text', 'voice')),
+    message_type TEXT NOT NULL CHECK (message_type IN ('text', 'voice', 'image')),
     content TEXT,
     voice_path TEXT,
+    image_path TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT ck_chat_message_payload CHECK (
-        (message_type = 'text' AND content IS NOT NULL AND length(btrim(content)) BETWEEN 1 AND 2000 AND voice_path IS NULL)
+        (message_type = 'text' AND content IS NOT NULL AND length(btrim(content)) BETWEEN 1 AND 2000 AND voice_path IS NULL AND image_path IS NULL)
         OR
-        (message_type = 'voice' AND content IS NULL AND voice_path IS NOT NULL AND length(voice_path) <= 512)
+        (message_type = 'voice' AND content IS NULL AND voice_path IS NOT NULL AND image_path IS NULL AND length(voice_path) <= 512)
+        OR
+        (message_type = 'image' AND content IS NULL AND voice_path IS NULL AND image_path IS NOT NULL AND length(image_path) <= 512)
     )
 );
 
@@ -65,8 +68,9 @@ CREATE POLICY "Users create their own chat messages"
     WITH CHECK (
         user_id = auth.uid()
         AND (
-            (message_type = 'text' AND content IS NOT NULL AND voice_path IS NULL)
+            (message_type = 'text' AND content IS NOT NULL AND voice_path IS NULL AND image_path IS NULL)
             OR (message_type = 'voice' AND content IS NULL AND voice_path LIKE auth.uid()::TEXT || '/%')
+            OR (message_type = 'image' AND content IS NULL AND voice_path IS NULL AND image_path LIKE auth.uid()::TEXT || '/%')
         )
     );
 
