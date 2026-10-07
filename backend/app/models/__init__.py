@@ -7,7 +7,8 @@ from app.models.cattle_report import CattleReport
 from app.models.news import NewsArticle
 from app.models.notification import Notification
 from app.models.user_device import UserDevice
+from app.models.chat_message import ChatMessage, ChatMessageReport
 from app.models.partner import Partner, PartnerProduct
 
-__all__ = ["Base", "User", "Profile", "Feed", "Order", "OrderItem", "Cattle", "CattleReport", "NewsArticle", "Notification", "UserDevice", "Partner", "PartnerProduct"]
+__all__ = ["Base", "User", "Profile", "Feed", "Order", "OrderItem", "Cattle", "CattleReport", "NewsArticle", "Notification", "UserDevice", "ChatMessage", "ChatMessageReport", "Partner", "PartnerProduct"]
 

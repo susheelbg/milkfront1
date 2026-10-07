@@ -36,6 +36,7 @@ function AppContent() {
     '/sante',
     '/feeds',
     '/orders',
+    '/chat',
     '/profile',
     '/nandini-ai',
     '/partners',

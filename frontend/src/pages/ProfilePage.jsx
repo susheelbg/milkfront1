@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header, Button, Input, Card } from '../components';
 import { useAuth } from '../context/AuthContext';
+import { authApi } from '../services/api/authApi';
 import { toastService } from '../services/toastService';
-import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, LogOut, LogIn, Mail, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { User, Phone, MapPin, Edit3, Save, Globe, Shield, HelpCircle, FileText, Lock, LogOut, LogIn, Mail, Trash2, AlertTriangle, Loader2, Camera } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
   const { t, language, setLanguage } = useTranslation();
-  const { user, isAuthenticated, signOut, updateProfile, deleteAccount, isAdmin, isSuperAdmin } = useAuth();
+  const { user, isAuthenticated, signOut, updateProfile, deleteAccount, refreshProfile, isAdmin, isSuperAdmin } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const [avatarDraft, setAvatarDraft] = useState(null);
+  const avatarPreviewUrlRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -29,6 +33,10 @@ export const ProfilePage = () => {
       });
     }
   }, [user]);
+
+  useEffect(() => () => {
+    if (avatarPreviewUrlRef.current) URL.revokeObjectURL(avatarPreviewUrlRef.current);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,6 +54,68 @@ export const ProfilePage = () => {
       toastService.success(t('profile.updateSuccess') || 'Details saved successfully!');
     } catch (err) {
       toastService.error(err.message || 'Failed to save details.');
+    }
+  };
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toastService.error(t('chat.photoTypeInvalid'));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toastService.error(t('chat.photoTooLarge'));
+      return;
+    }
+
+    if (avatarPreviewUrlRef.current) URL.revokeObjectURL(avatarPreviewUrlRef.current);
+    const previewUrl = URL.createObjectURL(file);
+    avatarPreviewUrlRef.current = previewUrl;
+    setAvatarDraft({ file, previewUrl });
+  };
+
+  const handleAvatarSave = async () => {
+    if (!avatarDraft?.file) return;
+    setIsAvatarUploading(true);
+    try {
+      const imageData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error(t('chat.photoUploadFailed')));
+        reader.readAsDataURL(avatarDraft.file);
+      });
+      const uploaded = await authApi.uploadAvatar(imageData);
+      if (!uploaded?.avatar_url) throw new Error(t('chat.photoUploadFailed'));
+      await refreshProfile();
+      toastService.success(t('profile.avatarSuccess') || 'Avatar updated!');
+      URL.revokeObjectURL(avatarDraft.previewUrl);
+      avatarPreviewUrlRef.current = null;
+      setAvatarDraft(null);
+    } catch (error) {
+      toastService.error(error.message || t('chat.photoUploadFailed'));
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
+
+  const cancelAvatarPreview = () => {
+    if (avatarDraft?.previewUrl) URL.revokeObjectURL(avatarDraft.previewUrl);
+    avatarPreviewUrlRef.current = null;
+    setAvatarDraft(null);
+  };
+
+  const handleAvatarRemoval = async () => {
+    setIsAvatarUploading(true);
+    try {
+      await authApi.removeAvatar();
+      await refreshProfile();
+      toastService.success(t('chat.removePhoto'));
+    } catch (error) {
+      toastService.error(error.message || t('chat.photoUploadFailed'));
+    } finally {
+      setIsAvatarUploading(false);
     }
   };
 
@@ -81,8 +151,10 @@ export const ProfilePage = () => {
       <section className="bg-gradient-to-r from-[#041D12] via-[#0A2E1F] to-[#041D12] py-8 px-4 shadow-sm text-white">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white text-[#0A2E1F] rounded-2xl flex items-center justify-center shadow-lg border-2 border-amber-400 text-2xl font-black">
-              {user?.name ? user.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : <User size={28} />)}
+            <div className="w-16 h-16 overflow-hidden bg-white text-[#0A2E1F] rounded-2xl flex items-center justify-center shadow-lg border-2 border-amber-400 text-2xl font-black">
+              {avatarDraft?.previewUrl || user?.avatar_url ? (
+                <img src={avatarDraft?.previewUrl || user.avatar_url} alt={t('chat.profilePhoto')} className="w-full h-full object-cover" />
+              ) : user?.name ? user.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : <User size={28} />)}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -130,6 +202,41 @@ export const ProfilePage = () => {
 
       {/* Main Content */}
       <section className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        {isAuthenticated && (
+          <Card padding="lg" className="border border-border-light shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border-light bg-emerald-50 flex items-center justify-center text-xl font-black text-emerald-900">
+                {avatarDraft?.previewUrl || user?.avatar_url ? <img src={avatarDraft?.previewUrl || user.avatar_url} alt={t('chat.profilePhoto')} className="h-full w-full object-cover" /> : (user?.name || 'M').trim().charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-black text-text-dark">{t('chat.profilePhoto')}</h2>
+                <p className="mt-0.5 text-xs text-text-light">{t('chat.profilePhotoHelp')}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-extrabold text-text-dark ${isAvatarUploading ? 'pointer-events-none opacity-60' : ''}`}>
+                    {isAvatarUploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                    {t(avatarDraft || user?.avatar_url ? 'chat.replacePhoto' : 'chat.choosePhoto')}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleAvatarChange} disabled={isAvatarUploading} />
+                  </label>
+                  {avatarDraft ? (
+                    <>
+                      <button type="button" onClick={handleAvatarSave} disabled={isAvatarUploading} className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-900 disabled:opacity-50">
+                        {isAvatarUploading ? t('common.loading') : t('common.save')}
+                      </button>
+                      <button type="button" onClick={cancelAvatarPreview} disabled={isAvatarUploading} className="rounded-lg border border-border-light px-3 py-2 text-xs font-bold text-text-dark hover:bg-bg-light disabled:opacity-50">
+                        {t('common.cancel')}
+                      </button>
+                    </>
+                  ) : user?.avatar_url && (
+                    <button type="button" onClick={handleAvatarRemoval} disabled={isAvatarUploading} className="rounded-lg border border-border-light px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                      {t('chat.removePhoto')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Unauthenticated Alert Banner */}
         {!isAuthenticated && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">

@@ -15,6 +15,9 @@ class ProfileUpdate(BaseModel):
     address: Optional[str] = None
     preferred_language: Optional[str] = None
 
+class ProfileAvatarUpload(BaseModel):
+    image_data: str = Field(..., min_length=1, max_length=7_000_000)
+
 class ProfileSyncRequest(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None

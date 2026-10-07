@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Store, ShoppingBag, Package } from 'lucide-react';
+import { Home, Store, ShoppingBag, Package, MessageCircle } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export const BottomNavigation = () => {
@@ -20,6 +20,12 @@ export const BottomNavigation = () => {
       label: t('home.sante') || 'Sante',
       icon: Store,
       path: '/sante',
+    },
+    {
+      id: 'chat',
+      label: t('chat.maatuKate') || 'Maatu Kate',
+      icon: MessageCircle,
+      path: '/chat',
     },
     {
       id: 'feeds',

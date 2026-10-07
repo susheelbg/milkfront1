@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import { chatApi } from './chatApi';
 
 export const adminApi = {
   // Get all users registered
@@ -56,6 +57,10 @@ export const adminApi = {
   sendPushNotification: async (payload) => {
     return apiClient.post('/admin/notifications/push', payload);
   },
+
+  getChatReports: async () => chatApi.getReports(),
+
+  removeChatMessage: async (messageId) => chatApi.removeMessage(messageId),
 
   // Get all cattle listings
   getCattle: async () => {

@@ -22,6 +22,7 @@ import {
   LoginPage,
   RegisterPage,
   ForgotPassword,
+  CommunityChatPage,
 } from '../pages';
 import { ShieldAlert } from 'lucide-react';
 
@@ -223,6 +224,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <OrdersPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/chat',
+    element: (
+      <ProtectedRoute>
+        <CommunityChatPage />
       </ProtectedRoute>
     ),
   },

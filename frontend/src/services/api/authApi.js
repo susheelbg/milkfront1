@@ -99,6 +99,16 @@ export const authApi = {
     return resp?.data || null;
   },
 
+  uploadAvatar: async (imageData) => {
+    const resp = await apiClient.post('/auth/profile/avatar', { image_data: imageData });
+    return resp?.data || null;
+  },
+
+  removeAvatar: async () => {
+    const resp = await apiClient.delete('/auth/profile/avatar');
+    return resp?.data || null;
+  },
+
   // Delete user account permanently
   deleteAccount: async () => {
     const resp = await apiClient.delete('/auth/account');

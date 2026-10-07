@@ -4,7 +4,7 @@ import { Header, Button, Card } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { feedsApi } from '../services/api/feedsApi';
 import { newsApi } from '../services/api/newsApi';
-import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store, Building2 } from 'lucide-react';
+import { ShieldCheck, Truck, Users, HelpCircle, ChevronDown, Newspaper, ExternalLink, Bell, Brain, Store, Building2, MessageCircle } from 'lucide-react';
 import { partnersApi } from '../services/api/partnersApi';
 import { PartnerLogo } from './PartnersPage';
 import { useTranslation } from '../i18n/useTranslation';
@@ -230,6 +230,27 @@ export const HomePage = () => {
               </span>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section className="max-w-4xl mx-auto px-4 pb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-emerald-800/10 bg-gradient-to-r from-emerald-950 to-emerald-800 text-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 shrink-0 rounded-xl bg-amber-300 text-emerald-950 flex items-center justify-center">
+              <MessageCircle size={24} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-black">{t('chat.maatuKate')}</p>
+              <p className="text-xs text-emerald-100/80 mt-1">{t('chat.homeDescription')}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/chat')}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-extrabold text-emerald-950 transition-colors hover:bg-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          >
+            {t('chat.joinChat')} <span aria-hidden="true">→</span>
+          </button>
         </div>
       </section>
 

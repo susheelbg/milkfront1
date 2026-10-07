@@ -13,6 +13,7 @@ class Profile(Base):
     name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     address = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
     preferred_language = Column(String, nullable=False, default="kn")
     role = Column(String, nullable=False, default="user") # user, admin, super_admin
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

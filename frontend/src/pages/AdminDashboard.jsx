@@ -32,6 +32,7 @@ import {
   Search,
   UserRound,
   Send,
+  MessageCircle,
 } from 'lucide-react';
 import { AdminPartners } from './AdminPartners';
 import { useTranslation } from '../i18n/useTranslation';
@@ -62,6 +63,9 @@ export const AdminDashboard = () => {
   const [isPushSending, setIsPushSending] = useState(false);
   const [pushResult, setPushResult] = useState(null);
   const [pushError, setPushError] = useState('');
+  const [chatReports, setChatReports] = useState([]);
+  const [chatReportsLoading, setChatReportsLoading] = useState(false);
+  const [chatReportsError, setChatReportsError] = useState('');
 
   // Data states
   const [usersList, setUsersList] = useState([]);
@@ -249,6 +253,34 @@ export const AdminDashboard = () => {
     }
   };
 
+  const loadChatReports = async () => {
+    setChatReportsLoading(true);
+    setChatReportsError('');
+    try {
+      const response = await adminApi.getChatReports();
+      setChatReports(Array.isArray(response) ? response : response?.data || []);
+    } catch (error) {
+      setChatReportsError(error.message || 'Could not load chat reports.');
+    } finally {
+      setChatReportsLoading(false);
+    }
+  };
+
+  const handleRemoveChatMessage = async (messageId) => {
+    if (!window.confirm(t('chat.confirmRemoveMessage'))) return;
+    try {
+      await adminApi.removeChatMessage(messageId);
+      toastService.success(t('chat.messageRemoved'));
+      await loadChatReports();
+    } catch (error) {
+      toastService.error(error.message || t('chat.failedToSend'));
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'chat-moderation' && isAdmin) loadChatReports();
+  }, [activeTab, isAdmin]);
+
   const openAddFeed = () => {
     setEditingFeed(null);
     setFeedFormData({
@@ -423,6 +455,7 @@ export const AdminDashboard = () => {
     { id: 'moderation', label: 'Moderation', icon: ShieldAlert },
     { id: 'partners', label: 'Our Partners', icon: Building2 },
     { id: 'push-notifications', label: 'Push Notifications', icon: Bell },
+    { id: 'chat-moderation', label: t('chat.adminModeration'), icon: MessageCircle },
   ];
 
   if (authLoading) {
@@ -1175,6 +1208,48 @@ export const AdminDashboard = () => {
                         </div>
                       </form>
                     </Card>
+                  </div>
+                )}
+
+                {activeTab === 'chat-moderation' && (
+                  <div className="space-y-5 animate-slide-up">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-xl font-extrabold text-text-dark">{t('chat.adminModeration')}</h2>
+                        <p className="mt-1 text-sm text-text-light">{t('chat.openReportsCount').replace('{count}', String(chatReports.length))}</p>
+                      </div>
+                      <Button variant="secondary" size="sm" onClick={loadChatReports} disabled={chatReportsLoading}>
+                        {chatReportsLoading ? t('common.loading') : t('common.refresh')}
+                      </Button>
+                    </div>
+                    {chatReportsError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{chatReportsError}</p>}
+                    {chatReportsLoading ? (
+                      <Card padding="lg" className="border border-border-light text-center text-sm text-text-light">{t('common.loading')}</Card>
+                    ) : chatReports.length === 0 ? (
+                      <Card padding="lg" className="border border-border-light text-center text-sm text-text-light">{t('chat.noReports')}</Card>
+                    ) : (
+                      <div className="space-y-3">
+                        {chatReports.map(report => (
+                          <Card key={report.id} padding="md" className="border border-border-light">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0 space-y-2">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-light">
+                                  <span className="font-bold text-text-dark">{report.sender_name}</span>
+                                  <time>{new Date(report.created_at).toLocaleString()}</time>
+                                </div>
+                                <p className="break-words rounded-lg bg-bg-light px-3 py-2 text-sm text-text-dark">
+                                  {report.message_type === 'text' ? report.content : t('chat.voiceMessage')}
+                                </p>
+                                <p className="text-xs text-red-800"><span className="font-bold">{t('chat.reportReason')} </span>{report.reason}</p>
+                              </div>
+                              <Button variant="danger" size="sm" onClick={() => handleRemoveChatMessage(report.message_id)}>
+                                <span className="inline-flex items-center gap-1.5"><Trash2 size={14} />{t('chat.removeMessage')}</span>
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
