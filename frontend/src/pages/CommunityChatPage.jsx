@@ -145,6 +145,10 @@ export const CommunityChatPage = () => {
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
   const [expandedImage, setExpandedImage] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [viewportBounds, setViewportBounds] = useState(() => ({
+    height: window.visualViewport?.height || window.innerHeight,
+    top: window.visualViewport?.offsetTop || 0,
+  }));
   const imageInputRef = useRef(null);
   const scrollRef = useRef(null);
   const recorderRef = useRef(null);
@@ -155,6 +159,27 @@ export const CommunityChatPage = () => {
   const pendingScrollRef = useRef(null);
   const recordPressActiveRef = useRef(false);
   const loadingOlderRef = useRef(false);
+
+  useEffect(() => {
+    const visualViewport = window.visualViewport;
+    const updateViewportBounds = () => {
+      setViewportBounds({
+        height: visualViewport?.height || window.innerHeight,
+        top: visualViewport?.offsetTop || 0,
+      });
+    };
+
+    visualViewport?.addEventListener('resize', updateViewportBounds);
+    visualViewport?.addEventListener('scroll', updateViewportBounds);
+    window.addEventListener('resize', updateViewportBounds);
+    updateViewportBounds();
+
+    return () => {
+      visualViewport?.removeEventListener('resize', updateViewportBounds);
+      visualViewport?.removeEventListener('scroll', updateViewportBounds);
+      window.removeEventListener('resize', updateViewportBounds);
+    };
+  }, []);
 
   const refreshNewest = useCallback(async () => {
     const response = await chatApi.getMessages({ limit: PAGE_SIZE });
@@ -459,13 +484,16 @@ export const CommunityChatPage = () => {
   };
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-[#f7f8f4]">
+    <div
+      className="fixed inset-x-0 z-10 overflow-hidden bg-[#f7f8f4]"
+      style={{ top: `${viewportBounds.top}px`, height: `${viewportBounds.height}px` }}
+    >
       <div className="hidden md:block">
         <Header showBack onBack={() => navigate('/home')} />
       </div>
-      <main className="mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f7f8f4] md:h-[calc(100dvh-72px)]">
+      <main className="mx-auto flex h-full w-full flex-col overflow-hidden bg-[#f7f8f4] md:h-[calc(100%-72px)]">
         <Card padding="none" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border-0 shadow-none">
-          <header className="flex items-center gap-3 border-b border-border-light bg-white px-4 py-3">
+          <header className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-border-light bg-white px-4 py-3">
             <button type="button" onClick={() => navigate('/home')} aria-label={t('common.back')} className="rounded-lg p-2 text-text-light hover:bg-bg-light md:hidden">
               <ArrowLeft size={18} />
             </button>
@@ -535,7 +563,7 @@ export const CommunityChatPage = () => {
             )}
           </div>
 
-          <div className="border-t border-border-light bg-white px-2 py-2 sm:px-3" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
+          <div className="z-20 shrink-0 border-t border-border-light bg-white px-2 py-2 sm:px-3" style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
             {(recording || voiceDraft) && (
               <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-2 py-2">
                 {recording ? (
