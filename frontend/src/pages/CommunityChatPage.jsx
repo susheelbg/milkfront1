@@ -282,7 +282,8 @@ export const CommunityChatPage = () => {
       if (message?.id) setMessages(current => [message, ...current.filter(item => item.id !== message.id)]);
       setText('');
     } catch (sendError) {
-      setError(sendError?.message?.includes('429') ? sendError.message : t('chat.failedToSend'));
+      const detail = sendError?.message;
+      setError(detail && !detail.startsWith('HTTP error!') ? detail : t('chat.failedToSend'));
     } finally {
       setIsSending(false);
     }
@@ -419,6 +420,7 @@ export const CommunityChatPage = () => {
       if (message?.id) setMessages(current => [message, ...current.filter(item => item.id !== message.id)]);
       toastService.success(t('chat.messageSent') || 'Photo shared');
     } catch (photoError) {
+      await supabase.storage.from('chat-images').remove([imagePath]).catch(() => {});
       setError(photoError?.message || t('chat.photoUploadFailed'));
     } finally {
       setUploadingImage(false);
@@ -457,9 +459,11 @@ export const CommunityChatPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f8f4]">
-      <Header showBack onBack={() => navigate('/home')} />
-      <main className="mx-auto flex h-[calc(100dvh-72px)] w-full flex-col overflow-hidden bg-[#f7f8f4]">
+    <div className="h-[100dvh] overflow-hidden bg-[#f7f8f4]">
+      <div className="hidden md:block">
+        <Header showBack onBack={() => navigate('/home')} />
+      </div>
+      <main className="mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f7f8f4] md:h-[calc(100dvh-72px)]">
         <Card padding="none" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border-0 shadow-none">
           <header className="flex items-center gap-3 border-b border-border-light bg-white px-4 py-3">
             <button type="button" onClick={() => navigate('/home')} aria-label={t('common.back')} className="rounded-lg p-2 text-text-light hover:bg-bg-light md:hidden">

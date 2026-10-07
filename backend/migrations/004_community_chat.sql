@@ -143,6 +143,34 @@ CREATE POLICY "Users delete their own community voice"
         AND (storage.foldername(name))[1] = auth.uid()::TEXT
     );
 
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('chat-images', 'chat-images', false, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp'])
+ON CONFLICT (id) DO UPDATE SET
+    public = false,
+    file_size_limit = EXCLUDED.file_size_limit,
+    allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+DROP POLICY IF EXISTS "Authenticated users read community images" ON storage.objects;
+CREATE POLICY "Authenticated users read community images"
+    ON storage.objects FOR SELECT TO authenticated
+    USING (bucket_id = 'chat-images');
+
+DROP POLICY IF EXISTS "Users upload their own community images" ON storage.objects;
+CREATE POLICY "Users upload their own community images"
+    ON storage.objects FOR INSERT TO authenticated
+    WITH CHECK (
+        bucket_id = 'chat-images'
+        AND (storage.foldername(name))[1] = auth.uid()::TEXT
+    );
+
+DROP POLICY IF EXISTS "Users delete their own community images" ON storage.objects;
+CREATE POLICY "Users delete their own community images"
+    ON storage.objects FOR DELETE TO authenticated
+    USING (
+        bucket_id = 'chat-images'
+        AND (storage.foldername(name))[1] = auth.uid()::TEXT
+    );
+
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime')

@@ -47,11 +47,12 @@ function AppContent() {
   const showFooter = userPages.some(page => 
     location.pathname === page || location.pathname.startsWith(page + '/')
   );
+  const isChatPage = location.pathname === '/chat';
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* Content wrapper with bottom padding if footer is visible to prevent overlap */}
-      <main className={`flex-1 ${showFooter ? 'pb-20 md:pb-24' : ''} transition-all duration-300`}>
+      <main className={`flex-1 ${showFooter && !isChatPage ? 'pb-20 md:pb-24' : ''} transition-all duration-300`}>
         <Routes>
           {routes.map((route, index) => (
             <Route key={index} path={route.path} element={route.element} />
@@ -59,7 +60,7 @@ function AppContent() {
         </Routes>
       </main>
       
-      {showFooter && <BottomNavigation />}
+      {showFooter && <BottomNavigation hideOnMobile={isChatPage} />}
     </div>
   );
 }

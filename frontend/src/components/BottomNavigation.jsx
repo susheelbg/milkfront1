@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Store, ShoppingBag, Package, MessageCircle } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
-export const BottomNavigation = () => {
+export const BottomNavigation = ({ hideOnMobile = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -50,7 +50,7 @@ export const BottomNavigation = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#ece7dc] shadow-[0_-6px_20px_-10px_rgba(41,37,36,0.18)] md:max-w-2xl md:mx-auto md:bottom-4 md:rounded-2xl md:border md:shadow-xl transition-all duration-300">
+    <div className={`${hideOnMobile ? 'hidden md:block ' : ''}fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#ece7dc] shadow-[0_-6px_20px_-10px_rgba(41,37,36,0.18)] md:max-w-2xl md:mx-auto md:bottom-4 md:rounded-2xl md:border md:shadow-xl transition-all duration-300`}>
       <div 
         className="flex items-center justify-around w-full"
         style={{
