@@ -23,8 +23,8 @@ export const Support = () => {
             </div>
             <div>
               <p className="text-xs text-text-light font-bold uppercase">{t('compliance.supportEmail')}</p>
-              <a href="mailto:support@milkmaatu.com" className="font-extrabold text-sm text-text-dark hover:underline">
-                support@milkmaatu.com
+              <a href="mailto:milkmaatu@gmail.com" className="font-extrabold text-sm text-text-dark hover:underline">
+                milkmaatu@gmail.com
               </a>
             </div>
           </div>
