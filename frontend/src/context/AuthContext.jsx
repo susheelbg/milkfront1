@@ -1,9 +1,27 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { authApi } from '../services/api/authApi';
 import { initFCM, deregisterFCM } from '../services/fcmService';
 
 const AuthContext = createContext(null);
+const PASSWORD_RECOVERY_KEY = 'milkmaatu_password_recovery';
+
+const getRecoveryUrlState = () => {
+  const isResetRoute = window.location.pathname === '/reset-password';
+  const params = [
+    new URLSearchParams(window.location.search),
+    new URLSearchParams(window.location.hash.replace(/^#/, '')),
+  ];
+  const hasError = params.some((entry) =>
+    ['error', 'error_code', 'error_description'].some((key) => entry.has(key))
+  );
+  const hasRecoveryIntent = params.some((entry) => {
+    const hasRecoveryCredential = entry.has('code') || entry.has('token_hash') || entry.has('access_token');
+    return hasRecoveryCredential && (!entry.has('type') || entry.get('type') === 'recovery');
+  });
+
+  return { isResetRoute, hasError, hasRecoveryIntent };
+};
 
 export const AuthProvider = ({ children }) => {
   // Initialize user from cached profile if present for instantaneous render
@@ -17,6 +35,12 @@ export const AuthProvider = ({ children }) => {
   });
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [recoveryStatus, setRecoveryStatus] = useState(() => {
+    const { isResetRoute, hasError, hasRecoveryIntent } = getRecoveryUrlState();
+    const storedRecovery = sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'active';
+    return isResetRoute || hasError || hasRecoveryIntent || storedRecovery ? 'checking' : 'idle';
+  });
+  const recoveryEventSeen = useRef(false);
 
   // Load and refresh user profile from backend
   const fetchProfile = async () => {
@@ -53,10 +77,27 @@ export const AuthProvider = ({ children }) => {
         if (!mounted) return;
 
         setSession(initialSession);
+        const { isResetRoute, hasError, hasRecoveryIntent } = getRecoveryUrlState();
+        const storedRecovery = sessionStorage.getItem(PASSWORD_RECOVERY_KEY) === 'active';
+        const isRecoverySession = Boolean(initialSession && (storedRecovery || hasRecoveryIntent));
+
+        if (!recoveryEventSeen.current) {
+          if (isRecoverySession) {
+            recoveryEventSeen.current = true;
+            sessionStorage.setItem(PASSWORD_RECOVERY_KEY, 'active');
+            setRecoveryStatus('active');
+          } else if (isResetRoute || hasError || hasRecoveryIntent || storedRecovery) {
+            sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+            setRecoveryStatus('invalid');
+          }
+        }
+
         if (initialSession) {
-          await fetchProfile();
-          // Initialise FCM after session is confirmed (non-blocking)
-          initFCM().catch((e) => console.warn('[AuthContext] FCM init error:', e));
+          if (!isRecoverySession) {
+            await fetchProfile();
+            // Initialise FCM after session is confirmed (non-blocking)
+            initFCM().catch((e) => console.warn('[AuthContext] FCM init error:', e));
+          }
         } else {
           setUser(null);
           localStorage.removeItem('milkmaatu_auth_user');
@@ -73,19 +114,27 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
 
     // 2. Listen to Supabase auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (!mounted) return;
 
       setSession(currentSession);
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (currentSession) {
-          await fetchProfile();
-          // Re-init FCM in case the user changed or token was cleared
-          initFCM().catch((e) => console.warn('[AuthContext] FCM init error:', e));
+      const { hasRecoveryIntent } = getRecoveryUrlState();
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && hasRecoveryIntent)) {
+        recoveryEventSeen.current = true;
+        sessionStorage.setItem(PASSWORD_RECOVERY_KEY, 'active');
+        setRecoveryStatus('active');
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (currentSession && !recoveryEventSeen.current) {
+          Promise.resolve().then(fetchProfile).then(() => {
+            initFCM().catch((e) => console.warn('[AuthContext] FCM init error:', e));
+          });
         }
       } else if (event === 'SIGNED_OUT') {
+        recoveryEventSeen.current = false;
         setUser(null);
         localStorage.removeItem('milkmaatu_auth_user');
+        sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+        setRecoveryStatus((current) => current === 'completed' ? current : 'idle');
       }
       setLoading(false);
     });
@@ -193,6 +242,11 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     deleteAccount,
     refreshProfile: fetchProfile,
+    recoveryStatus,
+    clearPasswordRecovery: () => {
+      sessionStorage.removeItem(PASSWORD_RECOVERY_KEY);
+      setRecoveryStatus('completed');
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

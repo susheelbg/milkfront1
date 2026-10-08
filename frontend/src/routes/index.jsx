@@ -22,6 +22,7 @@ import {
   LoginPage,
   RegisterPage,
   ForgotPassword,
+  ResetPassword,
   CommunityChatPage,
 } from '../pages';
 import { ShieldAlert } from 'lucide-react';
@@ -41,11 +42,15 @@ export const RouteLoader = () => (
 // ProtectedRoute: Requires active Supabase session.
 // Waits for session verification to resolve (loading === false) before deciding to render or redirect.
 export const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, recoveryStatus } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || recoveryStatus === 'checking') {
     return <RouteLoader />;
+  }
+
+  if (recoveryStatus === 'active' && location.pathname !== '/reset-password') {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (!isAuthenticated) {
@@ -58,10 +63,19 @@ export const ProtectedRoute = ({ children }) => {
 // PublicOnlyRoute: Prevents logged-in users from seeing Login/Register again.
 // If valid session exists, passes directly to /home.
 export const PublicOnlyRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, recoveryStatus } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
+  if (loading || recoveryStatus === 'checking') {
     return <RouteLoader />;
+  }
+
+  if (recoveryStatus === 'active') {
+    return <Navigate to="/reset-password" replace />;
+  }
+
+  if (location.pathname === '/forgot-password') {
+    return children;
   }
 
   if (isAuthenticated) {
@@ -69,6 +83,20 @@ export const PublicOnlyRoute = ({ children }) => {
   }
 
   return children;
+};
+
+const RootRedirect = () => {
+  const { loading, recoveryStatus } = useAuth();
+
+  if (loading || recoveryStatus === 'checking') {
+    return <RouteLoader />;
+  }
+
+  if (recoveryStatus === 'active' || recoveryStatus === 'invalid') {
+    return <Navigate to="/reset-password" replace />;
+  }
+
+  return <Navigate to="/home" replace />;
 };
 
 // AdminRoute: Guarded by Supabase RBAC role (admin or super_admin)
@@ -151,7 +179,7 @@ export const routes = [
   },
   {
     path: '/reset-password',
-    element: <ForgotPassword />,
+    element: <ResetPassword />,
   },
 
   // Core Marketplace routes (Protected by Supabase Auth session)
@@ -303,7 +331,7 @@ export const routes = [
   // Root and fallback routes
   {
     path: '/',
-    element: <Navigate to="/home" replace />,
+    element: <RootRedirect />,
   },
   {
     path: '*',

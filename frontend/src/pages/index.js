@@ -18,4 +18,5 @@ export { Support } from './compliance/Support';
 export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
 export { ForgotPassword } from './auth/ForgotPassword';
+export { ResetPassword } from './auth/ResetPassword';
 export { CommunityChatPage } from './CommunityChatPage';
