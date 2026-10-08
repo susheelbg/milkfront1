@@ -445,7 +445,7 @@ export const HomePage = () => {
           <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-2 border-primary-dark/40 overflow-hidden shadow-sm flex-shrink-0 bg-white">
             <img
               src="https://ywgjsvrvyokzkhtyxqrt.supabase.co/storage/v1/object/public/milkmaatu-image/other/susheel.jpeg"
-              alt="Susheel"
+              alt={t('home.founderName')}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
@@ -458,7 +458,7 @@ export const HomePage = () => {
           {/* Right Side: Text Content */}
           <div className="flex-1 space-y-1.5 text-left">
             <p className="text-sm font-black text-text-dark tracking-tight">
-              Susheel
+              {t('home.founderName')}
             </p>
             <p className="text-xs md:text-sm font-semibold text-text-dark/90 leading-relaxed">
               {t('home.welcomeMessage')}
